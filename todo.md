@@ -3074,3 +3074,12 @@
 - [x] Create dotloop-api.js module for API calls
 - [x] Update manifest.json with OAuth and API permissions
 - [x] Rewrite popup.js to use OAuth and API instead of DOM scraping
+
+## Phase 61: Extension Error Handling & Recovery
+- [ ] Create error handling utilities and retry logic
+- [ ] Implement token refresh mechanism with expiration tracking
+- [ ] Add user-friendly error messages and recovery suggestions
+- [ ] Update popup UI with error states and connection status
+- [ ] Add error logging and diagnostics
+- [ ] Test error scenarios and recovery flows
+- [ ] Create updated ZIP and deliver to user

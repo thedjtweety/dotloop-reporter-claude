@@ -6,8 +6,9 @@
 console.log('[Dotloop Extension] Popup script loaded');
 
 // Import OAuth and API modules
-import { startOAuthFlow, isConnected, revokeToken, getValidAccessToken } from '../oauth/oauth-handler.js';
+import { startOAuthFlow, isConnected, revokeToken, getValidAccessToken, getConnectionStatus } from '../oauth/oauth-handler.js';
 import { fetchAllTransactions } from '../api/dotloop-api.js';
+import { classifyError, getUserFriendlyMessage, getRecoverySuggestions, logErrorToDiagnostics } from '../utils/error-handler.js';
 
 // DOM Elements
 const connectBtn = document.getElementById('connect-btn');
@@ -95,7 +96,7 @@ function showConnectedState() {
 }
 
 /**
- * Handle OAuth connection
+ * Handle OAuth connection with error handling
  */
 async function handleConnect() {
   console.log('[Dotloop Extension] Starting OAuth connection...');
@@ -104,15 +105,23 @@ async function handleConnect() {
   try {
     const token = await startOAuthFlow();
     console.log('[Dotloop Extension] OAuth successful');
-    showConnectedState();
+    
+    // Verify connection status
+    const status = await getConnectionStatus();
+    if (status.connected) {
+      showConnectedState();
+    } else {
+      throw new Error('Connection verification failed');
+    }
   } catch (error) {
     console.error('[Dotloop Extension] OAuth error:', error);
-    showErrorState(error.message || 'Failed to connect to Dotloop');
+    await logErrorToDiagnostics(error, 'handleConnect');
+    showErrorState(error);
   }
 }
 
 /**
- * Handle disconnection
+ * Handle disconnection with error handling
  */
 async function handleDisconnect() {
   console.log('[Dotloop Extension] Disconnecting...');
@@ -121,10 +130,12 @@ async function handleDisconnect() {
     await revokeToken();
     extractedData = [];
     await chrome.storage.local.remove('extractedData');
+    await chrome.storage.local.remove('diagnostics');
     showIdleState();
   } catch (error) {
     console.error('[Dotloop Extension] Disconnect error:', error);
-    showErrorState('Failed to disconnect');
+    await logErrorToDiagnostics(error, 'handleDisconnect');
+    showErrorState(error);
   }
 }
 
@@ -141,15 +152,25 @@ function loadSavedData() {
 }
 
 /**
- * Start extraction from Dotloop API
+ * Start extraction from Dotloop API with retry logic
  */
 async function startExtraction() {
   console.log('[Dotloop Extension] Starting API extraction...');
   showLoadingState('Fetching transactions from Dotloop...');
 
   try {
+    // Check connection status first
+    const status = await getConnectionStatus();
+    if (!status.connected) {
+      throw new Error('Not connected to Dotloop. Please reconnect.');
+    }
+
     const accessToken = await getValidAccessToken();
     const transactions = await fetchAllTransactions(accessToken);
+
+    if (!transactions || transactions.length === 0) {
+      throw new Error('No transactions found. Check your Dotloop account.');
+    }
 
     extractedData = transactions;
     console.log(`[Dotloop Extension] Extraction successful: ${extractedData.length} transactions`);
@@ -163,7 +184,8 @@ async function startExtraction() {
     showSuccessState();
   } catch (error) {
     console.error('[Dotloop Extension] Extraction error:', error);
-    showErrorState(error.message || 'Extraction failed. Please try again.');
+    await logErrorToDiagnostics(error, 'startExtraction');
+    showErrorState(error);
   }
 }
 
@@ -227,7 +249,7 @@ function showSuccessState(extractedAt) {
 }
 
 /**
- * Show error state
+ * Show error state with recovery suggestions
  */
 function showErrorState(error) {
   idleState.style.display = 'none';
@@ -235,7 +257,28 @@ function showErrorState(error) {
   loadingState.style.display = 'none';
   successState.style.display = 'none';
   errorState.style.display = 'flex';
-  errorMessage.textContent = error || 'An error occurred.';
+
+  // Classify error and get user-friendly message
+  const errorType = classifyError(error);
+  const userMessage = getUserFriendlyMessage(errorType);
+  const suggestions = getRecoverySuggestions(errorType);
+
+  // Display error message
+  errorMessage.innerHTML = `
+    <div style="margin-bottom: 12px;">
+      <strong>${userMessage}</strong>
+    </div>
+    <div style="font-size: 12px; color: #999; margin-bottom: 12px;">
+      <strong>What you can try:</strong>
+      <ul style="margin: 8px 0 0 20px; padding: 0;">
+        ${suggestions.map(s => `<li>${s}</li>`).join('')}
+      </ul>
+    </div>
+    ${error?.message ? `<div style="font-size: 11px; color: #666; margin-top: 12px; padding-top: 12px; border-top: 1px solid #ddd;">Technical details: ${error.message}</div>` : ''}
+  `;
+
+  // Log error for diagnostics
+  logErrorToDiagnostics(error, 'popup-error');
 }
 
 /**

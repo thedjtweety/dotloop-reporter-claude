@@ -85,10 +85,15 @@
       <div id="error-state" class="state" style="display: none;">
         <div class="icon">❌</div>
         <h2>Extraction Failed</h2>
-        <p id="error-message" class="error-message">An error occurred during extraction.</p>
-        <button id="error-reset-btn" class="btn btn-primary">
-          Try Again
-        </button>
+        <div id="error-message" class="error-message" style="text-align: left; background: #f5f5f5; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; line-height: 1.5;">An error occurred during extraction.</div>
+        <div class="button-group">
+          <button id="retry-btn" class="btn btn-primary">
+            Try Again
+          </button>
+          <button id="error-reset-btn" class="btn btn-secondary">
+            Disconnect &amp; Reconnect
+          </button>
+        </div>
       </div>
     </div>
 

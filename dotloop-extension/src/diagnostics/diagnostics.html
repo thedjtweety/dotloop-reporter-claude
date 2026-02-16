@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dotloop Extension - Diagnostics</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .controls {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+
+    .btn-danger {
+      background: #f56565;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #e53e3e;
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #999;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .logs-container {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logs-header {
+      background: #f9fafb;
+      padding: 15px;
+      border-bottom: 1px solid #e5e7eb;
+      font-weight: 600;
+      display: grid;
+      grid-template-columns: 150px 100px 1fr 100px;
+      gap: 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #666;
+    }
+
+    .log-entry {
+      padding: 12px 15px;
+      border-bottom: 1px solid #f3f4f6;
+      display: grid;
+      grid-template-columns: 150px 100px 1fr 100px;
+      gap: 15px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .log-entry:hover {
+      background: #f9fafb;
+    }
+
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+
+    .timestamp {
+      color: #999;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+    }
+
+    .error-type {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .error-type.NETWORK_ERROR {
+      background: #fed7d7;
+      color: #c53030;
+    }
+
+    .error-type.AUTH_ERROR {
+      background: #feebc8;
+      color: #c05621;
+    }
+
+    .error-type.TOKEN_EXPIRED {
+      background: #feebc8;
+      color: #c05621;
+    }
+
+    .error-type.API_ERROR {
+      background: #fed7d7;
+      color: #c53030;
+    }
+
+    .error-type.RATE_LIMIT {
+      background: #feebc8;
+      color: #c05621;
+    }
+
+    .error-type.UNKNOWN_ERROR {
+      background: #e2e8f0;
+      color: #2d3748;
+    }
+
+    .error-message {
+      color: #666;
+      word-break: break-word;
+    }
+
+    .context {
+      color: #999;
+      font-size: 12px;
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .empty-state {
+      padding: 40px;
+      text-align: center;
+      color: #999;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .message {
+      padding: 12px 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      display: none;
+    }
+
+    .message.success {
+      background: #c6f6d5;
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+      display: block;
+    }
+
+    .message.error {
+      background: #fed7d7;
+      color: #742a2a;
+      border: 1px solid #fc8181;
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .logs-header,
+      .log-entry {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔍 Diagnostics</h1>
+      <p>View error logs and troubleshoot extension issues</p>
+    </div>
+
+    <div id="message" class="message"></div>
+
+    <div class="controls">
+      <button class="btn btn-primary" onclick="refreshLogs()">🔄 Refresh</button>
+      <button class="btn btn-secondary" onclick="exportLogs()">📥 Export Logs</button>
+      <button class="btn btn-danger" onclick="clearLogs()">🗑️ Clear All Logs</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">Total Errors</div>
+        <div class="stat-value" id="total-errors">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Network Errors</div>
+        <div class="stat-value" id="network-errors">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Auth Errors</div>
+        <div class="stat-value" id="auth-errors">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">API Errors</div>
+        <div class="stat-value" id="api-errors">0</div>
+      </div>
+    </div>
+
+    <div class="logs-container">
+      <div class="logs-header">
+        <div>Timestamp</div>
+        <div>Type</div>
+        <div>Message</div>
+        <div>Context</div>
+      </div>
+      <div id="logs-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <p>No error logs yet. Everything is working smoothly!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="diagnostics.js"></script>
+</body>
+</html>

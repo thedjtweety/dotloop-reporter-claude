@@ -175,6 +175,96 @@ async function refreshAccessToken(refreshToken) {
 }
 
 /**
+ * Get connection status with details
+ */
+export async function getConnectionStatus() {
+  try {
+    const { dotloop_token } = await chrome.storage.local.get('dotloop_token');
+
+    if (!dotloop_token) {
+      return {
+        connected: false,
+        status: 'disconnected',
+        message: 'Not connected to Dotloop',
+      };
+    }
+
+    const timeUntilExpiry = dotloop_token.expires_at - Date.now();
+    const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000; // 5 minutes
+
+    if (timeUntilExpiry < 0) {
+      return {
+        connected: false,
+        status: 'expired',
+        message: 'Token has expired. Please reconnect.',
+        expiresAt: new Date(dotloop_token.expires_at),
+      };
+    }
+
+    if (timeUntilExpiry < TOKEN_REFRESH_BUFFER) {
+      return {
+        connected: true,
+        status: 'expiring_soon',
+        message: 'Token expiring soon. Will auto-refresh.',
+        expiresAt: new Date(dotloop_token.expires_at),
+        timeUntilExpiry,
+      };
+    }
+
+    return {
+      connected: true,
+      status: 'connected',
+      message: 'Connected to Dotloop',
+      expiresAt: new Date(dotloop_token.expires_at),
+      timeUntilExpiry,
+    };
+  } catch (error) {
+    console.error('[OAuth] Error getting connection status:', error);
+    return {
+      connected: false,
+      status: 'error',
+      message: 'Error checking connection status',
+    };
+  }
+}
+
+/**
+ * Setup token refresh interval
+ */
+export function setupTokenRefreshInterval() {
+  const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000; // 5 minutes
+  
+  // Check token every 30 seconds
+  const intervalId = setInterval(async () => {
+    try {
+      const status = await getConnectionStatus();
+      
+      if (status.status === 'expiring_soon') {
+        console.log('[OAuth] Auto-refreshing token...');
+        const { dotloop_token } = await chrome.storage.local.get('dotloop_token');
+        if (dotloop_token && dotloop_token.refresh_token) {
+          await refreshAccessToken(dotloop_token.refresh_token);
+        }
+      }
+    } catch (error) {
+      console.error('[OAuth] Auto-refresh failed:', error);
+    }
+  }, 30000);
+
+  return intervalId;
+}
+
+/**
+ * Clear token refresh interval
+ */
+export function clearTokenRefreshInterval(intervalId) {
+  if (intervalId) {
+    clearInterval(intervalId);
+    console.log('[OAuth] Token refresh interval cleared');
+  }
+}
+
+/**
  * Revoke token and disconnect
  */
 export async function revokeToken() {
