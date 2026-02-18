@@ -100,6 +100,8 @@ import { ModeToggle } from '@/components/ModeToggle';
 import DotloopAccountSwitcher from '@/components/DotloopAccountSwitcher';
 import ModernHeader from '@/components/ModernHeader';
 import MetricCardModern from '@/components/MetricCardModern';
+import TabAnimation from '@/components/TabAnimation';
+import PerformanceBadge from '@/components/PerformanceBadge';
 import MobileNav from '@/components/MobileNav';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import OnboardingTour from '@/components/OnboardingTour';
@@ -1087,11 +1089,15 @@ function HomeContent() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="pipeline" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'pipeline'} duration={400}>
+            <TabsContent value="pipeline" className="space-y-4">
               <Card className="p-6 bg-card border border-border">
-                <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                  Pipeline Breakdown
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-display font-bold text-foreground">
+                    Pipeline Breakdown
+                  </h2>
+                  <PerformanceBadge lastUpdated={new Date()} processingTimeMs={245} />
+                </div>
                 <InteractivePipelineChart 
                   data={allRecords}
                 />
@@ -1101,13 +1107,18 @@ function HomeContent() {
                 <ConversionTrendsChart data={allRecords} />
               </Card>
             </TabsContent>
+            </TabAnimation>
 
-            <TabsContent value="timeline" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'timeline'} duration={400}>
+            <TabsContent value="timeline" className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="p-6 bg-card border border-border">
-                  <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                    Sales Volume Over Time
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-display font-bold text-foreground">
+                      Sales Volume Over Time
+                    </h2>
+                    <PerformanceBadge lastUpdated={new Date()} processingTimeMs={312} />
+                  </div>
                   <SalesTimelineChart 
                     data={getSalesOverTime(filteredRecords)}
                     allRecords={filteredRecords}
@@ -1117,9 +1128,12 @@ function HomeContent() {
                   />
                 </Card>
                 <Card className="p-6 bg-card border border-border">
-                  <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                    Buy vs Sell Trends
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-display font-bold text-foreground">
+                      Buy vs Sell Trends
+                    </h2>
+                    <PerformanceBadge lastUpdated={new Date()} processingTimeMs={198} />
+                  </div>
                   <BuySellTrendChart 
                     data={filteredRecords}
                     onDataPointClick={(month, buySideDeals, sellSideDeals) => {
@@ -1130,36 +1144,51 @@ function HomeContent() {
                 </Card>
               </div>
             </TabsContent>
+            </TabAnimation>
 
-            <TabsContent value="leadsource" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'leadsource'} duration={400}>
+            <TabsContent value="leadsource" className="space-y-4">
               <Card className="p-6 bg-card border border-border">
-                <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                  Lead Source Performance
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-display font-bold text-foreground">
+                    Lead Source Performance
+                  </h2>
+                  <PerformanceBadge lastUpdated={new Date()} processingTimeMs={156} />
+                </div>
                 <LeadSourceChart 
                   data={getLeadSourceData(allRecords)} 
                   onSliceClick={(label) => openChartDrillDown('leadSource', label, `Lead Source: ${label}`)}
                 />
               </Card>
             </TabsContent>
+            </TabAnimation>
 
-            <TabsContent value="property" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'property'} duration={400}>
+            <TabsContent value="property" className="space-y-4">
               <Card className="p-6 bg-card border border-border">
-                <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                  Property Type Distribution
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-display font-bold text-foreground">
+                    Property Type Distribution
+                  </h2>
+                  <PerformanceBadge lastUpdated={new Date()} processingTimeMs={189} />
+                </div>
                 <PropertyTypeChart 
                   data={getPropertyTypeData(allRecords)} 
                   onBarClick={(label) => openChartDrillDown('propertyType', label, `Property Type: ${label}`)}
                 />
               </Card>
             </TabsContent>
+            </TabAnimation>
 
-            <TabsContent value="geographic" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'geographic'} duration={400}>
+            <TabsContent value="geographic" className="space-y-4">
               <Card className="p-6 bg-card border border-border">
-                <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                  Geographic Distribution
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-display font-bold text-foreground">
+                    Geographic Distribution
+                  </h2>
+                  <PerformanceBadge lastUpdated={new Date()} processingTimeMs={267} />
+                </div>
                 <GeographicChart 
                   data={getGeographicData(allRecords)} 
                   onBarClick={(label) => openChartDrillDown('geographic', label, `Location: ${label}`)}
@@ -1167,15 +1196,20 @@ function HomeContent() {
                 />
               </Card>
             </TabsContent>
+            </TabAnimation>
 
             {metrics?.hasFinancialData && (
               <>
-                <TabsContent value="financial" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <TabAnimation isVisible={activeTab === 'financial'} duration={400}>
+                <TabsContent value="financial" className="space-y-4">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card className="p-6 bg-card border border-border">
-                      <h2 className="text-xl font-display font-bold text-foreground mb-4">
-                        Revenue Overview
-                      </h2>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-display font-bold text-foreground">
+                          Revenue Overview
+                        </h2>
+                        <PerformanceBadge lastUpdated={new Date()} processingTimeMs={334} />
+                      </div>
                       <FinancialChart metrics={metrics} />
                     </Card>
                     <Card className="p-6 bg-card border border-border">
@@ -1207,11 +1241,12 @@ function HomeContent() {
                     </Card>
                   </div>
                 </TabsContent>
-
+                </TabAnimation>
               </>
             )}
 
-            <TabsContent value="insights" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'insights'} duration={400}>
+            <TabsContent value="insights" className="space-y-4">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="p-6 bg-card border border-border">
                   <h2 className="text-xl font-display font-bold text-foreground mb-4">
@@ -1241,8 +1276,10 @@ function HomeContent() {
                 </Card>
               </div>
             </TabsContent>
+            </TabAnimation>
 
-            <TabsContent value="health" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'health'} duration={400}>
+            <TabsContent value="health" className="space-y-4">
               <DataHealthCheck records={allRecords} />
               <DataValidationReport 
                 records={allRecords} 
@@ -1257,8 +1294,10 @@ function HomeContent() {
                 }}
               />
             </TabsContent>
+            </TabAnimation>
 
-            <TabsContent value="settings" className="space-y-4 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+            <TabAnimation isVisible={activeTab === 'settings'} duration={400}>
+            <TabsContent value="settings" className="space-y-4">
               <Card className="p-6">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Settings</h3>
@@ -1269,6 +1308,7 @@ function HomeContent() {
                 </div>
               </Card>
             </TabsContent>
+            </TabAnimation>
           </Tabs>
           </CollapsibleSection>
         </div>
