@@ -10,6 +10,8 @@ import { startOAuthFlow, isConnected, revokeToken, getValidAccessToken, getConne
 import { fetchAllTransactions } from '../api/dotloop-api.js';
 import { classifyError, getUserFriendlyMessage, getRecoverySuggestions, logErrorToDiagnostics } from '../utils/error-handler.js';
 import { formatAccountName } from '../utils/account-manager.js';
+import { cacheData, getCachedData, isCacheValid, getFormattedCacheTime, getCacheStats, clearCache } from '../utils/cache-manager.js';
+import { requestNotificationPermission, areNotificationsEnabled, notifyExtractionComplete, notifyExtractionError, notifyAccountSwitched, notifyCacheRefreshed } from '../utils/notification-manager.js';
 
 // DOM Elements
 const connectBtn = document.getElementById('connect-btn');
@@ -36,6 +38,13 @@ const loadingMessage = document.getElementById('loading-message');
 const errorMessage = document.getElementById('error-message');
 const connectionStatus = document.getElementById('connection-status');
 
+// Cache and notification elements
+const cacheStatus = document.getElementById('cache-status');
+const cacheTimestamp = document.getElementById('cache-timestamp');
+const refreshCacheBtn = document.getElementById('refresh-cache-btn');
+const removeAccountBtn = document.getElementById('remove-account-btn');
+const accountDropdown = document.getElementById('account-dropdown');
+
 let extractedData = [];
 
 // Event Listeners
@@ -47,6 +56,8 @@ if (resetBtn) resetBtn.addEventListener('click', resetUI);
 if (disconnectBtn) disconnectBtn.addEventListener('click', handleDisconnect);
 if (retryBtn) retryBtn.addEventListener('click', startExtraction);
 if (errorResetBtn) errorResetBtn.addEventListener('click', resetUI);
+if (refreshCacheBtn) refreshCacheBtn.addEventListener('click', refreshCache);
+if (removeAccountBtn) removeAccountBtn.addEventListener('click', handleRemoveAccount);
 
 // Initialize on popup open
 initializePopup();
@@ -178,13 +189,25 @@ async function startExtraction() {
     extractedData = transactions;
     console.log(`[Dotloop Extension] Extraction successful: ${extractedData.length} transactions`);
 
-    // Save to storage
+    // Save to storage and cache
+    const currentAccount = await getConnectionStatus();
     chrome.storage.local.set({
       extractedData: extractedData,
       extractedAt: new Date().toISOString()
     });
+    
+    // Cache the data
+    await cacheData(extractedData, currentAccount.accountId);
+    
+    // Request notification permission on first extraction
+    await requestNotifications();
+    
+    // Show success notification
+    const totalValue = extractedData.reduce((sum, t) => sum + (t.salePrice || t.price || 0), 0);
+    await notifyExtractionComplete(extractedData.length, totalValue);
 
     showSuccessState();
+    await updateCacheStatus();
   } catch (error) {
     console.error('[Dotloop Extension] Extraction error:', error);
     await logErrorToDiagnostics(error, 'startExtraction');
@@ -402,5 +425,91 @@ async function updateAccountSelector() {
     }
   } catch (error) {
     console.error('[Popup] Error updating account selector:', error);
+  }
+}
+
+
+/**
+ * Refresh cached data from Dotloop API
+ */
+async function refreshCache() {
+  console.log('[Popup] Refreshing cache...');
+  showLoadingState('Refreshing data...');
+  
+  try {
+    await startExtraction();
+  } catch (error) {
+    console.error('[Popup] Error refreshing cache:', error);
+    showErrorState(error);
+  }
+}
+
+/**
+ * Handle account removal
+ */
+async function handleRemoveAccount() {
+  if (!accountDropdown || !accountDropdown.value) {
+    alert('No account selected');
+    return;
+  }
+  
+  const confirmed = confirm('Are you sure you want to remove this account? This action cannot be undone.');
+  if (!confirmed) {
+    return;
+  }
+  
+  try {
+    const accountId = accountDropdown.value;
+    console.log('[Popup] Removing account:', accountId);
+    
+    await disconnectAccount(accountId);
+    
+    // Refresh account selector
+    await updateAccountSelector();
+    
+    // Show notification if enabled
+    if (areNotificationsEnabled()) {
+      await notifyAccountSwitched('Account removed');
+    }
+    
+    console.log('[Popup] Account removed successfully');
+  } catch (error) {
+    console.error('[Popup] Error removing account:', error);
+    showErrorState(error);
+  }
+}
+
+/**
+ * Update cache status display
+ */
+async function updateCacheStatus() {
+  const stats = await getCacheStats();
+  
+  if (!stats || !stats.isValid) {
+    if (cacheStatus) {
+      cacheStatus.style.display = 'none';
+    }
+    return;
+  }
+  
+  if (cacheStatus) {
+    cacheStatus.style.display = 'block';
+    if (cacheTimestamp) {
+      cacheTimestamp.textContent = stats.formattedTime;
+    }
+  }
+}
+
+/**
+ * Request notification permission on first extraction
+ */
+async function requestNotifications() {
+  try {
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      console.log('[Popup] Notification permission granted');
+    }
+  } catch (error) {
+    console.error('[Popup] Error requesting notification permission:', error);
   }
 }

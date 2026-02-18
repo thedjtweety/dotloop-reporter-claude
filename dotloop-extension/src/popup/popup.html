@@ -29,15 +29,34 @@
       <div id="connected-state" class="state" style="display: none;">
         <div class="icon">✓</div>
         <h2>Connected to Dotloop</h2>
-        <p id="connection-status" class="connection-status">✓ Connected to Dotloop</p>
+        <p id="connection-status" class="connection-status">✓ Connected</p>
+        
+        <!-- Account Selector -->
         <div id="account-selector" style="display: none; margin-bottom: 16px;">
           <label for="account-dropdown" style="display: block; font-size: 12px; color: #999; margin-bottom: 8px; text-transform: uppercase;">Active Account</label>
-          <select id="account-dropdown" class="account-dropdown" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white; cursor: pointer;">
-          </select>
-          <button id="add-account-btn" class="btn btn-secondary" style="width: 100%; margin-top: 8px;">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <select id="account-dropdown" class="account-dropdown" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white; cursor: pointer;">
+            </select>
+            <button id="remove-account-btn" class="btn btn-secondary" style="padding: 8px 12px; min-width: auto;" title="Remove selected account">
+              X
+            </button>
+          </div>
+          <button id="add-account-btn" class="btn btn-secondary" style="width: 100%;">
             + Add Another Account
           </button>
         </div>
+        
+        <!-- Cache Status -->
+        <div id="cache-status" style="display: none; margin-bottom: 16px; padding: 12px; background: #f0f0f0; border-radius: 6px; font-size: 12px;">
+          <div style="margin-bottom: 8px;">
+            <strong>Cached Data</strong>
+            <div id="cache-info" style="color: #666; margin-top: 4px;">Last extracted: <span id="cache-timestamp">-</span></div>
+          </div>
+          <button id="refresh-cache-btn" class="btn btn-secondary" style="width: 100%; font-size: 12px;">
+            Refresh Data
+          </button>
+        </div>
+        
         <p>Click below to fetch all your transactions from Dotloop</p>
         <button id="extract-btn" class="btn btn-primary">
           Extract All Transactions
