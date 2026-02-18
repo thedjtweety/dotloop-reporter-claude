@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { ModeToggle } from '@/components/ModeToggle';
 import { Button } from '@/components/ui/button';
-import { Calendar, LogOut, Settings, Menu, X } from 'lucide-react';
+import { Calendar, LogOut, Settings, Menu, X, Zap } from 'lucide-react';
 import { DatePickerWithRange } from '@/components/DateRangePicker';
 import { DateRange } from 'react-day-picker';
 
@@ -10,9 +10,11 @@ interface ModernHeaderProps {
   dateRange?: DateRange;
   setDateRange?: (range: DateRange | undefined) => void;
   title?: string;
+  onDemoClick?: () => void;
+  isDemoLoading?: boolean;
 }
 
-export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop Reporter' }: ModernHeaderProps) {
+export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop Reporter', onDemoClick, isDemoLoading }: ModernHeaderProps) {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -40,6 +42,20 @@ export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Demo Button */}
+            {onDemoClick && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDemoClick}
+                disabled={isDemoLoading}
+                className="hidden sm:flex items-center gap-2 text-foreground/70 hover:text-foreground"
+              >
+                <Zap className="w-4 h-4" />
+                {isDemoLoading ? 'Loading...' : 'Try Demo'}
+              </Button>
+            )}
+
             {/* Theme Toggle */}
             <ModeToggle />
 
@@ -101,6 +117,19 @@ export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop
                   <p className="text-xs text-foreground/60">Signed in</p>
                 </div>
               </div>
+            )}
+
+            {onDemoClick && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={onDemoClick}
+                disabled={isDemoLoading}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                {isDemoLoading ? 'Loading Demo...' : 'Try Demo'}
+              </Button>
             )}
 
             <Button

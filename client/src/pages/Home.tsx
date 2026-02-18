@@ -693,7 +693,7 @@ function HomeContent() {
   if (!metrics) {
     return (
       <div className="min-h-screen bg-background flex flex-col pb-16">
-        <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" />
+        <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" onDemoClick={handleDemoMode} isDemoLoading={isLoading} />
 
         <main className="flex-1 container flex items-center justify-center py-8">
           <div className="w-full max-w-6xl space-y-8">
@@ -876,7 +876,7 @@ function HomeContent() {
       <Toaster />
       {/* <SectionNav /> - Removed floating navigation */}
       <BackToTop />
-      <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" />
+      <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" onDemoClick={handleDemoMode} isDemoLoading={isLoading} />
 
       {/* Main Dashboard */}
       <main className="container py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8">
