@@ -1,9 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
+import cors from 'cors';
 
 /**
  * Security Headers Middleware
  */
+
+/**
+ * CORS Configuration
+ */
+export const corsMiddleware = cors({
+  origin: [
+    'https://dotloopreport.com',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    /^chrome-extension:\/\/.*$/,
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+});
 
 export const securityHeaders = helmet({
   contentSecurityPolicy: {

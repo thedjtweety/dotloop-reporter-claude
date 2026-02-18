@@ -208,4 +208,50 @@ export const dotloopApiRouter = router({
       });
     }
   }),
+
+  /**
+   * Get recently synced transactions
+   * Used by the Chrome extension to retrieve synced data
+   */
+  getRecentSync: protectedProcedure
+    .input(z.object({
+      profileId: z.string(),
+      limit: z.number().default(100),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
+        const tokenData = await getValidOAuthToken(ctx.user.id, tenantId, 'dotloop');
+        
+        const client = new DotloopAPIClient(tokenData.accessToken);
+        
+        // Fetch loops
+        const loops = await client.getLoops(input.profileId);
+        
+        // Transform to transaction format
+        const transactions = [];
+        for (const loop of loops.slice(0, input.limit)) {
+          try {
+            const participants = await client.getLoopParticipants(
+              input.profileId,
+              loop.loopId
+            );
+            transactions.push(transformDotloopToRecord(loop, participants));
+          } catch (error) {
+            console.error(`Failed to fetch participants for loop ${loop.loopId}:`, error);
+            // Continue with next loop
+          }
+        }
+        
+        return {
+          transactions,
+          total: transactions.length,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch transactions',
+        });
+      }
+    }),
 });

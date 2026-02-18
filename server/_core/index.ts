@@ -9,6 +9,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { securityHeaders, csrfProtection, requestLoggingMiddleware, bruteForceProtection } from "../middleware/security-headers";
 import { uploadLimiter, apiLimiter, authLimiter } from "../middleware/rate-limiter";
+import { corsMiddleware } from "../middleware/security-headers";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -34,6 +35,7 @@ async function startServer() {
   const server = createServer(app);
   
   // Security middleware - apply early
+  app.use(corsMiddleware);
   app.use(securityHeaders);
   app.use(requestLoggingMiddleware);
   

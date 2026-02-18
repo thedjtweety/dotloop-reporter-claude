@@ -57,7 +57,7 @@ export interface TokenRefreshResponse {
 export class DotloopAPIClient {
   private client: AxiosInstance;
   private accessToken: string;
-  private baseURL = 'https://api.dotloop.com/v2';
+  private baseURL = 'https://api-gateway.dotloop.com/public/v2';
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
