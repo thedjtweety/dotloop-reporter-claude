@@ -46,89 +46,89 @@
 }
 
 :root {
-  /* Real Estate Theming - Professional Market Colors */
-  /* Primary: Deep Slate Blue - Trust & Professionalism */
-  --primary: oklch(0.45 0.14 250);
+  /* Modern Dotloop Reporter Design System */
+  /* Primary: Emerald Green - Success & Positive Metrics */
+  --primary: oklch(0.52 0.16 140);
   --primary-foreground: oklch(0.98 0.001 0);
-  --sidebar-primary: oklch(0.45 0.14 250);
+  --sidebar-primary: oklch(0.52 0.16 140);
   --sidebar-primary-foreground: oklch(0.98 0.001 0);
   
-  /* Real Estate Market Palette */
-  --chart-1: oklch(0.65 0.18 120); /* Emerald Green - Successful Closings */
-  --chart-2: oklch(0.70 0.16 250); /* Professional Blue - Active Listings */
-  --chart-3: oklch(0.75 0.18 60);  /* Market Gold - Pending/Under Contract */
-  --chart-4: oklch(0.60 0.18 30);  /* Coral Red - Archived/Expired */
-  --chart-5: oklch(0.55 0.15 280); /* Deep Purple - Insights */
+  /* Modern Chart Palette */
+  --chart-1: oklch(0.52 0.16 140); /* Emerald - Positive */
+  --chart-2: oklch(0.60 0.16 260); /* Blue - Active */
+  --chart-3: oklch(0.70 0.18 50);  /* Orange - Pending */
+  --chart-4: oklch(0.55 0.15 15);  /* Red - Archived */
+  --chart-5: oklch(0.65 0.14 290); /* Purple - Insights */
 
   --radius: 0.75rem; /* Softer corners for premium feel */
 
-  /* Dark Mode Base (Warm Slate) */
-  --background: oklch(0.12 0.03 250); /* Deep Slate */
-  --foreground: oklch(0.98 0.01 250); /* Warm White */
+  /* Dark Mode Base (Deep Navy) */
+  --background: oklch(0.10 0.02 260); /* Deep Navy */
+  --foreground: oklch(0.98 0.01 0); /* Pure White */
   
-  --card: oklch(0.18 0.03 250); /* Warm Slate Card */
-  --card-foreground: oklch(0.98 0.01 250);
+  --card: oklch(0.15 0.02 260); /* Darker Navy Card */
+  --card-foreground: oklch(0.98 0.01 0);
   
-  --popover: oklch(0.18 0.03 250);
-  --popover-foreground: oklch(0.98 0.01 250);
+  --popover: oklch(0.15 0.02 260);
+  --popover-foreground: oklch(0.98 0.01 0);
   
-  --secondary: oklch(0.22 0.03 250);
-  --secondary-foreground: oklch(0.98 0.01 250);
+  --secondary: oklch(0.20 0.02 260);
+  --secondary-foreground: oklch(0.98 0.01 0);
   
-  --muted: oklch(0.22 0.03 250);
-  --muted-foreground: oklch(0.65 0.02 250);
+  --muted: oklch(0.20 0.02 260);
+  --muted-foreground: oklch(0.70 0.02 260);
   
-  --accent: oklch(0.65 0.18 120); /* Emerald Accent */
+  --accent: oklch(0.52 0.16 140); /* Emerald Accent */
   --accent-foreground: oklch(0.98 0.001 0);
   
-  --destructive: oklch(0.60 0.18 30);
+  --destructive: oklch(0.55 0.15 15);
   --destructive-foreground: oklch(0.98 0.001 0);
   
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.65 0.18 120); /* Emerald Ring */
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.52 0.16 140); /* Emerald Ring */
   
-  --sidebar: oklch(0.15 0.03 250);
-  --sidebar-foreground: oklch(0.98 0.01 250);
-  --sidebar-accent: oklch(0.22 0.03 250);
-  --sidebar-accent-foreground: oklch(0.98 0.01 250);
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: oklch(0.65 0.18 120);
+  --sidebar: oklch(0.12 0.02 260);
+  --sidebar-foreground: oklch(0.98 0.01 0);
+  --sidebar-accent: oklch(0.18 0.02 260);
+  --sidebar-accent-foreground: oklch(0.98 0.01 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.52 0.16 140);
 }
 
 .light {
-  /* Light Mode (Premium Real Estate) */
-  --background: oklch(0.99 0.002 250); /* Clean White */
-  --foreground: oklch(0.25 0.05 250); /* Deep Slate Text */
+  /* Light Mode (Clean Professional) */
+  --background: oklch(0.99 0.002 0); /* Clean White */
+  --foreground: oklch(0.20 0.05 260); /* Deep Navy Text */
   
   --card: oklch(1 0 0); /* White Cards */
-  --card-foreground: oklch(0.25 0.05 250);
+  --card-foreground: oklch(0.20 0.05 260);
   
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.05 250);
+  --popover-foreground: oklch(0.20 0.05 260);
   
-  --secondary: oklch(0.96 0.01 250); /* Very Light Blue/Grey */
-  --secondary-foreground: oklch(0.25 0.05 250);
+  --secondary: oklch(0.96 0.01 260); /* Very Light Blue */
+  --secondary-foreground: oklch(0.20 0.05 260);
   
-  --muted: oklch(0.96 0.01 250);
-  --muted-foreground: oklch(0.55 0.03 250);
+  --muted: oklch(0.96 0.01 260);
+  --muted-foreground: oklch(0.50 0.03 260);
   
-  --accent: oklch(0.65 0.18 120); /* Emerald Accent */
+  --accent: oklch(0.52 0.16 140); /* Emerald Accent */
   --accent-foreground: oklch(0.98 0.001 0);
   
-  --destructive: oklch(0.60 0.18 30);
+  --destructive: oklch(0.55 0.15 15);
   --destructive-foreground: oklch(0.98 0.001 0);
   
-  --border: oklch(0.90 0.02 250); /* Light Blue-Grey Border */
-  --input: oklch(0.90 0.02 250);
-  --ring: oklch(0.65 0.18 120);
+  --border: oklch(0.92 0.01 260); /* Light Blue-Grey Border */
+  --input: oklch(0.92 0.01 260);
+  --ring: oklch(0.52 0.16 140);
   
-  --sidebar: oklch(0.98 0.002 250);
-  --sidebar-foreground: oklch(0.25 0.05 250);
-  --sidebar-accent: oklch(0.94 0.02 250);
-  --sidebar-accent-foreground: oklch(0.25 0.05 250);
-  --sidebar-border: oklch(0.90 0.02 250);
-  --sidebar-ring: oklch(0.65 0.18 120);
+  --sidebar: oklch(0.98 0.002 0);
+  --sidebar-foreground: oklch(0.20 0.05 260);
+  --sidebar-accent: oklch(0.94 0.01 260);
+  --sidebar-accent-foreground: oklch(0.20 0.05 260);
+  --sidebar-border: oklch(0.92 0.01 260);
+  --sidebar-ring: oklch(0.52 0.16 140);
 }
 
 @layer base {
@@ -183,65 +183,119 @@
     }
   }
 
-  /* Real Estate Premium Card Styling */
-  .re-card {
-    @apply bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow;
+  /* Modern Metric Card Styling */
+  .metric-card {
+    @apply bg-card border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-accent/30 transition-all duration-300;
   }
 
-  .re-card-header {
-    @apply flex items-center justify-between mb-4 pb-4 border-b border-border/50;
+  .metric-card-header {
+    @apply flex items-start justify-between mb-4;
   }
 
-  .re-card-title {
-    @apply text-lg font-semibold text-foreground;
+  .metric-card-title {
+    @apply text-sm font-medium text-foreground/70 uppercase tracking-wide;
   }
 
-  .re-card-value {
-    @apply text-3xl font-bold text-primary;
+  .metric-card-value {
+    @apply text-4xl font-bold text-foreground mt-2;
+  }
+
+  .metric-card-trend {
+    @apply text-xs font-semibold flex items-center gap-1 mt-2;
+  }
+
+  .metric-card-trend.positive {
+    @apply text-emerald-500;
+  }
+
+  .metric-card-trend.negative {
+    @apply text-red-500;
+  }
+
+  /* Status Badge Styling */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all;
+  }
+
+  .status-badge-active {
+    @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30;
+  }
+
+  .status-badge-pending {
+    @apply bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30;
+  }
+
+  .status-badge-closed {
+    @apply bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30;
+  }
+
+  .status-badge-archived {
+    @apply bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-500/30;
   }
 
   /* Gradient Backgrounds for Market Stages */
   .gradient-closed {
-    background: linear-gradient(135deg, oklch(0.65 0.18 120) 0%, oklch(0.60 0.16 110) 100%);
+    background: linear-gradient(135deg, oklch(0.52 0.16 140) 0%, oklch(0.48 0.14 130) 100%);
   }
 
   .gradient-active {
-    background: linear-gradient(135deg, oklch(0.70 0.16 250) 0%, oklch(0.65 0.14 240) 100%);
+    background: linear-gradient(135deg, oklch(0.60 0.16 260) 0%, oklch(0.55 0.14 250) 100%);
   }
 
   .gradient-contract {
-    background: linear-gradient(135deg, oklch(0.75 0.18 60) 0%, oklch(0.70 0.16 50) 100%);
+    background: linear-gradient(135deg, oklch(0.70 0.18 50) 0%, oklch(0.65 0.16 40) 100%);
   }
 
   .gradient-archived {
-    background: linear-gradient(135deg, oklch(0.60 0.18 30) 0%, oklch(0.55 0.16 20) 100%);
+    background: linear-gradient(135deg, oklch(0.55 0.15 15) 0%, oklch(0.50 0.13 5) 100%);
   }
 
   /* Property Icon Styling */
   .property-icon {
-    @apply w-8 h-8 rounded-md flex items-center justify-center text-sm font-bold;
+    @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold bg-accent/10 text-accent;
   }
 
   /* Market Penetration Badge */
   .market-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border;
   }
 
   .market-badge-success {
-    @apply bg-emerald-500/20 text-emerald-700 dark:text-emerald-400;
+    @apply bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30;
   }
 
   .market-badge-warning {
-    @apply bg-amber-500/20 text-amber-700 dark:text-amber-400;
+    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30;
   }
 
   .market-badge-info {
-    @apply bg-blue-500/20 text-blue-700 dark:text-blue-400;
+    @apply bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30;
   }
 
   /* Floating Action Button */
   .fab {
     @apply fixed bottom-8 right-8 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center cursor-pointer;
+  }
+
+  /* Modern Table Styling */
+  .data-table {
+    @apply w-full;
+  }
+
+  .data-table thead {
+    @apply bg-card border-b border-border/50;
+  }
+
+  .data-table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-foreground/70 uppercase tracking-wide;
+  }
+
+  .data-table tbody tr {
+    @apply border-b border-border/30 hover:bg-card/50 transition-colors;
+  }
+
+  .data-table td {
+    @apply px-4 py-3 text-sm text-foreground;
   }
 }
 
@@ -251,7 +305,7 @@
     background-color: transparent;
   }
   50% {
-    background-color: rgb(34, 197, 94, 0.1);
+    background-color: rgb(16, 185, 129, 0.1);
   }
   100% {
     background-color: transparent;
@@ -260,10 +314,10 @@
 
 .highlight-agent {
   animation: highlight-agent 2s ease-in-out;
-  background-color: rgb(34, 197, 94, 0.05);
+  background-color: rgb(16, 185, 129, 0.05);
 }
 
-/* Smooth transitions for real estate elements */
+/* Smooth transitions for dashboard elements */
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -279,16 +333,46 @@
   animation: slide-up 0.3s ease-out;
 }
 
-/* Property stage pulse effect */
-@keyframes pulse-stage {
+/* Metric card pulse effect */
+@keyframes pulse-metric {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(101, 184, 192, 0.7);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(101, 184, 192, 0);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
   }
 }
 
-.pulse-stage {
-  animation: pulse-stage 2s infinite;
+.pulse-metric {
+  animation: pulse-metric 2s infinite;
+}
+
+/* Smooth fade in for charts */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* Smooth scale animation for modals */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
 }
