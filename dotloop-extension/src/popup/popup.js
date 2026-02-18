@@ -513,3 +513,92 @@ async function requestNotifications() {
     console.error('[Popup] Error requesting notification permission:', error);
   }
 }
+
+
+/**
+ * Get connected accounts from storage
+ */
+async function getConnectedAccounts() {
+  try {
+    const result = await chrome.storage.local.get('connectedAccounts');
+    return result.connectedAccounts || [];
+  } catch (error) {
+    console.error('[Popup] Error getting connected accounts:', error);
+    return [];
+  }
+}
+
+/**
+ * Save connected accounts to storage
+ */
+async function saveConnectedAccounts(accounts) {
+  try {
+    await chrome.storage.local.set({ connectedAccounts: accounts });
+    console.log('[Popup] Saved', accounts.length, 'connected accounts');
+  } catch (error) {
+    console.error('[Popup] Error saving connected accounts:', error);
+  }
+}
+
+/**
+ * Switch to a different account
+ */
+async function switchAccount(accountId) {
+  try {
+    const accounts = await getConnectedAccounts();
+    const account = accounts.find(a => a.id === accountId);
+    
+    if (!account) {
+      throw new Error('Account not found');
+    }
+    
+    await chrome.storage.local.set({ activeAccount: account });
+    console.log('[Popup] Switched to account:', account.name);
+    await loadSavedData();
+  } catch (error) {
+    console.error('[Popup] Error switching account:', error);
+    showErrorState(error);
+  }
+}
+
+/**
+ * Disconnect an account
+ */
+async function disconnectAccount(accountId) {
+  try {
+    const accounts = await getConnectedAccounts();
+    const updated = accounts.filter(a => a.id !== accountId);
+    await saveConnectedAccounts(updated);
+    
+    const active = await chrome.storage.local.get('activeAccount');
+    if (active.activeAccount?.id === accountId) {
+      if (updated.length > 0) {
+        await switchAccount(updated[0].id);
+      } else {
+        await chrome.storage.local.set({ activeAccount: null });
+      }
+    }
+    
+    console.log('[Popup] Disconnected account:', accountId);
+  } catch (error) {
+    console.error('[Popup] Error disconnecting account:', error);
+    throw error;
+  }
+}
+
+/**
+ * Format account name for display
+ */
+function formatAccountName(account) {
+  if (!account) return 'Unknown Account';
+  return account.name || account.email || 'Unknown Account';
+}
+
+/**
+ * Open extension settings page
+ */
+function openSettings() {
+  chrome.runtime.openOptionsPage();
+}
+
+console.log('[Popup] Multi-account functions loaded');

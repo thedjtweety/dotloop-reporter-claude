@@ -27,5 +27,6 @@
   "action": {
     "default_popup": "src/popup/popup.html",
     "default_title": "Dotloop Reporting Tool"
-  }
+  },
+  "options_page": "src/options/options.html"
 }

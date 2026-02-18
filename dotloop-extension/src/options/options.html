@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dotloop Reporter - Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Dotloop Reporter Settings</h1>
+      <p class="subtitle">Configure your extension preferences</p>
+    </header>
+
+    <div class="content">
+      <!-- Sync Settings Section -->
+      <section class="settings-section">
+        <h2 class="section-title">Sync Settings</h2>
+        <div class="section-content">
+          <div class="setting-group">
+            <label for="sync-frequency">Auto-Sync Frequency</label>
+            <select id="sync-frequency" class="form-control">
+              <option value="disabled">Disabled (Manual Only)</option>
+              <option value="5">Every 5 minutes</option>
+              <option value="15">Every 15 minutes</option>
+              <option value="30">Every 30 minutes</option>
+              <option value="60">Every hour</option>
+              <option value="1440">Every day</option>
+            </select>
+            <small>Automatically sync your Dotloop transactions at the selected interval</small>
+          </div>
+
+          <div class="setting-group">
+            <label for="sync-limit">Transactions Per Sync</label>
+            <input type="number" id="sync-limit" class="form-control" min="10" max="500" value="100">
+            <small>Maximum number of transactions to fetch per sync (10-500)</small>
+          </div>
+
+          <div class="setting-group">
+            <label>
+              <input type="checkbox" id="sync-on-startup" class="form-checkbox">
+              Sync on Extension Startup
+            </label>
+            <small>Automatically fetch new transactions when the extension loads</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filter Settings Section -->
+      <section class="settings-section">
+        <h2 class="section-title">Transaction Filters</h2>
+        <div class="section-content">
+          <div class="setting-group">
+            <label for="status-filter">Include Transaction Status</label>
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" class="status-filter" value="Active" checked>
+                Active
+              </label>
+              <label>
+                <input type="checkbox" class="status-filter" value="Closed" checked>
+                Closed
+              </label>
+              <label>
+                <input type="checkbox" class="status-filter" value="Archived" checked>
+                Archived
+              </label>
+              <label>
+                <input type="checkbox" class="status-filter" value="Pending" checked>
+                Pending
+              </label>
+            </div>
+            <small>Select which transaction statuses to include in syncs</small>
+          </div>
+
+          <div class="setting-group">
+            <label for="property-type-filter">Property Types</label>
+            <div class="checkbox-group">
+              <label>
+                <input type="checkbox" class="property-filter" value="Single Family" checked>
+                Single Family
+              </label>
+              <label>
+                <input type="checkbox" class="property-filter" value="Condo" checked>
+                Condo
+              </label>
+              <label>
+                <input type="checkbox" class="property-filter" value="Townhouse" checked>
+                Townhouse
+              </label>
+              <label>
+                <input type="checkbox" class="property-filter" value="Multi-Family" checked>
+                Multi-Family
+              </label>
+              <label>
+                <input type="checkbox" class="property-filter" value="Land" checked>
+                Land
+              </label>
+            </div>
+            <small>Select which property types to include</small>
+          </div>
+
+          <div class="setting-group">
+            <label for="min-price">Minimum Transaction Price</label>
+            <input type="number" id="min-price" class="form-control" min="0" value="0" placeholder="0">
+            <small>Only include transactions above this price (0 = no minimum)</small>
+          </div>
+
+          <div class="setting-group">
+            <label for="max-price">Maximum Transaction Price</label>
+            <input type="number" id="max-price" class="form-control" min="0" value="0" placeholder="No limit">
+            <small>Only include transactions below this price (0 = no maximum)</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data & Privacy Section -->
+      <section class="settings-section">
+        <h2 class="section-title">Data & Privacy</h2>
+        <div class="section-content">
+          <div class="setting-group">
+            <label>
+              <input type="checkbox" id="encrypt-cache" class="form-checkbox" checked>
+              Encrypt Cached Data
+            </label>
+            <small>Encrypt transaction data stored locally in the extension</small>
+          </div>
+
+          <div class="setting-group">
+            <label for="cache-retention">Cache Retention</label>
+            <select id="cache-retention" class="form-control">
+              <option value="7">7 days</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+              <option value="365">1 year</option>
+              <option value="0">Never delete</option>
+            </select>
+            <small>How long to keep cached transaction data</small>
+          </div>
+
+          <div class="setting-group">
+            <label>
+              <input type="checkbox" id="send-analytics" class="form-checkbox" checked>
+              Send Anonymous Usage Analytics
+            </label>
+            <small>Help us improve the extension by sending anonymous usage data</small>
+          </div>
+
+          <div class="setting-group">
+            <button id="clear-cache-btn" class="btn btn-danger">
+              Clear All Cached Data
+            </button>
+            <small>Permanently delete all locally cached transactions</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Account Management Section -->
+      <section class="settings-section">
+        <h2 class="section-title">Account Management</h2>
+        <div class="section-content">
+          <div id="accounts-list" class="accounts-list">
+            <!-- Connected accounts will be listed here -->
+          </div>
+
+          <button id="manage-accounts-btn" class="btn btn-secondary" style="width: 100%; margin-top: 12px;">
+            Manage Connected Accounts
+          </button>
+        </div>
+      </section>
+
+      <!-- Advanced Settings Section -->
+      <section class="settings-section">
+        <h2 class="section-title">Advanced Settings</h2>
+        <div class="section-content">
+          <div class="setting-group">
+            <label for="api-timeout">API Timeout (seconds)</label>
+            <input type="number" id="api-timeout" class="form-control" min="5" max="120" value="30">
+            <small>How long to wait for API responses before timing out</small>
+          </div>
+
+          <div class="setting-group">
+            <label for="log-level">Debug Log Level</label>
+            <select id="log-level" class="form-control">
+              <option value="error">Error Only</option>
+              <option value="warning">Warning & Error</option>
+              <option value="info">Info & Above</option>
+              <option value="debug">Debug (Verbose)</option>
+            </select>
+            <small>Control verbosity of extension logs (check browser console)</small>
+          </div>
+
+          <div class="setting-group">
+            <button id="export-settings-btn" class="btn btn-secondary">
+              Export Settings
+            </button>
+            <button id="import-settings-btn" class="btn btn-secondary">
+              Import Settings
+            </button>
+            <small>Backup and restore your extension configuration</small>
+          </div>
+
+          <div class="setting-group">
+            <button id="reset-settings-btn" class="btn btn-danger">
+              Reset to Defaults
+            </button>
+            <small>Restore all settings to their default values</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Status & Info Section -->
+      <section class="settings-section">
+        <h2 class="section-title">Extension Info</h2>
+        <div class="section-content">
+          <div class="info-row">
+            <span class="info-label">Version:</span>
+            <span class="info-value" id="extension-version">1.0.0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Last Sync:</span>
+            <span class="info-value" id="last-sync">Never</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Cached Transactions:</span>
+            <span class="info-value" id="cached-count">0</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Cache Size:</span>
+            <span class="info-value" id="cache-size">0 KB</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Save Status -->
+    <div id="save-status" class="save-status" style="display: none;">
+      <span id="save-message">Settings saved</span>
+    </div>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="import-file" style="display: none;" accept=".json">
+
+  <script src="options.js"></script>
+</body>
+</html>
