@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
-import { Upload, TrendingUp, Home as HomeIcon, DollarSign, Calendar, Percent, Settings, ArrowLeft, AlertCircle, Trophy } from 'lucide-react';
+import { Upload, TrendingUp, Home as HomeIcon, DollarSign, Calendar, Percent, Settings, ArrowLeft, AlertCircle, Trophy, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -885,43 +885,61 @@ function HomeContent() {
         
         {/* Pipeline Pulse Dashboard */}
         {metrics && filteredRecords.length > 0 && (
-          <div className="mb-12 space-y-6" data-tour="pipeline-pulse">
-            {/* KPI Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <KPICard
+          <div className="mb-12 space-y-8" data-tour="pipeline-pulse">
+            {/* KPI Cards Row - Modern Design */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+              <MetricCardModern
+                icon={<TrendingUp className="w-5 h-5 text-accent" />}
                 title="Total Transactions"
-                value={metrics.totalTransactions}
-                subtitle={`Avg: ${formatCurrency(metrics.averagePrice)}`}
-                icon="📊"
-                trend={metrics.trends?.totalTransactions?.value}
-                trendLabel="vs previous period"
-                color="primary"
+                value={metrics.totalTransactions.toLocaleString()}
+                trend={{
+                  value: metrics.trends?.totalTransactions?.value || 0,
+                  isPositive: (metrics.trends?.totalTransactions?.direction === 'up') || false,
+                  label: 'vs previous'
+                }}
+                status="active"
                 onClick={() => handleMetricClick('total')}
               />
-              <KPICard
+              <MetricCardModern
+                icon={<DollarSign className="w-5 h-5 text-accent" />}
                 title="Total Sales Volume"
                 value={formatCurrency(metrics.totalSalesVolume)}
-                subtitle={`${metrics.closed} closed deals`}
-                icon="💰"
-                trend={metrics.trends?.totalVolume?.value}
-                trendLabel="vs previous period"
-                color="success"
+                trend={{
+                  value: metrics.trends?.totalVolume?.value || 0,
+                  isPositive: (metrics.trends?.totalVolume?.direction === 'up') || false,
+                  label: 'vs previous'
+                }}
+                status="active"
                 onClick={() => handleMetricClick('volume')}
               />
-              <KPICard
+              <MetricCardModern
+                icon={<CheckCircle className="w-5 h-5 text-accent" />}
                 title="Closing Rate"
                 value={formatPercentage(metrics.closingRate)}
-                subtitle={`${metrics.averageDaysToClose} days avg`}
-                icon="🎯"
-                trend={metrics.trends?.closingRate?.value}
-                trendLabel="vs previous period"
-                color="accent"
+                trend={{
+                  value: metrics.trends?.closingRate?.value || 0,
+                  isPositive: (metrics.trends?.closingRate?.direction === 'up') || false,
+                  label: 'vs previous'
+                }}
+                status="active"
                 onClick={() => handleMetricClick('closing')}
+              />
+              <MetricCardModern
+                icon={<Calendar className="w-5 h-5 text-accent" />}
+                title="Pipeline Status"
+                value={`${metrics.activeListings + metrics.underContract}`}
+                trend={{
+                  value: ((metrics.activeListings + metrics.underContract) / metrics.totalTransactions * 100),
+                  isPositive: true,
+                  label: 'active'
+                }}
+                status="pending"
+                onClick={() => handleMetricClick('active')}
               />
             </div>
 
             {/* Pipeline Funnel Chart & Projected to Close - Side by Side */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
               {/* Left: Pipeline Breakdown */}
               <div>
                 <PipelineFunnelChart
@@ -979,7 +997,7 @@ function HomeContent() {
 
 
         {/* Status Overview Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 landscape:grid-cols-4 gap-3 landscape:gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 landscape:grid-cols-4 gap-3 landscape:gap-4 mb-12 mt-12">
           <Card 
             className="p-4 cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/50 active:scale-[0.99]"
             onClick={() => handleMetricClick('active')}

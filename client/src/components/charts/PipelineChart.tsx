@@ -5,7 +5,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, TooltipProps } from 'recharts';
 import { ChartData } from '@/lib/csvParser';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 interface PipelineChartProps {
   data: ChartData[];
@@ -38,6 +38,7 @@ const CustomTooltip = ({ active, payload, label, total }: TooltipProps<number, s
 
 export default function PipelineChart({ data, onBarClick }: PipelineChartProps) {
   const chartRef = useRef<HTMLDivElement>(null);
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null);
 
   useEffect(() => {
     // Add entrance animation
@@ -75,13 +76,21 @@ export default function PipelineChart({ data, onBarClick }: PipelineChartProps) 
           tick={{ fill: '#6b7280', fontSize: 12 }}
         />
         <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
-        <Tooltip content={<CustomTooltip total={data.reduce((acc, curr) => acc + curr.value, 0)} />} />
+        <Tooltip 
+          content={<CustomTooltip total={data.reduce((acc, curr) => acc + curr.value, 0)} />}
+          cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
+        />
         <Bar 
           dataKey="value" 
           fill="#1e3a5f" 
           radius={[8, 8, 0, 0]}
-          onClick={(data) => onBarClick && onBarClick(data.label)}
-          className="cursor-pointer"
+          onClick={(data) => {
+            onBarClick && onBarClick(data.label);
+            setHoveredBar(data.label);
+          }}
+          onMouseEnter={(data) => setHoveredBar(data.label)}
+          onMouseLeave={() => setHoveredBar(null)}
+          className="cursor-pointer transition-all duration-300"
           animationBegin={0}
           animationDuration={800}
           animationEasing="ease-out"
@@ -90,7 +99,12 @@ export default function PipelineChart({ data, onBarClick }: PipelineChartProps) 
           }}
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={`url(#pipeline-gradient-${index})`} />
+            <Cell 
+              key={`cell-${index}`} 
+              fill={`url(#pipeline-gradient-${index})`}
+              opacity={hoveredBar === null || hoveredBar === entry.label ? 1 : 0.5}
+              style={{ transition: 'opacity 200ms ease-in-out' }}
+            />
           ))}
         </Bar>
         <defs>
