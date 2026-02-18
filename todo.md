@@ -3083,3 +3083,13 @@
 - [ ] Add error logging and diagnostics
 - [ ] Test error scenarios and recovery flows
 - [ ] Create updated ZIP and deliver to user
+
+
+## Phase 62: Multi-Account Support for Extension
+- [ ] Create account management module for storing multiple OAuth tokens
+- [ ] Update OAuth handler to support multiple accounts
+- [ ] Add account dropdown UI to popup
+- [ ] Implement account switching logic
+- [ ] Add token revocation for account removal
+- [ ] Update API client to use selected account
+- [ ] Test multi-account flows

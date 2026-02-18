@@ -1,7 +1,9 @@
 /**
  * Dotloop OAuth Handler
- * Manages OAuth 2.0 flow for extension
+ * Manages OAuth 2.0 flow for extension with multi-account support
  */
+
+import { saveAccount, getCurrentAccount, removeAccount, getAllAccounts, setCurrentAccount } from '../utils/account-manager.js';
 
 const DOTLOOP_AUTH_URL = 'https://auth.dotloop.com/oauth/authorize';
 const DOTLOOP_TOKEN_URL = 'https://auth.dotloop.com/oauth/token';
@@ -20,7 +22,6 @@ export async function startOAuthFlow() {
   const state = generateRandomState();
   const scope = 'loops:read loops:write profile email';
 
-  // Store state for verification
   await chrome.storage.local.set({ oauth_state: state });
 
   const authUrl = new URL(DOTLOOP_AUTH_URL);
@@ -29,15 +30,14 @@ export async function startOAuthFlow() {
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', scope);
   authUrl.searchParams.set('state', state);
+  authUrl.searchParams.set('prompt', 'login');
 
-  // Open OAuth window
   const authWindow = window.open(authUrl.toString(), 'dotloop-oauth', 'width=600,height=700');
 
   if (!authWindow) {
     throw new Error('Failed to open OAuth window. Please check if popups are blocked.');
   }
 
-  // Wait for OAuth callback
   return new Promise((resolve, reject) => {
     const checkInterval = setInterval(() => {
       try {
@@ -51,7 +51,6 @@ export async function startOAuthFlow() {
       }
     }, 500);
 
-    // Listen for message from callback
     const messageHandler = async (request, sender, sendResponse) => {
       if (request.type === 'OAUTH_CALLBACK') {
         clearInterval(checkInterval);
@@ -61,8 +60,9 @@ export async function startOAuthFlow() {
           if (request.error) {
             reject(new Error(request.error));
           } else {
-            const token = await exchangeCodeForToken(request.code);
-            resolve(token);
+            const account = await exchangeCodeForToken(request.code);
+            const savedAccount = await saveAccount(account);
+            resolve(savedAccount);
           }
         } catch (error) {
           reject(error);
@@ -72,7 +72,6 @@ export async function startOAuthFlow() {
 
     chrome.runtime.onMessage.addListener(messageHandler);
 
-    // Timeout after 5 minutes
     setTimeout(() => {
       clearInterval(checkInterval);
       chrome.runtime.onMessage.removeListener(messageHandler);
@@ -84,7 +83,7 @@ export async function startOAuthFlow() {
 /**
  * Exchange authorization code for access token
  */
-async function exchangeCodeForToken(code) {
+export async function exchangeCodeForToken(code) {
   console.log('[Dotloop Extension] Exchanging code for token...');
 
   const response = await fetch(DOTLOOP_TOKEN_URL, {
@@ -107,44 +106,73 @@ async function exchangeCodeForToken(code) {
 
   const tokenData = await response.json();
 
-  // Store token
-  const tokenInfo = {
-    access_token: tokenData.access_token,
-    refresh_token: tokenData.refresh_token,
-    expires_at: Date.now() + (tokenData.expires_in * 1000),
-    token_type: tokenData.token_type,
+  const userProfile = await fetchUserProfile(tokenData.access_token);
+
+  const account = {
+    email: userProfile.email,
+    displayName: userProfile.displayName || userProfile.email,
+    accessToken: tokenData.access_token,
+    refreshToken: tokenData.refresh_token,
+    expiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
+    tokenType: tokenData.token_type,
   };
 
-  await chrome.storage.local.set({ dotloop_token: tokenInfo });
+  console.log('[Dotloop Extension] Token obtained for:', account.email);
+  return account;
+}
 
-  console.log('[Dotloop Extension] Token stored successfully');
-  return tokenInfo;
+/**
+ * Fetch user profile from Dotloop API
+ */
+async function fetchUserProfile(accessToken) {
+  try {
+    const response = await fetch('https://api.dotloop.com/v1/profile', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+
+    const profile = await response.json();
+    return {
+      email: profile.email || profile.emailAddress || 'unknown@dotloop.com',
+      displayName: profile.displayName || profile.name || profile.email,
+    };
+  } catch (error) {
+    console.error('[Dotloop Extension] Error fetching user profile:', error);
+    return {
+      email: 'unknown@dotloop.com',
+      displayName: 'Unknown User',
+    };
+  }
 }
 
 /**
  * Get valid access token (refresh if needed)
  */
 export async function getValidAccessToken() {
-  const result = await chrome.storage.local.get('dotloop_token');
-  const tokenInfo = result.dotloop_token;
+  const account = await getCurrentAccount();
 
-  if (!tokenInfo) {
-    throw new Error('No token found. Please connect to Dotloop first.');
+  if (!account) {
+    throw new Error('No account connected. Please connect to Dotloop first.');
   }
 
-  // Check if token is expired
-  if (Date.now() >= tokenInfo.expires_at) {
+  const expiresAt = new Date(account.expiresAt).getTime();
+  if (Date.now() >= expiresAt) {
     console.log('[Dotloop Extension] Token expired, refreshing...');
-    return await refreshAccessToken(tokenInfo.refresh_token);
+    return await refreshAccessToken(account.refreshToken);
   }
 
-  return tokenInfo.access_token;
+  return account.accessToken;
 }
 
 /**
  * Refresh access token using refresh token
  */
-async function refreshAccessToken(refreshToken) {
+export async function refreshAccessToken(refreshToken) {
   const response = await fetch(DOTLOOP_TOKEN_URL, {
     method: 'POST',
     headers: {
@@ -163,15 +191,19 @@ async function refreshAccessToken(refreshToken) {
 
   const tokenData = await response.json();
 
-  const tokenInfo = {
-    access_token: tokenData.access_token,
-    refresh_token: tokenData.refresh_token || refreshToken,
-    expires_at: Date.now() + (tokenData.expires_in * 1000),
-    token_type: tokenData.token_type,
-  };
+  const account = await getCurrentAccount();
+  if (account) {
+    const updatedAccount = {
+      ...account,
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token || account.refreshToken,
+      expiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
+    };
+    await saveAccount(updatedAccount);
+    return tokenData.access_token;
+  }
 
-  await chrome.storage.local.set({ dotloop_token: tokenInfo });
-  return tokenInfo.access_token;
+  throw new Error('No account found to refresh');
 }
 
 /**
@@ -179,9 +211,9 @@ async function refreshAccessToken(refreshToken) {
  */
 export async function getConnectionStatus() {
   try {
-    const { dotloop_token } = await chrome.storage.local.get('dotloop_token');
+    const account = await getCurrentAccount();
 
-    if (!dotloop_token) {
+    if (!account) {
       return {
         connected: false,
         status: 'disconnected',
@@ -189,15 +221,17 @@ export async function getConnectionStatus() {
       };
     }
 
-    const timeUntilExpiry = dotloop_token.expires_at - Date.now();
-    const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000; // 5 minutes
+    const expiresAt = new Date(account.expiresAt).getTime();
+    const timeUntilExpiry = expiresAt - Date.now();
+    const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000;
 
     if (timeUntilExpiry < 0) {
       return {
         connected: false,
         status: 'expired',
         message: 'Token has expired. Please reconnect.',
-        expiresAt: new Date(dotloop_token.expires_at),
+        expiresAt: new Date(expiresAt),
+        account: account.email,
       };
     }
 
@@ -206,8 +240,9 @@ export async function getConnectionStatus() {
         connected: true,
         status: 'expiring_soon',
         message: 'Token expiring soon. Will auto-refresh.',
-        expiresAt: new Date(dotloop_token.expires_at),
+        expiresAt: new Date(expiresAt),
         timeUntilExpiry,
+        account: account.email,
       };
     }
 
@@ -215,8 +250,9 @@ export async function getConnectionStatus() {
       connected: true,
       status: 'connected',
       message: 'Connected to Dotloop',
-      expiresAt: new Date(dotloop_token.expires_at),
+      expiresAt: new Date(expiresAt),
       timeUntilExpiry,
+      account: account.email,
     };
   } catch (error) {
     console.error('[OAuth] Error getting connection status:', error);
@@ -232,18 +268,15 @@ export async function getConnectionStatus() {
  * Setup token refresh interval
  */
 export function setupTokenRefreshInterval() {
-  const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000; // 5 minutes
-  
-  // Check token every 30 seconds
   const intervalId = setInterval(async () => {
     try {
       const status = await getConnectionStatus();
-      
+
       if (status.status === 'expiring_soon') {
         console.log('[OAuth] Auto-refreshing token...');
-        const { dotloop_token } = await chrome.storage.local.get('dotloop_token');
-        if (dotloop_token && dotloop_token.refresh_token) {
-          await refreshAccessToken(dotloop_token.refresh_token);
+        const account = await getCurrentAccount();
+        if (account && account.refreshToken) {
+          await refreshAccessToken(account.refreshToken);
         }
       }
     } catch (error) {
@@ -267,11 +300,11 @@ export function clearTokenRefreshInterval(intervalId) {
 /**
  * Revoke token and disconnect
  */
-export async function revokeToken() {
-  const result = await chrome.storage.local.get('dotloop_token');
-  const tokenInfo = result.dotloop_token;
+export async function revokeToken(accountId) {
+  const { dotloop_accounts = {} } = await chrome.storage.local.get('dotloop_accounts');
+  const account = accountId ? dotloop_accounts[accountId] : await getCurrentAccount();
 
-  if (tokenInfo && tokenInfo.access_token) {
+  if (account && account.accessToken) {
     try {
       await fetch(DOTLOOP_REVOKE_URL, {
         method: 'POST',
@@ -280,7 +313,7 @@ export async function revokeToken() {
           'Authorization': `Basic ${btoa(`${CLIENT_ID}:${CLIENT_SECRET}`)}`,
         },
         body: new URLSearchParams({
-          token: tokenInfo.access_token,
+          token: account.accessToken,
         }),
       });
     } catch (error) {
@@ -288,17 +321,38 @@ export async function revokeToken() {
     }
   }
 
-  // Clear stored token
-  await chrome.storage.local.remove('dotloop_token');
-  console.log('[Dotloop Extension] Token revoked and cleared');
+  console.log('[Dotloop Extension] Token revoked');
 }
 
 /**
  * Check if user is connected
  */
 export async function isConnected() {
-  const result = await chrome.storage.local.get('dotloop_token');
-  return !!result.dotloop_token;
+  const account = await getCurrentAccount();
+  return !!account;
+}
+
+/**
+ * Get all connected accounts
+ */
+export async function getConnectedAccounts() {
+  return await getAllAccounts();
+}
+
+/**
+ * Switch to different account
+ */
+export async function switchAccount(accountId) {
+  await setCurrentAccount(accountId);
+  console.log('[OAuth] Switched to account:', accountId);
+}
+
+/**
+ * Disconnect account
+ */
+export async function disconnectAccount(accountId) {
+  await removeAccount(accountId);
+  console.log('[OAuth] Account disconnected:', accountId);
 }
 
 /**

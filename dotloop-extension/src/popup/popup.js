@@ -6,9 +6,10 @@
 console.log('[Dotloop Extension] Popup script loaded');
 
 // Import OAuth and API modules
-import { startOAuthFlow, isConnected, revokeToken, getValidAccessToken, getConnectionStatus } from '../oauth/oauth-handler.js';
+import { startOAuthFlow, isConnected, revokeToken, getValidAccessToken, getConnectionStatus, getConnectedAccounts, switchAccount, disconnectAccount } from '../oauth/oauth-handler.js';
 import { fetchAllTransactions } from '../api/dotloop-api.js';
 import { classifyError, getUserFriendlyMessage, getRecoverySuggestions, logErrorToDiagnostics } from '../utils/error-handler.js';
+import { formatAccountName } from '../utils/account-manager.js';
 
 // DOM Elements
 const connectBtn = document.getElementById('connect-btn');
@@ -83,7 +84,7 @@ function showIdleState() {
 /**
  * Show connected state
  */
-function showConnectedState() {
+async function showConnectedState() {
   idleState.style.display = 'none';
   connectedState.style.display = 'flex';
   loadingState.style.display = 'none';
@@ -93,6 +94,8 @@ function showConnectedState() {
   if (connectionStatus) {
     connectionStatus.textContent = '✓ Connected to Dotloop';
   }
+  
+  await updateAccountSelector();
 }
 
 /**
@@ -357,5 +360,47 @@ function sendToDashboard() {
   } catch (error) {
     console.error('[Dotloop Extension] Error sending to dashboard:', error);
     showErrorState('Failed to open dashboard: ' + error.message);
+  }
+}
+
+
+/**
+ * Update account dropdown with connected accounts
+ */
+async function updateAccountSelector() {
+  const accountDropdown = document.getElementById('account-dropdown');
+  const accountSelector = document.getElementById('account-selector');
+  const addAccountBtn = document.getElementById('add-account-btn');
+  
+  if (!accountDropdown || !accountSelector) return;
+  
+  try {
+    const accounts = await getConnectedAccounts();
+    
+    if (accounts.length <= 1) {
+      accountSelector.style.display = 'none';
+      return;
+    }
+    
+    accountSelector.style.display = 'block';
+    
+    accountDropdown.innerHTML = '';
+    accounts.forEach(account => {
+      const option = document.createElement('option');
+      option.value = account.id;
+      option.textContent = formatAccountName(account);
+      accountDropdown.appendChild(option);
+    });
+    
+    accountDropdown.addEventListener('change', async (e) => {
+      await switchAccount(e.target.value);
+      console.log('[Popup] Switched to account:', e.target.value);
+    });
+    
+    if (addAccountBtn) {
+      addAccountBtn.addEventListener('click', handleConnect);
+    }
+  } catch (error) {
+    console.error('[Popup] Error updating account selector:', error);
   }
 }
