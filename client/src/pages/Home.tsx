@@ -98,6 +98,8 @@ import DataValidationReport from '@/components/DataValidationReport';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ModeToggle } from '@/components/ModeToggle';
 import DotloopAccountSwitcher from '@/components/DotloopAccountSwitcher';
+import ModernHeader from '@/components/ModernHeader';
+import MetricCardModern from '@/components/MetricCardModern';
 import MobileNav from '@/components/MobileNav';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import OnboardingTour from '@/components/OnboardingTour';
@@ -691,39 +693,9 @@ function HomeContent() {
   if (!metrics) {
     return (
       <div className="min-h-screen bg-background flex flex-col pb-16">
-        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <img src="/dotloop-logo.png" alt="Dotloop Logo" className="h-8 w-auto" />
-              <h1 className="text-xl font-display font-bold text-foreground hidden sm:block">
-                Reporting Tool
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <ConnectDotloop variant="button" />
-              <DotloopAccountSwitcher />
+        <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" />
 
-              {isAuthenticated && user?.role === 'admin' && (
-                <Button variant="ghost" onClick={() => setLocation('/admin')}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
-              )}
-              {isAuthenticated && (
-                <Button variant="ghost" onClick={() => setLocation('/settings')}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              )}
-              <ModeToggle />
-              <Button variant="outline" onClick={handleDemoMode} disabled={isLoading} data-tour="demo-button">
-                {isLoading ? 'Loading...' : 'Try Demo'}
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 container flex items-center justify-center py-12">
+        <main className="flex-1 container flex items-center justify-center py-8">
           <div className="w-full max-w-6xl space-y-8">
             <div className="space-y-4 text-center">
               <h2 className="text-3xl sm:text-4xl md:text-5xl">
@@ -904,73 +876,10 @@ function HomeContent() {
       <Toaster />
       {/* <SectionNav /> - Removed floating navigation */}
       <BackToTop />
-      {/* Dashboard Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <MobileNav 
-              onReset={() => {
-                setMetrics(null);
-                setAllRecords([]);
-                setFilteredRecords([]);
-              }}
-              onOpenSettings={() => {
-                // Open settings logic
-              }}
-              onOpenMapping={() => setShowFieldMapper(true)}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
-            />
-            <div className="flex items-center gap-2">
-              <img src="/dotloop-logo.png" alt="Dotloop Logo" className="h-8 w-auto" />
-              <h1 className="text-xl font-display font-bold text-foreground hidden md:block">
-                Reporting Tool
-              </h1>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="hidden md:block">
-              <DatePickerWithRange date={dateRange} setDate={setDateRange} />
-            </div>
-            <div className="flex items-center gap-2">
-              {isAuthenticated && user?.role === 'admin' && (
-                <Button variant="ghost" size="sm" onClick={() => setLocation('/admin')}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Admin
-                </Button>
-              )}
-              {isAuthenticated && (
-                <Button variant="ghost" size="sm" onClick={() => setLocation('/settings')}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              )}
-              <ModeToggle />
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => {
-                  setMetrics(null);
-                  setAllRecords([]);
-                  setFilteredRecords([]);
-                  setDateRange(undefined);
-                }}
-              >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Upload
-              </Button>
-            </div>
-          </div>
-        </div>
-        {/* Mobile Sub-header for Date Picker */}
-        <div className="md:hidden border-t border-border bg-muted/20 py-2 px-4">
-           <DatePickerWithRange date={dateRange} setDate={setDateRange} className="w-full" />
-        </div>
-      </header>
+      <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" />
 
       {/* Main Dashboard */}
-      <main className="container py-4 sm:py-6 md:py-8 landscape:py-3 px-4 sm:px-6 md:px-8 landscape:px-4">
+      <main className="container py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8">
         {/* Filter Badge */}
         <FilterBadge />
         
