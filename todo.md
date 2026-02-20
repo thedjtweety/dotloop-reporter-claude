@@ -3499,3 +3499,13 @@
 - [x] Add re-use functionality to load previous upload data (reuseUpload procedure)
 - [x] Test upload history and comparison workflow (uploads.test.ts)
 - [x] Test re-use data functionality with demo data (tests passing)
+
+
+## Database Migration - Commission Plans & Templates
+- [ ] Create backend endpoints for commission plans (CRUD operations)
+- [ ] Create backend endpoints for agent assignments
+- [ ] Migrate BulkPlanAssignment to use database
+- [ ] Migrate CommissionPlansManager to use database
+- [ ] Migrate AgentAssignment to use database
+- [ ] Test commission plan assignment with database
+- [ ] Test template functionality with database
