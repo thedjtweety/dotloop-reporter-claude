@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
+import Footer from '@/components/Footer';
 import { Upload, TrendingUp, Home as HomeIcon, DollarSign, Calendar, Percent, Settings, ArrowLeft, AlertCircle, Trophy, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -853,22 +854,8 @@ function HomeContent() {
           onProceed={() => setShowValidationReport(false)}
         />
 
-        {/* Professional Disclaimer Footer */}
-        <footer className="mt-auto border-t border-border bg-card/30 backdrop-blur-sm">
-          <div className="container py-6 px-4">
-            <div className="max-w-4xl mx-auto">
-              <p className="text-sm text-foreground/70 text-center leading-relaxed">
-                <span className="font-semibold text-foreground">Disclaimer:</span> This tool is strictly an independent passion project and is <span className="font-semibold">NOT</span> an official dotloop product. For questions or support, please email{' '}
-                <a 
-                  href="mailto:dotloopreport@gmail.com" 
-                  className="text-primary hover:text-primary/80 underline transition-colors"
-                >
-                  dotloopreport@gmail.com
-                </a>
-              </p>
-            </div>
-          </div>
-        </footer>
+        {/* Legal Footer */}
+        <Footer />
       </div>
     );
   }
@@ -1450,29 +1437,8 @@ function HomeContent() {
         />
       )}
 
-      {/* Professional Disclaimer Footer */}
-      <footer className="border-t border-border bg-card/30 backdrop-blur-sm mt-auto">
-        <div className="container py-6 px-4">
-          <div className="max-w-4xl mx-auto">
-            <p className="text-sm text-foreground/70 text-center leading-relaxed">
-              <span className="font-semibold text-foreground">Disclaimer:</span> This tool is strictly an independent passion project and is <span className="font-semibold">NOT</span> an official dotloop product. For questions or support, please email{' '}
-              <a 
-                href="mailto:dotloopreport@gmail.com" 
-                className="text-primary hover:text-primary/80 underline transition-colors"
-              >
-                dotloopreport@gmail.com
-              </a>
-              {' '}or visit our{' '}
-              <a 
-                href="/privacy" 
-                className="text-primary hover:text-primary/80 underline transition-colors"
-              >
-                Privacy Policy
-              </a>
-            </p>
-          </div>
-        </div>
-      </footer>
+      {/* Legal Footer */}
+      <Footer />
     </div>
   );
 }

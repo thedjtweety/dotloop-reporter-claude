@@ -20,6 +20,8 @@ import OAuthCallback from "./pages/OAuthCallback";
 import CommissionTemplates from "./pages/CommissionTemplates";
 import Privacy from "./pages/Privacy";
 import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 
 function Router() {
@@ -42,6 +44,8 @@ function Router() {
       <Route path="/commission-templates" component={CommissionTemplates} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/faq" component={FAQ} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
 
       <Route path="{/404}" component={NotFound} />
       {/* Final fallback route */}
