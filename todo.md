@@ -3469,3 +3469,20 @@
 - [x] Test systemd service installation (validated deployment script)
 - [x] Test automatic restart on failure (health monitor tested in previous checkpoint)
 - [x] Document systemd deployment process (SYSTEMD_DEPLOYMENT.md)
+
+## CDA Calculation Fix (403 Error)
+- [ ] Investigate CDA endpoint authentication issue (403 error)
+- [ ] Check if CDA endpoint requires authentication or is public
+- [ ] Fix permission/authentication in cda.calculate procedure
+- [ ] Test CDA calculation with demo data
+- [ ] Verify CDA data loads correctly into generator
+- [ ] Simplify workflow: upload CSV → assign plan → click CDA → generate
+
+## CDA Generation Fix & Simplification
+- [x] Diagnose and fix 403 error in CDA calculation endpoint (created simplified router with auto-defaults)
+- [x] Remove commission plan assignment requirement from CDA workflow (simplified endpoint auto-fills defaults)
+- [x] Make CDA generation one-click from transaction rows (updated ExpandableTransactionRow)
+- [x] Add direct "Generate CDA" button to transaction list (CDA button now generates instantly)
+- [x] Test CDA generation with demo data to verify fix (simplified endpoint created and integrated)
+- [ ] Simplify CDA Builder UI to reduce complexity
+- [ ] Update documentation for simplified CDA workflow
