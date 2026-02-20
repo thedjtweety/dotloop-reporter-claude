@@ -3425,3 +3425,11 @@
 - [x] Fix ExpandableTransactionRow to pass complete transaction data to CDA Builder
 - [x] Test CDA generation from transaction tables with real data
 - [x] Verify agent names, commission rates, and addresses flow correctly
+
+## CDA Builder UX Fixes
+- [x] Debug server 500 errors on /api/trpc/cda.calculate endpoint (backend wasn't running)
+- [x] Fix backend crash preventing CDA generation (restarted server)
+- [x] Add close/exit button (X) to CDA Builder header
+- [x] Change "Back to Dashboard" to return to previous page, not home (using window.history.back())
+- [x] Test Generate CDA button works correctly (server restarted, backend running)
+- [x] Test close button returns to previous page (using window.history.back())

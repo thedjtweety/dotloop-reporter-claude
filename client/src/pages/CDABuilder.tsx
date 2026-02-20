@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Mail, Plus, Trash2, ArrowLeft, AlertCircle, CheckCircle2, Sparkles, TrendingUp, GraduationCap, Award, Users, Users2, UserCheck, Share2, Star } from 'lucide-react';
+import { FileText, Download, Mail, Plus, Trash2, ArrowLeft, AlertCircle, CheckCircle2, Sparkles, TrendingUp, GraduationCap, Award, Users, Users2, UserCheck, Share2, Star, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
@@ -269,16 +269,6 @@ export default function CDABuilder() {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setLocation('/')}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Dashboard
-            </Button>
-            <div className="h-6 w-px bg-border" />
             <div>
               <h1 className="text-xl font-display font-bold text-foreground">
                 CDA Builder
@@ -304,6 +294,15 @@ export default function CDABuilder() {
             >
               <FileText className="h-4 w-4" />
               {isGenerating ? 'Generating...' : 'Generate CDA'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => window.history.back()}
+              className="h-9 w-9"
+              title="Close"
+            >
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </div>
