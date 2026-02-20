@@ -33,7 +33,7 @@ export default function RoleManagement() {
   const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleChangeUserId, setRoleChangeUserId] = useState<number | null>(null);
-  const [newRole, setNewRole] = useState<'user' | 'admin'>('user');
+  const [newRole, setNewRole] = useState<'admin' | 'broker' | 'agent' | 'viewer'>('viewer');
   const [targetUserName, setTargetUserName] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState<Set<number>>(new Set());
   const [bulkAction, setBulkAction] = useState<'promote' | 'demote' | null>(null);
@@ -57,7 +57,7 @@ export default function RoleManagement() {
 
   const handleRoleChange = (userId: number, currentRole: string, userName: string) => {
     setRoleChangeUserId(userId);
-    setNewRole(currentRole === 'admin' ? 'user' : 'admin');
+    setNewRole(currentRole === 'admin' ? 'viewer' : 'admin');
     setTargetUserName(userName);
   };
 
@@ -99,7 +99,7 @@ export default function RoleManagement() {
   const confirmBulkAction = async () => {
     if (!bulkAction) return;
 
-    const targetRole = bulkAction === 'promote' ? 'admin' : 'user';
+    const targetRole = bulkAction === 'promote' ? 'admin' : 'viewer';
     
     // Execute all role changes
     for (const userId of Array.from(selectedUserIds)) {
@@ -366,7 +366,7 @@ export default function RoleManagement() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmRoleChange}
-              className={newRole === 'user' ? 'bg-destructive hover:bg-destructive/90' : ''}
+              className={newRole !== 'admin' ? 'bg-destructive hover:bg-destructive/90' : ''}
             >
               {newRole === 'admin' ? 'Promote' : 'Demote'}
             </AlertDialogAction>

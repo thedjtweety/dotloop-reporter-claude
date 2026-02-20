@@ -45,7 +45,7 @@ export default function AdminDashboard() {
   const { user, isAuthenticated } = useAuth();
   const [deleteUserId, setDeleteUserId] = useState<number | null>(null);
   const [roleChangeUserId, setRoleChangeUserId] = useState<number | null>(null);
-  const [newRole, setNewRole] = useState<'user' | 'admin'>('user');
+  const [newRole, setNewRole] = useState<'admin' | 'broker' | 'agent' | 'viewer'>('viewer');
 
   const { data: stats, isLoading: statsLoading } = trpc.admin.getStats.useQuery();
   const { data: users, refetch: refetchUsers } = trpc.admin.listUsers.useQuery({ limit: 50, offset: 0 });
@@ -240,7 +240,7 @@ export default function AdminDashboard() {
                               size="sm"
                               onClick={() => {
                                 setRoleChangeUserId(u.id);
-                                setNewRole(u.role === 'admin' ? 'user' : 'admin');
+                                setNewRole(u.role === 'admin' ? 'viewer' : 'admin');
                               }}
                             >
                               <Shield className="w-3 h-3 mr-1" />

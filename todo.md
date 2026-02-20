@@ -3150,3 +3150,87 @@
 - [x] Add loading state indicators
 - [x] Test badge display on all chart types
 - [x] Verify timestamp updates correctly
+
+## Phase 69: Legal Compliance & Security (PRIORITY)
+### Data Privacy & Access Control
+- [x] Implement role-based access control (RBAC) system
+- [x] Add user roles: Admin, Broker, Agent, Viewer
+- [x] Create permissions matrix for each role
+- [ ] Implement data segregation by brokerage and agent
+- [x] Add privacy settings for commission visibility
+- [ ] Restrict agent-to-agent commission data viewing
+- [ ] Add "who can see what" configuration UI for admins
+- [ ] Implement row-level security in database queries
+
+### Commission Data Privacy
+- [ ] Add commission visibility toggle (public/private/admin-only)
+- [ ] Implement agent-level commission data masking
+- [ ] Create commission caps visibility controls
+- [ ] Add audit log for commission data access
+- [ ] Implement "need-to-know" access for sensitive data
+- [ ] Add warning banners for viewing others' commission data
+- [ ] Create commission data export restrictions by role
+
+### Security Hardening
+- [ ] Implement rate limiting on all API endpoints
+- [ ] Add CSRF protection tokens
+- [ ] Implement SQL injection prevention (parameterized queries)
+- [ ] Add XSS protection headers
+- [ ] Implement session timeout and auto-logout
+- [ ] Add two-factor authentication (2FA) option
+- [ ] Implement IP whitelisting for admin access
+- [ ] Add security headers (CSP, HSTS, X-Frame-Options)
+- [ ] Implement data encryption at rest
+- [ ] Add secure file upload validation (MIME type, size, content)
+
+### Audit Logging & Compliance
+- [ ] Create comprehensive audit log system
+- [ ] Log all data access events (who, what, when)
+- [ ] Log all commission calculations and views
+- [ ] Log all admin actions (user management, settings changes)
+- [ ] Create audit log viewer for admins
+- [ ] Implement data retention policies
+- [ ] Add GDPR compliance features (data export, deletion)
+- [ ] Create compliance report generation
+- [ ] Add data breach notification system
+
+### Compliance Documentation
+- [ ] Write Privacy Policy document
+- [ ] Write Terms of Service document
+- [ ] Create Data Processing Agreement (DPA)
+- [ ] Write Security & Compliance whitepaper
+- [ ] Create User Access Control documentation
+- [ ] Write Data Retention Policy
+- [ ] Create Incident Response Plan
+- [ ] Write GDPR/CCPA compliance guide
+- [ ] Create SOC 2 compliance checklist
+
+### Branding & White-Label
+- [ ] Add customizable logo upload
+- [ ] Implement custom color scheme configuration
+- [ ] Add custom domain support
+- [ ] Create white-label mode (hide "Dotloop Reporter" branding)
+- [ ] Add custom email templates
+- [ ] Implement custom footer text
+- [ ] Add brokerage-specific branding per tenant
+- [ ] Create branding preview UI
+
+### User Management & Verification
+- [ ] Create user invitation system
+- [ ] Implement email verification for new users
+- [ ] Add admin approval workflow for new users
+- [ ] Create user onboarding checklist
+- [ ] Implement user deactivation (soft delete)
+- [ ] Add bulk user import from CSV
+- [ ] Create user role assignment UI
+- [ ] Add user activity monitoring dashboard
+
+### Testing & Validation
+- [ ] Test RBAC with all user roles
+- [ ] Test commission visibility restrictions
+- [ ] Test audit logging for all critical actions
+- [ ] Security penetration testing
+- [ ] Test data segregation between brokerages
+- [ ] Test GDPR data export/deletion
+- [ ] Test session timeout and auto-logout
+- [ ] Test rate limiting and DDoS protection

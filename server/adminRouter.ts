@@ -149,7 +149,7 @@ export const adminRouter = router({
     .input(
       z.object({
         userId: z.number(),
-        role: z.enum(['user', 'admin']),
+        role: z.enum(['admin', 'broker', 'agent', 'viewer']),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -159,7 +159,7 @@ export const adminRouter = router({
       // Get user info before update for audit log
       const userToUpdate = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
       const userName = userToUpdate[0]?.name || 'Unknown User';
-      const oldRole = userToUpdate[0]?.role || 'user';
+      const oldRole = userToUpdate[0]?.role || 'viewer';
 
       await db
         .update(users)

@@ -371,7 +371,7 @@ export const uploads = mysqlTable("uploads", {
 	name: text(),
 	email: varchar({ length: 320 }),
 	loginMethod: varchar({ length: 64 }),
-	role: mysqlEnum(['user','admin']).default('user').notNull(),
+	role: mysqlEnum(['admin','broker','agent','viewer']).default('viewer').notNull(),
 	status: mysqlEnum(['active','inactive','suspended']).default('active').notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
@@ -394,6 +394,12 @@ export const userPreferences = mysqlTable("user_preferences", {
 	// Other preferences
 	defaultUploadView: varchar({ length: 50 }).default('dashboard'),
 	theme: varchar({ length: 20 }).default('light'),
+	
+	// Privacy & Access Control Settings
+	commissionVisibility: mysqlEnum(['public','team','admin_only','private']).default('admin_only').notNull(),
+	allowOthersViewMyCommission: int().default(0).notNull(),
+	allowOthersViewMyTransactions: int().default(1).notNull(),
+	showInLeaderboard: int().default(1).notNull(),
 	
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 },
