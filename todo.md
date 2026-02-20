@@ -3459,3 +3459,13 @@
 - [x] Implement process monitoring script for automatic restart (scripts/health-monitor.mjs)
 - [x] Add health monitoring to package.json scripts (pnpm health:check, pnpm health:monitor)
 - [x] Document health check usage and monitoring setup (HEALTH_CHECK_GUIDE.md)
+
+## Systemd Service Deployment
+- [x] Create systemd service file for main application (dotloop-reporter.service)
+- [x] Create systemd service file for health monitor (dotloop-health-monitor.service)
+- [x] Create deployment script for installing systemd services (scripts/deploy-systemd.sh)
+- [x] Add service management commands to package.json (systemd:install, systemd:restart, etc.)
+- [x] Create production environment configuration template (.env.production.example)
+- [x] Test systemd service installation (validated deployment script)
+- [x] Test automatic restart on failure (health monitor tested in previous checkpoint)
+- [x] Document systemd deployment process (SYSTEMD_DEPLOYMENT.md)

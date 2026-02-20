@@ -1,0 +1,51 @@
+[Unit]
+Description=Dotloop Reporter - Real Estate Analytics Platform
+Documentation=https://github.com/yourusername/dotloop-reporter
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/dotloop-reporter
+
+# Environment variables
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+EnvironmentFile=-/home/ubuntu/dotloop-reporter/.env.production
+
+# Start command
+ExecStart=/usr/bin/node dist/index.js
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Resource limits
+LimitNOFILE=65536
+MemoryLimit=2G
+CPUQuota=200%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dotloop-reporter
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/dotloop-reporter/uploads
+ReadWritePaths=/home/ubuntu/dotloop-reporter/logs
+
+# Process management
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

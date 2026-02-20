@@ -13,7 +13,12 @@
     "db:push": "drizzle-kit generate && drizzle-kit migrate",
     "seed": "node scripts/seed-sample-data.mjs",
     "health:check": "curl -s http://localhost:3000/health | jq .",
-    "health:monitor": "node scripts/health-monitor.mjs"
+    "health:monitor": "node scripts/health-monitor.mjs",
+    "systemd:install": "sudo ./scripts/deploy-systemd.sh install",
+    "systemd:uninstall": "sudo ./scripts/deploy-systemd.sh uninstall",
+    "systemd:restart": "sudo ./scripts/deploy-systemd.sh restart",
+    "systemd:status": "sudo ./scripts/deploy-systemd.sh status",
+    "systemd:logs": "sudo ./scripts/deploy-systemd.sh logs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
