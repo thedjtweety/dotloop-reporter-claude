@@ -12,7 +12,7 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold text-foreground mb-3">Dotloop Reporter</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Professional real estate analytics and commission reporting platform for brokerages and agents.
+              Independent passion project providing real estate analytics and commission reporting tools. Not affiliated with Dotloop.
             </p>
           </div>
 
@@ -45,20 +45,20 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <a 
-                  href="mailto:support@dotloop.com" 
+                  href="mailto:dotloopreport@gmail.com" 
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <Mail className="h-4 w-4" />
-                  support@dotloop.com
+                  dotloopreport@gmail.com
                 </a>
               </li>
               <li>
                 <a 
-                  href="mailto:privacy@dotloop.com" 
+                  href="mailto:dotloopreport@gmail.com" 
                   className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                   <Shield className="h-4 w-4" />
-                  privacy@dotloop.com
+                  Privacy Inquiries
                 </a>
               </li>
             </ul>
@@ -85,10 +85,10 @@ export default function Footer() {
               </Link>
               <span className="text-muted-foreground">•</span>
               <a 
-                href="mailto:legal@dotloop.com" 
+                href="mailto:dotloopreport@gmail.com" 
                 className="text-xs text-muted-foreground hover:text-primary transition-colors"
               >
-                Legal
+                Contact
               </a>
             </div>
           </div>

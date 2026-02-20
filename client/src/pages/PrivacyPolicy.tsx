@@ -40,7 +40,7 @@ export default function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-foreground mb-4">Introduction</h2>
             <p className="text-foreground/90 leading-relaxed">
-              Dotloop Reporter ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our real estate analytics and reporting platform (the "Service").
+              Dotloop Reporter ("we," "our," or "us"), an independent passion project, is committed to protecting your privacy. We are not affiliated with or endorsed by Dotloop. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our real estate analytics and reporting platform (the "Service").
             </p>
             <p className="text-foreground/90 leading-relaxed">
               By using the Service, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with our policies and practices, please do not use the Service.
@@ -151,7 +151,7 @@ export default function PrivacyPolicy() {
               <li><strong>Objection and Withdrawal:</strong> Object to certain data processing activities; revoke consent</li>
             </ul>
             <p className="text-foreground/90 leading-relaxed mt-3">
-              To exercise these rights, contact us at <a href="mailto:privacy@dotloop.com" className="text-primary hover:underline">privacy@dotloop.com</a> or use the in-app privacy settings.
+              To exercise these rights, contact us at <a href="mailto:dotloopreport@gmail.com" className="text-primary hover:underline">dotloopreport@gmail.com</a> or use the in-app privacy settings.
             </p>
           </section>
 
@@ -161,7 +161,7 @@ export default function PrivacyPolicy() {
               If you are a California resident, you have additional rights under the California Consumer Privacy Act, including the right to know what personal information we collect, the right to delete your personal information, and the right to opt-out of the sale of personal information (we do not sell personal information).
             </p>
             <p className="text-foreground/90 leading-relaxed mt-3">
-              To submit a CCPA request, email <a href="mailto:privacy@dotloop.com" className="text-primary hover:underline">privacy@dotloop.com</a> with "CCPA Request" in the subject line.
+              To submit a CCPA request, email <a href="mailto:dotloopreport@gmail.com" className="text-primary hover:underline">dotloopreport@gmail.com</a> with "CCPA Request" in the subject line.
             </p>
           </section>
 
@@ -171,7 +171,7 @@ export default function PrivacyPolicy() {
               If you are in the European Economic Area (EEA), you have rights under the General Data Protection Regulation, including the right to access, rectify, erase, restrict processing, data portability, and object to processing. You also have the right to lodge a complaint with your local data protection authority.
             </p>
             <p className="text-foreground/90 leading-relaxed mt-3">
-              Contact our Data Protection Officer at <a href="mailto:dpo@dotloop.com" className="text-primary hover:underline">dpo@dotloop.com</a> for privacy inquiries.
+              Contact our Data Protection Officer at <a href="mailto:dotloopreport@gmail.com" className="text-primary hover:underline">dotloopreport@gmail.com</a> for privacy inquiries.
             </p>
           </section>
 
@@ -195,9 +195,9 @@ export default function PrivacyPolicy() {
               If you have questions or concerns about this Privacy Policy, please contact us:
             </p>
             <ul className="list-none pl-0 text-foreground/90 space-y-2 mt-3">
-              <li><strong>Email:</strong> <a href="mailto:privacy@dotloop.com" className="text-primary hover:underline">privacy@dotloop.com</a></li>
-              <li><strong>Data Protection Officer:</strong> <a href="mailto:dpo@dotloop.com" className="text-primary hover:underline">dpo@dotloop.com</a></li>
-              <li><strong>Support:</strong> Available through the in-app help center</li>
+              <li><strong>Email:</strong> <a href="mailto:dotloopreport@gmail.com" className="text-primary hover:underline">dotloopreport@gmail.com</a></li>
+              <li><strong>Project:</strong> Independent open-source passion project</li>
+              <li><strong>Support:</strong> Available via email</li>
             </ul>
           </section>
 

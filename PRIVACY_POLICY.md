@@ -5,7 +5,7 @@
 
 ## Introduction
 
-Dotloop Reporter ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our real estate analytics and reporting platform (the "Service").
+Dotloop Reporter ("we," "our," or "us"), an independent passion project, is committed to protecting your privacy. We are not affiliated with or endorsed by Dotloop. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our real estate analytics and reporting platform (the "Service").
 
 By using the Service, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with our policies and practices, please do not use the Service.
 
@@ -157,7 +157,7 @@ Depending on your location, you may have the following rights:
 - **Withdraw Consent:** Revoke consent for optional data processing
 - **Opt-Out:** Unsubscribe from marketing communications
 
-To exercise these rights, contact us at privacy@dotloop.com or use the in-app privacy settings.
+To exercise these rights, contact us at dotloopreport@gmail.com or use the in-app privacy settings.
 
 ## California Privacy Rights (CCPA)
 
@@ -168,14 +168,14 @@ If you are a California resident, you have additional rights under the Californi
 - **Right to Opt-Out:** Opt-out of the sale of personal information (we do not sell personal information)
 - **Right to Non-Discrimination:** Equal service regardless of privacy choices
 
-To submit a CCPA request, email privacy@dotloop.com with "CCPA Request" in the subject line.
+To submit a CCPA request, email dotloopreport@gmail.com with "CCPA Request" in the subject line.
 
 ## European Privacy Rights (GDPR)
 
 If you are in the European Economic Area (EEA), you have rights under the General Data Protection Regulation:
 
 - **Legal Basis:** We process data based on consent, contract performance, legal obligations, and legitimate interests
-- **Data Protection Officer:** Contact dpo@dotloop.com for privacy inquiries
+- **Data Protection Officer:** Contact dotloopreport@gmail.com for privacy inquiries
 - **Supervisory Authority:** Right to lodge a complaint with your local data protection authority
 - **International Transfers:** Data may be transferred to the United States with appropriate safeguards
 
@@ -200,11 +200,9 @@ Your continued use of the Service after changes become effective constitutes acc
 
 If you have questions or concerns about this Privacy Policy, please contact us:
 
-**Email:** privacy@dotloop.com  
-**Address:** Dotloop Reporter Privacy Team  
-**Support:** Available through the in-app help center
-
-**Data Protection Officer:** dpo@dotloop.com
+**Email:** dotloopreport@gmail.com  
+**Project:** Independent open-source passion project  
+**Support:** Available via emailrt@gmail.com
 
 ---
 

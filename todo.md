@@ -3244,3 +3244,13 @@
 - [x] Add routes for /privacy and /terms pages
 - [x] Test legal pages display correctly
 - [x] Verify footer appears on all pages
+
+## Phase 71: Fix Legal Documents - Remove @dotloop.com References
+- [x] Update PRIVACY_POLICY.md to use dotloopreport@gmail.com
+- [x] Update TERMS_OF_SERVICE.md to use dotloopreport@gmail.com
+- [x] Update Footer.tsx to use dotloopreport@gmail.com
+- [x] Update PrivacyPolicy.tsx contact info
+- [x] Update TermsOfService.tsx contact info
+- [x] Remove all @dotloop.com email references
+- [x] Emphasize independent project status in all legal docs
+- [ ] Test all legal pages and footer

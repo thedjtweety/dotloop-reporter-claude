@@ -5,7 +5,7 @@
 
 ## Agreement to Terms
 
-These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Dotloop Reporter ("Company," "we," "our," or "us") governing your access to and use of the Dotloop Reporter platform (the "Service").
+These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Dotloop Reporter ("Company," "we," "our," or "us"), an independent passion project, governing your access to and use of the Dotloop Reporter platform (the "Service"). We are not affiliated with or endorsed by Dotloop.
 
 By accessing or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, you may not access or use the Service.
 
@@ -306,7 +306,7 @@ The following may be brought in court:
 
 ### Informal Resolution
 
-Before initiating arbitration, you agree to attempt informal resolution by contacting us at legal@dotloop.com.
+Before initiating arbitration, you agree to attempt informal resolution by contacting us at dotloopreport@gmail.com.
 
 ## General Provisions
 
@@ -341,7 +341,7 @@ We are not liable for delays or failures caused by circumstances beyond our reas
 
 ### Notices
 
-Notices to you may be sent via email to your registered email address or through in-app notifications. Notices to us should be sent to legal@dotloop.com.
+Notices to you may be sent via email to your registered email address or through in-app notifications. Notices to us should be sent to dotloopreport@gmail.com.
 
 ### Export Control
 
@@ -351,9 +351,9 @@ You agree to comply with all export and import laws and regulations. You represe
 
 For questions about these Terms, please contact us:
 
-**Email:** legal@dotloop.com  
-**Support:** Available through the in-app help center  
-**Address:** Dotloop Reporter Legal Department
+**Email:** dotloopreport@gmail.com  
+**Project:** Independent open-source passion project  
+**Support:** Available via email
 
 ---
 

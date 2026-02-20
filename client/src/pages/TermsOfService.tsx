@@ -40,7 +40,7 @@ export default function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-foreground mb-4">Agreement to Terms</h2>
             <p className="text-foreground/90 leading-relaxed">
-              These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Dotloop Reporter ("Company," "we," "our," or "us") governing your access to and use of the Dotloop Reporter platform (the "Service").
+              These Terms of Service ("Terms") constitute a legally binding agreement between you ("User," "you," or "your") and Dotloop Reporter ("Company," "we," "our," or "us"), an independent passion project, governing your access to and use of the Dotloop Reporter platform (the "Service"). We are not affiliated with or endorsed by Dotloop.
             </p>
             <p className="text-foreground/90 leading-relaxed">
               By accessing or using the Service, you agree to be bound by these Terms. If you do not agree to these Terms, you may not access or use the Service.
@@ -220,7 +220,7 @@ export default function TermsOfService() {
               These Terms are governed by the laws of the State of Delaware, United States. Any dispute arising from these Terms or the Service shall be resolved through binding arbitration administered by the American Arbitration Association (AAA).
             </p>
             <p className="text-foreground/90 leading-relaxed">
-              You agree to arbitrate disputes on an individual basis (no class actions) and waive your right to a jury trial. Before initiating arbitration, you agree to attempt informal resolution by contacting us at <a href="mailto:legal@dotloop.com" className="text-primary hover:underline">legal@dotloop.com</a>.
+              You agree to arbitrate disputes on an individual basis (no class actions) and waive your right to a jury trial. Before initiating arbitration, you agree to attempt informal resolution by contacting us at <a href="mailto:dotloopreport@gmail.com" className="text-primary hover:underline">dotloopreport@gmail.com</a>.
             </p>
           </section>
 
@@ -240,8 +240,9 @@ export default function TermsOfService() {
               For questions about these Terms, please contact us:
             </p>
             <ul className="list-none pl-0 text-foreground/90 space-y-2 mt-3">
-              <li><strong>Email:</strong> <a href="mailto:legal@dotloop.com" className="text-primary hover:underline">legal@dotloop.com</a></li>
-              <li><strong>Support:</strong> Available through the in-app help center</li>
+              <li><strong>Email:</strong> <a href="mailto:dotloopreport@gmail.com" className="text-primary hover:underline">dotloopreport@gmail.com</a></li>
+              <li><strong>Project:</strong> Independent open-source passion project</li>
+              <li><strong>Support:</strong> Available via email</li>
             </ul>
           </section>
 
