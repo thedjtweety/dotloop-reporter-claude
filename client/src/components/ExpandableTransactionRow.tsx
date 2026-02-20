@@ -63,8 +63,11 @@ export default function ExpandableTransactionRow({
   const handleGenerateCDA = (e: React.MouseEvent) => {
     e.stopPropagation();
     
+    // Get agent name (handle comma-separated multiple agents)
+    const agentName = transaction.agents ? transaction.agents.split(',')[0].trim() : transaction.createdBy || '';
+    
     // Get commission plan for this agent
-    const commissionPlan = getCommissionPlanForAgent(transaction.agents || '');
+    const commissionPlan = getCommissionPlanForAgent(agentName);
     
     // Map transaction to CDA form data
     const cdaData = mapTransactionToCDA(transaction, commissionPlan);

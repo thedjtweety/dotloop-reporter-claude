@@ -3416,3 +3416,12 @@
 - [ ] Add template customization and save-as-template features (deferred - can be added later)
 - [x] Test templates with various transaction amounts (28 tests passing)
 - [x] Verify all template calculations are accurate
+
+## CDA Builder Bug Fixes
+- [x] Debug validation error dialog - identify why specific errors are not showing
+- [x] Fix validation error dialog to display all specific field errors in bullet list
+- [x] Debug transaction data pre-filling - identify why URL parameters are not populating
+- [x] Fix cdaHelpers.ts to properly encode all transaction data in URL
+- [x] Fix ExpandableTransactionRow to pass complete transaction data to CDA Builder
+- [x] Test CDA generation from transaction tables with real data
+- [x] Verify agent names, commission rates, and addresses flow correctly

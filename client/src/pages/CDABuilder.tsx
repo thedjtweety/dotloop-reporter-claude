@@ -122,7 +122,6 @@ export default function CDABuilder() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CDATemplate['category'] | 'all'>('all');
-  
   const calculateMutation = trpc.cda.calculate.useMutation({
     onSuccess: (data) => {
       setCalculation(data);
@@ -134,12 +133,23 @@ export default function CDABuilder() {
           if (error.includes('Sale Price')) errors.salePrice = error;
           if (error.includes('Selling Agent')) errors.sellingAgent1Name = error;
           if (error.includes('Listing Agent')) errors.listingAgent1Name = error;
-          if (error.includes('Selling split')) errors.sellingAgent1SplitPercent = error;
-          if (error.includes('Listing split')) errors.listingAgent1SplitPercent = error;
         });
         setFieldErrors(errors);
+        
+        // If we were trying to generate, show validation dialog
+        if (pendingGeneration) {
+          setShowValidationDialog(true);
+          setPendingGeneration(false);
+        }
       } else {
         setFieldErrors({});
+        
+        // If we were trying to generate and validation passed, proceed
+        if (pendingGeneration && data.isValid) {
+          setPendingGeneration(false);
+          setIsGenerating(true);
+          generatePDFMutation.mutate(formData);
+        }
       }
     },
     onError: (error) => {
@@ -233,8 +243,18 @@ export default function CDABuilder() {
     },
   });
   
+  const [pendingGeneration, setPendingGeneration] = useState(false);
+  
   const handleGenerateCDA = async () => {
-    if (!calculation || !calculation.isValid) {
+    // Ensure calculation is up to date
+    if (!calculation) {
+      // Trigger calculation first and mark that we want to generate after
+      setPendingGeneration(true);
+      calculateMutation.mutate(formData);
+      return;
+    }
+    
+    if (!calculation.isValid) {
       setShowValidationDialog(true);
       return;
     }

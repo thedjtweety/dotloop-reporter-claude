@@ -58,30 +58,34 @@ export function mapTransactionToCDA(
 ): CDAFormData {
   // Extract property address
   const propertyAddress = [
-    transaction.streetAddress,
+    transaction.address || transaction.streetAddress,
     transaction.city,
-    transaction.state,
-    transaction.zipCode
+    transaction.state
   ].filter(Boolean).join(', ') || transaction.loopName || 'Unknown Address';
   
   // Get sale price (use salePrice or price)
   const salePrice = transaction.salePrice || transaction.price || 0;
   
   // Calculate commission rate from transaction data
-  // If we have both grossCommission and salePrice, calculate the rate
   let totalCommissionRate = 6.0; // Default
-  if (transaction.grossCommission && salePrice > 0) {
-    totalCommissionRate = (transaction.grossCommission / salePrice) * 100;
-  } else if (transaction.commissionRate) {
+  if (transaction.commissionRate && transaction.commissionRate > 0) {
     totalCommissionRate = transaction.commissionRate;
+  } else if (transaction.commissionTotal && salePrice > 0) {
+    totalCommissionRate = (transaction.commissionTotal / salePrice) * 100;
   }
   
   // Determine agent split percentages from commission plan or defaults
   const agentSplitPercent = commissionPlan?.agentSplitPercent || 80;
   const brokerSplitPercent = commissionPlan?.brokerSplitPercent || 20;
   
-  // Get agent name
-  const agentName = transaction.agent || transaction.agentName || 'Agent Name';
+  // Get agent name (handle comma-separated multiple agents)
+  let agentName = 'Agent Name';
+  if (transaction.agents) {
+    // If multiple agents, take the first one
+    agentName = transaction.agents.split(',')[0].trim();
+  } else if (transaction.createdBy) {
+    agentName = transaction.createdBy;
+  }
   
   // Determine if this is a selling or listing transaction
   const isSelling = transaction.transactionType?.toLowerCase().includes('sell') ||
