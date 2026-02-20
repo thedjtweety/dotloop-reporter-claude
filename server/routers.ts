@@ -22,6 +22,7 @@ import { cdaFixedRouter } from './routers/cda-fixed';
 // Note: tierHistoryRouter.ts file contains imports of the removed tierHistory table
 import { seedRouter } from './seedRouter';
 import { healthRouter } from './healthRouter';
+import { uploadsRouter } from './routers/uploads';
 import {
   createUpload,
   getUserUploads,
@@ -235,6 +236,7 @@ export const appRouter = router({
   cda: cdaRouter,
   cdaSimple: cdaSimpleRouter,
   cdaFixed: cdaFixedRouter,
+  uploadHistory: uploadsRouter,
   seed: seedRouter,
   health: healthRouter,
 });

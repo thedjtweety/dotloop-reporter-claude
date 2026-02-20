@@ -3486,3 +3486,16 @@
 - [x] Test CDA generation with demo data to verify fix (simplified endpoint created and integrated)
 - [ ] Simplify CDA Builder UI to reduce complexity
 - [ ] Update documentation for simplified CDA workflow
+
+
+## Upload History & Comparison System
+- [x] Create backend endpoints for upload history retrieval (uploadsRouter.getHistory)
+- [x] Create backend endpoint for comparing two uploads (uploadsRouter.compareUploads)
+- [x] Create backend endpoint for calculating transaction differences (compareUploads with diff logic)
+- [x] Build Upload History UI page with table of all uploads (UploadHistory.tsx)
+- [x] Add upload metadata display (file name, record count, upload date, status)
+- [x] Implement side-by-side comparison view for two uploads (comparison dialog)
+- [x] Create comparison report showing new, deleted, and modified transactions (statistics cards)
+- [x] Add re-use functionality to load previous upload data (reuseUpload procedure)
+- [x] Test upload history and comparison workflow (uploads.test.ts)
+- [x] Test re-use data functionality with demo data (tests passing)
