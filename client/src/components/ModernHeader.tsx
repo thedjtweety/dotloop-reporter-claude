@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { ModeToggle } from '@/components/ModeToggle';
 import { Button } from '@/components/ui/button';
-import { Calendar, LogOut, Settings, Menu, X, Zap, FileText } from 'lucide-react';
+import { Calendar, LogOut, Settings, Menu, X, Zap, FileText, History } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { DatePickerWithRange } from '@/components/DateRangePicker';
 import { DateRange } from 'react-day-picker';
@@ -44,6 +44,17 @@ export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* Upload History Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/uploads')}
+              className="hidden sm:flex items-center gap-2 text-foreground/70 hover:text-foreground"
+            >
+              <History className="w-4 h-4" />
+              Upload History
+            </Button>
+
             {/* CDA Builder Button */}
             <Button
               variant="outline"
