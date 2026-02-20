@@ -168,3 +168,51 @@ export const securityMiddleware = {
   requestLogging: requestLoggingMiddleware,
   bruteForce: bruteForceProtection,
 };
+
+/**
+ * Security headers configuration summary for documentation and testing
+ */
+export const SECURITY_HEADERS_CONFIG = {
+  csp: {
+    enabled: true,
+    directives: [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: https:",
+    ],
+  },
+  hsts: {
+    enabled: true,
+    maxAge: 31536000,
+    includeSubDomains: false,
+    preload: false,
+  },
+  frameguard: {
+    enabled: true,
+    action: 'deny',
+  },
+  noSniff: {
+    enabled: true,
+  },
+  xssFilter: {
+    enabled: true,
+  },
+  referrerPolicy: {
+    enabled: true,
+    policy: 'no-referrer',
+  },
+  permissionsPolicy: {
+    enabled: true,
+    restrictions: [
+      'geolocation',
+      'microphone',
+      'camera',
+      'payment',
+      'usb',
+      'magnetometer',
+      'gyroscope',
+      'accelerometer',
+    ],
+  },
+};
