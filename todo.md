@@ -3397,3 +3397,12 @@
 - [x] Ensure CDA data updates when commission plans change (fetches live from localStorage)
 - [x] Add navigation from transaction tables to CDA Builder with pre-filled data
 - [x] Test CDA generation from all locations with various commission structures (12 tests passing)
+
+## CDA Builder Validation Improvements
+- [x] Analyze current validation logic to identify why generic error is shown
+- [x] Implement field-level validation with specific error messages
+- [x] Add inline error display under each form field (red borders + error text)
+- [x] Create detailed validation summary dialog listing all specific issues
+- [x] Add visual indicators (red asterisks) for required fields (already marked with *)
+- [x] Test validation with various incomplete data scenarios (13 tests passing)
+- [x] Ensure validation errors clear when fields are corrected (auto-clears on calculation success)

@@ -13,7 +13,15 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Download, Mail, Plus, Trash2, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { trpc } from '@/lib/trpc';
 import { decodeCDAData } from '@/lib/cdaHelpers';
 
@@ -109,10 +117,27 @@ export default function CDABuilder() {
   
   const [calculation, setCalculation] = useState<CDACalculationResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
   const calculateMutation = trpc.cda.calculate.useMutation({
     onSuccess: (data) => {
       setCalculation(data);
+      // Map validation errors to specific fields
+      if (data.validationErrors && data.validationErrors.length > 0) {
+        const errors: Record<string, string> = {};
+        data.validationErrors.forEach((error: string) => {
+          if (error.includes('Property Address')) errors.propertyAddress = error;
+          if (error.includes('Sale Price')) errors.salePrice = error;
+          if (error.includes('Selling Agent')) errors.sellingAgent1Name = error;
+          if (error.includes('Listing Agent')) errors.listingAgent1Name = error;
+          if (error.includes('Selling split')) errors.sellingAgent1SplitPercent = error;
+          if (error.includes('Listing split')) errors.listingAgent1SplitPercent = error;
+        });
+        setFieldErrors(errors);
+      } else {
+        setFieldErrors({});
+      }
     },
     onError: (error) => {
       console.error('Calculation error:', error);
@@ -188,7 +213,7 @@ export default function CDABuilder() {
   
   const handleGenerateCDA = async () => {
     if (!calculation || !calculation.isValid) {
-      alert('Please fix validation errors before generating PDF');
+      setShowValidationDialog(true);
       return;
     }
     
@@ -244,23 +269,35 @@ export default function CDABuilder() {
               <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <Label htmlFor="propertyAddress">Property Address *</Label>
+                  <Label htmlFor="propertyAddress" className={fieldErrors.propertyAddress ? 'text-destructive' : ''}>
+                    Property Address *
+                  </Label>
                   <Input
                     id="propertyAddress"
                     value={formData.propertyAddress}
                     onChange={(e) => handleInputChange('propertyAddress', e.target.value)}
                     placeholder="123 Main St, City, ST 12345"
+                    className={fieldErrors.propertyAddress ? 'border-destructive focus-visible:ring-destructive' : ''}
                   />
+                  {fieldErrors.propertyAddress && (
+                    <p className="text-sm text-destructive mt-1">{fieldErrors.propertyAddress}</p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="salePrice">Sale Price *</Label>
+                  <Label htmlFor="salePrice" className={fieldErrors.salePrice ? 'text-destructive' : ''}>
+                    Sale Price *
+                  </Label>
                   <Input
                     id="salePrice"
                     type="number"
                     value={formData.salePrice || ''}
                     onChange={(e) => handleInputChange('salePrice', parseFloat(e.target.value) || 0)}
                     placeholder="500000"
+                    className={fieldErrors.salePrice ? 'border-destructive focus-visible:ring-destructive' : ''}
                   />
+                  {fieldErrors.salePrice && (
+                    <p className="text-sm text-destructive mt-1">{fieldErrors.salePrice}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="totalCommissionRate">Total Commission Rate (%) *</Label>
@@ -359,13 +396,19 @@ export default function CDABuilder() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="sellingAgent1Name">Agent 1 Name *</Label>
+                        <Label htmlFor="sellingAgent1Name" className={fieldErrors.sellingAgent1Name ? 'text-destructive' : ''}>
+                          Agent 1 Name *
+                        </Label>
                         <Input
                           id="sellingAgent1Name"
                           value={formData.sellingAgent1Name}
                           onChange={(e) => handleInputChange('sellingAgent1Name', e.target.value)}
-                          placeholder="John Doe"
+                          placeholder="John Smith"
+                          className={fieldErrors.sellingAgent1Name ? 'border-destructive focus-visible:ring-destructive' : ''}
                         />
+                        {fieldErrors.sellingAgent1Name && (
+                          <p className="text-sm text-destructive mt-1">{fieldErrors.sellingAgent1Name}</p>
+                        )}
                       </div>
                       <div>
                         <Label htmlFor="sellingAgent1SplitPercent">Agent 1 Split (%)</Label>
@@ -468,13 +511,19 @@ export default function CDABuilder() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="listingAgent1Name">Agent 1 Name *</Label>
+                        <Label htmlFor="listingAgent1Name" className={fieldErrors.listingAgent1Name ? 'text-destructive' : ''}>
+                          Agent 1 Name *
+                        </Label>
                         <Input
                           id="listingAgent1Name"
                           value={formData.listingAgent1Name}
                           onChange={(e) => handleInputChange('listingAgent1Name', e.target.value)}
-                          placeholder="Alice Johnson"
+                          placeholder="Jane Doe"
+                          className={fieldErrors.listingAgent1Name ? 'border-destructive focus-visible:ring-destructive' : ''}
                         />
+                        {fieldErrors.listingAgent1Name && (
+                          <p className="text-sm text-destructive mt-1">{fieldErrors.listingAgent1Name}</p>
+                        )}
                       </div>
                       <div>
                         <Label htmlFor="listingAgent1SplitPercent">Agent 1 Split (%)</Label>
@@ -702,6 +751,35 @@ export default function CDABuilder() {
           </div>
         </div>
       </main>
+
+      {/* Validation Error Dialog */}
+      <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Validation Errors
+            </DialogTitle>
+            <DialogDescription>
+              Please fix the following issues before generating the CDA:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {calculation?.validationErrors.map((error, i) => (
+              <Alert key={i} variant="destructive" className="py-2">
+                <AlertDescription className="text-sm">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowValidationDialog(false)}>
+              OK, I'll fix these
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
