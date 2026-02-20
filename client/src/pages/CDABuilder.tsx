@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, Download, Mail, Plus, Trash2, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { trpc } from '@/lib/trpc';
+import { decodeCDAData } from '@/lib/cdaHelpers';
 
 interface OtherAdjustment {
   description: string;
@@ -73,21 +74,38 @@ interface CDACalculationResult {
 
 export default function CDABuilder() {
   const [location, setLocation] = useLocation();
-  const [formData, setFormData] = useState<CDAFormData>({
-    propertyAddress: '',
-    salePrice: 0,
-    totalCommissionRate: 6.0,
-    sellingSplitPercent: 50,
-    listingSplitPercent: 50,
-    sellingAgent1Name: '',
-    sellingAgent1SplitPercent: 80,
-    sellingBrokerSplitPercent: 20,
-    sellingOtherAdjustments: [],
-    listingAgent1Name: '',
-    listingAgent1SplitPercent: 80,
-    listingBrokerSplitPercent: 20,
-    listingOtherAdjustments: [],
-  });
+  
+  // Check for pre-filled data from URL parameters
+  const getInitialFormData = (): CDAFormData => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dataParam = urlParams.get('data');
+    
+    if (dataParam) {
+      const decoded = decodeCDAData(dataParam);
+      if (decoded) {
+        return decoded;
+      }
+    }
+    
+    // Return default form data
+    return {
+      propertyAddress: '',
+      salePrice: 0,
+      totalCommissionRate: 6.0,
+      sellingSplitPercent: 50,
+      listingSplitPercent: 50,
+      sellingAgent1Name: '',
+      sellingAgent1SplitPercent: 80,
+      sellingBrokerSplitPercent: 20,
+      sellingOtherAdjustments: [],
+      listingAgent1Name: '',
+      listingAgent1SplitPercent: 80,
+      listingBrokerSplitPercent: 20,
+      listingOtherAdjustments: [],
+    };
+  };
+  
+  const [formData, setFormData] = useState<CDAFormData>(getInitialFormData());
   
   const [calculation, setCalculation] = useState<CDACalculationResult | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);

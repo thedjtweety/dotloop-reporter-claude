@@ -8,7 +8,9 @@ import { DotloopRecord } from '@/lib/csvParser';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, FileText } from 'lucide-react';
+import { useLocation } from 'wouter';
+import { mapTransactionToCDA, encodeCDAData, getCommissionPlanForAgent } from '@/lib/cdaHelpers';
 import { formatCurrency } from '@/lib/formatUtils';
 import DotloopLogo from './DotloopLogo';
 
@@ -56,6 +58,21 @@ export default function ExpandableTransactionRow({
   showCheckbox = false,
 }: ExpandableTransactionRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [, setLocation] = useLocation();
+  
+  const handleGenerateCDA = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Get commission plan for this agent
+    const commissionPlan = getCommissionPlanForAgent(transaction.agents || '');
+    
+    // Map transaction to CDA form data
+    const cdaData = mapTransactionToCDA(transaction, commissionPlan);
+    
+    // Navigate to CDA Builder with pre-filled data
+    const encoded = encodeCDAData(cdaData);
+    setLocation(`/cda-builder?data=${encoded}`);
+  };
 
   const renderCellContent = (column: string) => {
     switch (column) {
@@ -84,21 +101,33 @@ export default function ExpandableTransactionRow({
         return <div className="text-foreground text-sm">{formatDate(transaction.closingDate || transaction.createdDate || '')}</div>;
       case 'actions':
         return (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (transaction.loopViewUrl) {
-                window.open(transaction.loopViewUrl, '_blank');
-              }
-            }}
-            disabled={!transaction.loopViewUrl}
-            className="gap-1"
-          >
-            <DotloopLogo className="w-4 h-4" />
-            <span className="hidden sm:inline">View</span>
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerateCDA}
+              className="gap-1 text-primary hover:text-primary/80"
+              title="Generate CDA"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">CDA</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (transaction.loopViewUrl) {
+                  window.open(transaction.loopViewUrl, '_blank');
+                }
+              }}
+              disabled={!transaction.loopViewUrl}
+              className="gap-1"
+            >
+              <DotloopLogo className="w-4 h-4" />
+              <span className="hidden sm:inline">View</span>
+            </Button>
+          </div>
         );
       default:
         return null;

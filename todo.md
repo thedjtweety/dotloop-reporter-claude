@@ -3384,3 +3384,16 @@
 - [ ] Add bulk CDA generation for multiple transactions
 - [ ] Implement ZIP download for bulk CDAs
 - [ ] Add email delivery system for CDAs
+
+## CDA Dashboard Integration - Generate CDA from Transactions
+- [ ] Identify all transaction display locations (DrillDownModal, Agent Details, main tables)
+- [x] Create reusable helper function to map transaction data to CDA form structure
+- [x] Add "Generate CDA" button to DrillDownModal transaction tables
+- [x] Add "Generate CDA" button to Agent Detail modal transaction lists (uses TransactionTable component)
+- [x] Add "Generate CDA" button to main dashboard transaction tables (uses TransactionTable component)
+- [x] Integrate commission plan data to auto-calculate agent splits (reads from localStorage)
+- [x] Auto-populate CDA form with transaction data (address, price, agent names, commission)
+- [x] Add URL parameter handling to CDA Builder for pre-filled data
+- [x] Ensure CDA data updates when commission plans change (fetches live from localStorage)
+- [x] Add navigation from transaction tables to CDA Builder with pre-filled data
+- [x] Test CDA generation from all locations with various commission structures (12 tests passing)
