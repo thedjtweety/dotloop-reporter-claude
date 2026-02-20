@@ -3254,3 +3254,84 @@
 - [x] Remove all @dotloop.com email references
 - [x] Emphasize independent project status in all legal docs
 - [ ] Test all legal pages and footer
+
+## Phase 72: CDA Generation System (Phases 1, 2, 4)
+### Phase 1: Database Schema
+- [ ] Create cdaTemplates table (id, name, brokerageName, brokerageAddress, brokerageLogo, defaultSettings, createdAt, updatedAt)
+- [ ] Create cdaGenerated table (id, templateId, transactionId, pdfPath, status, generatedAt, generatedBy)
+- [ ] Create cdaFieldMappings table (id, templateId, csvColumn, cdaField, transformFunction)
+- [ ] Run database migration for CDA tables
+- [ ] Add indexes for performance (templateId, transactionId, status)
+
+### Phase 2: CDA Template Configuration
+- [ ] Create CDA template model with validation
+- [ ] Implement template CRUD operations (create, read, update, delete)
+- [ ] Add default template seeding for new users
+- [ ] Create template versioning system
+- [ ] Add template export/import functionality
+
+### Phase 3: CDA Calculation Engine
+- [x] Implement Gross Commission calculation (Sale Price × Commission Rate)
+- [x] Implement Selling/Listing split calculation
+- [x] Implement Referral fee calculation (deduct from correct side)
+- [x] Implement Agent split calculation (multiple agents supported)
+- [x] Implement Brokerage commission calculation
+- [x] Implement "Other +/-" adjustments handling
+- [x] Add validation: Sum of disbursements = Gross Commission
+- [x] Add validation: Agent % + Broker % = 100% per side
+- [x] Add validation: Selling + Listing = Gross Commission
+- [x] Create comprehensive calculation tests (23 test cases - all passing)
+
+### Phase 4: CDA Builder UI
+- [ ] Create CDA Builder page (/cda-builder)
+- [ ] Add transaction selector (dropdown or search)
+- [ ] Create field mapping interface (CSV columns → CDA fields)
+- [ ] Add static fields form (brokerage info, broker name)
+- [ ] Add commission split configurator
+- [ ] Add referral company section
+- [ ] Add "Other +/-" adjustment rows
+- [ ] Add real-time calculation preview
+- [ ] Add validation error display
+- [ ] Add "Generate PDF" button
+- [ ] Add bulk generation (select multiple transactions)
+
+### Phase 5: Professional PDF Generation
+- [ ] Install PDF generation libraries (ReportLab or WeasyPrint)
+- [ ] Create Page 1: Commission Disbursement REQUEST template
+- [ ] Add blue header bar with checkbox selection
+- [ ] Add transaction details section (buyer/seller info)
+- [ ] Add referral company section
+- [ ] Add dual-column layout (Selling Company | Listing Company)
+- [ ] Add agent commission breakdown (Agent 1, Agent 2)
+- [ ] Add brokerage commission section
+- [ ] Add "Other +/-" rows for adjustments
+- [ ] Add footer (Requested By, Additional Notes)
+- [ ] Create Page 2: Commission Disbursement AUTHORIZATION template
+- [ ] Add transaction summary section
+- [ ] Add referral company section (right side)
+- [ ] Add commission disbursement breakdown (two columns)
+- [ ] Add signature box for Admin/Broker
+- [ ] Add Admin/Broker name field
+- [ ] Match exact styling from sample PDF (colors, fonts, spacing)
+- [ ] Test PDF generation with sample data
+- [ ] Verify all calculations match expected values
+
+### Phase 6: Comprehensive Testing
+- [ ] Test calculation accuracy with 10+ real-world scenarios
+- [ ] Test dual-agent scenarios (2 agents on one side)
+- [ ] Test referral fee deductions (listing vs selling side)
+- [ ] Test "Other +/-" adjustments (positive and negative)
+- [ ] Test edge cases (0% commission, 100% to agent, etc.)
+- [ ] Test PDF formatting on different page sizes
+- [ ] Test bulk generation (10+ transactions at once)
+- [ ] Verify all validations work correctly
+- [ ] Test download and email functionality
+
+### Phase 7: Integration & Deployment
+- [ ] Integrate CDA Builder into main dashboard navigation
+- [ ] Add "Generate CDA" button to transaction table
+- [ ] Add CDA history viewer (list of all generated CDAs)
+- [ ] Add re-generate functionality for existing CDAs
+- [ ] Test end-to-end workflow (upload CSV → generate CDA → download PDF)
+- [ ] Create user documentation for CDA generation
+- [ ] Save checkpoint with complete CDA system

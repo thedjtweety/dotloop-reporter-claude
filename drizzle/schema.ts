@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, varchar, int, timestamp, mysqlEnum, text } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, varchar, int, timestamp, mysqlEnum, text, decimal } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const agentAssignments = mysqlTable("agent_assignments", {
@@ -406,4 +406,97 @@ export const userPreferences = mysqlTable("user_preferences", {
 (table) => [
 	index("user_preferences_user_unique").on(table.userId),
 	index("user_preferences_tenant_idx").on(table.tenantId),
+]);
+
+
+// CDA (Commission Disbursement Authorization) Tables
+
+export const cdaTemplates = mysqlTable("cda_templates", {
+	id: varchar({ length: 64 }).notNull().primaryKey(),
+	tenantId: int().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	
+	// Brokerage Information
+	brokerageName: varchar({ length: 255 }).notNull(),
+	brokerageAddress: text(),
+	brokerageLogo: text(), // URL or base64
+	brokerName: varchar({ length: 255 }),
+	brokerEmail: varchar({ length: 320 }),
+	brokerPhone: varchar({ length: 50 }),
+	
+	// Default Settings (JSON)
+	defaultSettings: text(), // JSON: { defaultCommissionRate, defaultSplit, etc. }
+	
+	// Metadata
+	isActive: int().default(1).notNull(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("cda_templates_tenant_idx").on(table.tenantId),
+	index("cda_templates_active_idx").on(table.isActive),
+	index("cda_templates_created_by_idx").on(table.createdBy),
+]);
+
+export const cdaGenerated = mysqlTable("cda_generated", {
+	id: varchar({ length: 64 }).notNull().primaryKey(),
+	tenantId: int().notNull(),
+	templateId: varchar({ length: 64 }).notNull(),
+	transactionId: varchar({ length: 64 }), // Reference to transaction/loop
+	
+	// Transaction Data (snapshot at generation time)
+	propertyAddress: varchar({ length: 500 }),
+	mlsNumber: varchar({ length: 100 }),
+	salePrice: decimal({ precision: 12, scale: 2 }),
+	closingDate: varchar({ length: 10 }),
+	
+	// Commission Data (snapshot)
+	grossCommission: decimal({ precision: 12, scale: 2 }),
+	commissionRate: decimal({ precision: 5, scale: 2 }),
+	
+	// PDF Storage
+	pdfPath: text(), // S3 URL or file path
+	pdfFileName: varchar({ length: 255 }),
+	
+	// Status
+	status: mysqlEnum(['draft','pending_approval','approved','sent','completed']).default('draft').notNull(),
+	
+	// Metadata
+	generatedBy: int().notNull(),
+	generatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	approvedBy: int(),
+	approvedAt: timestamp({ mode: 'string' }),
+	sentAt: timestamp({ mode: 'string' }),
+	
+	// Additional Data (JSON)
+	calculationData: text(), // JSON: full breakdown of all calculations
+	notes: text(),
+},
+(table) => [
+	index("cda_generated_tenant_idx").on(table.tenantId),
+	index("cda_generated_template_idx").on(table.templateId),
+	index("cda_generated_transaction_idx").on(table.transactionId),
+	index("cda_generated_status_idx").on(table.status),
+	index("cda_generated_generated_by_idx").on(table.generatedBy),
+	index("cda_generated_generated_at_idx").on(table.generatedAt),
+]);
+
+export const cdaFieldMappings = mysqlTable("cda_field_mappings", {
+	id: int().autoincrement().notNull().primaryKey(),
+	templateId: varchar({ length: 64 }).notNull(),
+	
+	// Mapping Configuration
+	csvColumn: varchar({ length: 255 }), // Source column name
+	cdaField: varchar({ length: 255 }).notNull(), // Target CDA field
+	transformFunction: varchar({ length: 100 }), // Optional: 'uppercase', 'currency', 'date', etc.
+	defaultValue: text(), // Fallback if CSV column is empty
+	
+	// Metadata
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("cda_field_mappings_template_idx").on(table.templateId),
+	index("cda_field_mappings_cda_field_idx").on(table.cdaField),
 ]);
