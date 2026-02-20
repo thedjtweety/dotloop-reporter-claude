@@ -3406,3 +3406,13 @@
 - [x] Add visual indicators (red asterisks) for required fields (already marked with *)
 - [x] Test validation with various incomplete data scenarios (13 tests passing)
 - [x] Ensure validation errors clear when fields are corrected (auto-clears on calculation success)
+
+## CDA Templates Library
+- [x] Research industry-standard commission structures and split scenarios
+- [x] Design template data structure with all necessary fields
+- [x] Create 10 comprehensive templates covering common scenarios
+- [x] Implement template selection UI in CDA Builder
+- [x] Add template preview and apply functionality
+- [ ] Add template customization and save-as-template features (deferred - can be added later)
+- [x] Test templates with various transaction amounts (28 tests passing)
+- [x] Verify all template calculations are accurate

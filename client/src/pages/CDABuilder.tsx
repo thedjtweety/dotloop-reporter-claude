@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Download, Mail, Plus, Trash2, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FileText, Download, Mail, Plus, Trash2, ArrowLeft, AlertCircle, CheckCircle2, Sparkles, TrendingUp, GraduationCap, Award, Users, Users2, UserCheck, Share2, Star } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Dialog,
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { trpc } from '@/lib/trpc';
 import { decodeCDAData } from '@/lib/cdaHelpers';
+import { CDA_TEMPLATES, CDATemplate, getAllTemplateCategories } from '@shared/cdaTemplates';
 
 interface OtherAdjustment {
   description: string;
@@ -119,6 +120,8 @@ export default function CDABuilder() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showValidationDialog, setShowValidationDialog] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<CDATemplate['category'] | 'all'>('all');
   
   const calculateMutation = trpc.cda.calculate.useMutation({
     onSuccess: (data) => {
@@ -153,6 +156,25 @@ export default function CDABuilder() {
   
   const handleInputChange = (field: keyof CDAFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const applyTemplate = (template: CDATemplate) => {
+    setFormData(prev => ({
+      ...prev,
+      sellingSplitPercent: template.sellingSplitPercent,
+      listingSplitPercent: template.listingSplitPercent,
+      sellingAgent1SplitPercent: template.sellingAgent1SplitPercent,
+      sellingAgent2SplitPercent: template.sellingAgent2SplitPercent,
+      sellingBrokerSplitPercent: template.sellingBrokerSplitPercent,
+      listingAgent1SplitPercent: template.listingAgent1SplitPercent,
+      listingAgent2SplitPercent: template.listingAgent2SplitPercent,
+      listingBrokerSplitPercent: template.listingBrokerSplitPercent,
+      referralPercent: template.referralFeePercent || undefined,
+      referralType: template.referralDeductFrom !== 'none' ? template.referralDeductFrom : undefined,
+      sellingOtherAdjustments: template.adjustments.filter(a => a.deductFrom === 'selling').map(a => ({ description: a.description, amount: a.amount })),
+      listingOtherAdjustments: template.adjustments.filter(a => a.deductFrom === 'listing').map(a => ({ description: a.description, amount: a.amount })),
+    }));
+    setShowTemplateDialog(false);
   };
   
   const addAdjustment = (side: 'selling' | 'listing') => {
@@ -247,6 +269,14 @@ export default function CDABuilder() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowTemplateDialog(true)}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              Use Template
+            </Button>
             <Button
               onClick={handleGenerateCDA}
               disabled={isGenerating || !formData.propertyAddress || formData.salePrice === 0}
@@ -751,6 +781,106 @@ export default function CDABuilder() {
           </div>
         </div>
       </main>
+
+      {/* Template Selection Dialog */}
+      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              CDA Templates Library
+            </DialogTitle>
+            <DialogDescription>
+              Choose a pre-configured commission structure based on industry standards
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Category Filter */}
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('all')}
+            >
+              All Templates
+            </Button>
+            {getAllTemplateCategories().map(cat => (
+              <Button
+                key={cat.value}
+                variant={selectedCategory === cat.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(cat.value)}
+              >
+                {cat.label}
+              </Button>
+            ))}
+          </div>
+
+          {/* Template Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {CDA_TEMPLATES
+              .filter(t => selectedCategory === 'all' || t.category === selectedCategory)
+              .map(template => {
+                const IconComponent = {
+                  TrendingUp,
+                  GraduationCap,
+                  Award,
+                  Users,
+                  Users2,
+                  UserCheck,
+                  Share2,
+                  Star,
+                  FileText
+                }[template.icon] || FileText;
+
+                return (
+                  <Card
+                    key={template.id}
+                    className="p-4 cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => applyTemplate(template)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <IconComponent className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm mb-1">{template.name}</h3>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {template.description}
+                        </p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Agent Split:</span>
+                            <span className="font-medium">
+                              {template.sellingAgent1SplitPercent}% / {template.sellingBrokerSplitPercent}%
+                            </span>
+                          </div>
+                          {template.referralFeePercent > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Referral Fee:</span>
+                              <span className="font-medium">{template.referralFeePercent}%</span>
+                            </div>
+                          )}
+                          {template.adjustments.length > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Adjustments:</span>
+                              <span className="font-medium">{template.adjustments.length}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-border">
+                          <p className="text-xs text-muted-foreground italic">
+                            {template.usageNotes}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Validation Error Dialog */}
       <Dialog open={showValidationDialog} onOpenChange={setShowValidationDialog}>
