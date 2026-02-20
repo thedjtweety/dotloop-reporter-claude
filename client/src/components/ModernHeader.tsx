@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { ModeToggle } from '@/components/ModeToggle';
 import { Button } from '@/components/ui/button';
-import { Calendar, LogOut, Settings, Menu, X, Zap } from 'lucide-react';
+import { Calendar, LogOut, Settings, Menu, X, Zap, FileText } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { DatePickerWithRange } from '@/components/DateRangePicker';
 import { DateRange } from 'react-day-picker';
 
@@ -17,6 +18,7 @@ interface ModernHeaderProps {
 export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop Reporter', onDemoClick, isDemoLoading }: ModernHeaderProps) {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [, setLocation] = useLocation();
 
   return (
     <>
@@ -42,6 +44,17 @@ export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 ml-auto">
+            {/* CDA Builder Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation('/cda-builder')}
+              className="hidden sm:flex items-center gap-2 text-foreground/70 hover:text-foreground"
+            >
+              <FileText className="w-4 h-4" />
+              CDA Builder
+            </Button>
+            
             {/* Demo Button */}
             {onDemoClick && (
               <Button
@@ -119,6 +132,19 @@ export default function ModernHeader({ dateRange, setDateRange, title = 'Dotloop
               </div>
             )}
 
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => {
+                setLocation('/cda-builder');
+                setMobileMenuOpen(false);
+              }}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              CDA Builder
+            </Button>
+            
             {onDemoClick && (
               <Button
                 variant="outline"

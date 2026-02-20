@@ -15,6 +15,7 @@ import { dotloopConnectionsRouter } from './routers/dotloop-connections';
 import { tenantSettingsRouter } from './tenantSettingsRouter';
 import { commissionRouter } from './commissionRouter';
 import { commissionRecalculationRouter } from './routers/commission-recalculation';
+import { cdaRouter } from './routers/cda';
 // import { tierHistoryRouter } from './tierHistoryRouter'; // Removed: tierHistory table was dropped in migration
 // Note: tierHistoryRouter.ts file contains imports of the removed tierHistory table
 import { seedRouter } from './seedRouter';
@@ -229,6 +230,7 @@ export const appRouter = router({
   commission: commissionRouter,
   commissionRecalculation: commissionRecalculationRouter,
   // tierHistory: tierHistoryRouter, // Removed: tierHistory table was dropped in migration
+  cda: cdaRouter,
   seed: seedRouter,
   health: healthRouter,
 });

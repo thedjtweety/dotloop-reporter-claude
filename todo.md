@@ -3335,3 +3335,52 @@
 - [ ] Test end-to-end workflow (upload CSV → generate CDA → download PDF)
 - [ ] Create user documentation for CDA generation
 - [ ] Save checkpoint with complete CDA system
+
+## Phase 73: CDA Builder UI & PDF Generation
+### CDA Builder UI
+- [ ] Create /cda-builder page route
+- [ ] Add transaction selection dropdown (from uploaded CSV or Dotloop sync)
+- [ ] Create form for transaction details (property address, sale price, commission rate)
+- [ ] Add selling/listing split configuration
+- [ ] Add referral fee inputs (company name, percentage, type)
+- [ ] Add agent split configuration (support 2 agents per side)
+- [ ] Add brokerage split percentage inputs
+- [ ] Add "Other +/-" adjustments table (add/remove rows)
+- [ ] Implement real-time calculation preview showing all amounts
+- [ ] Add validation error display
+- [ ] Add "Generate CDA" button
+
+### PDF Generation
+- [ ] Install python-shell package for Python integration
+- [ ] Create Python script using ReportLab for PDF generation
+- [ ] Match sample CDA format exactly (header, sections, signature lines)
+- [ ] Add brokerage letterhead support (logo upload)
+- [ ] Implement transaction summary section
+- [ ] Implement commission breakdown table
+- [ ] Implement disbursement instructions section
+- [ ] Add signature lines (Managing Broker, Agent, Title Company)
+- [ ] Add validation: Total Disbursement = GCI visual indicator
+- [ ] Test PDF generation with sample data
+
+### Bulk CDA Generation
+- [ ] Add checkbox selection to transaction list
+- [ ] Add "Generate CDAs" bulk action button
+- [ ] Implement batch PDF generation
+- [ ] Create ZIP file with all generated PDAs
+- [ ] Add download link for ZIP file
+- [ ] Implement email delivery to title companies
+- [ ] Add progress indicator for bulk generation
+- [ ] Test bulk generation with 10+ transactions
+
+## CDA Generation System - PDF Implementation
+- [x] Create Python PDF generation script using ReportLab
+- [x] Implement professional CDA PDF format matching sample document
+- [x] Add all required sections: Transaction Summary, Commission Breakdown, Disbursement Instructions, Authorization
+- [x] Integrate Python script with Node.js backend via python-shell
+- [x] Create tRPC generatePDF endpoint with base64 PDF return
+- [x] Add PDF download functionality to CDA Builder UI
+- [x] Test PDF generation with sample data (verified professional output)
+- [x] Add CDA Builder navigation link to main dashboard
+- [ ] Add bulk CDA generation for multiple transactions
+- [ ] Implement ZIP download for bulk CDAs
+- [ ] Add email delivery system for CDAs

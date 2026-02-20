@@ -22,6 +22,7 @@ import Privacy from "./pages/Privacy";
 import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import CDABuilder from "./pages/CDABuilder";
 
 
 function Router() {
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
+      <Route path="/cda-builder" component={CDABuilder} />
 
       <Route path="{/404}" component={NotFound} />
       {/* Final fallback route */}
