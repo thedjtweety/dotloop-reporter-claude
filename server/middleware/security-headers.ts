@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import crypto from 'crypto';
 
 /**
  * Security Headers Middleware
@@ -44,7 +45,6 @@ class CSRFProtection {
   private tokenExpiry = 24 * 60 * 60 * 1000;
 
   generateToken(sessionId: string): string {
-    const crypto = require('crypto');
     const token = crypto.randomBytes(32).toString('hex');
     this.tokens.set(sessionId, { token, timestamp: Date.now() });
     return token;
@@ -90,7 +90,6 @@ export const csrfProtection = new CSRFProtection();
  */
 export function requestLoggingMiddleware(req: Request, res: Response, next: NextFunction) {
   const startTime = Date.now();
-  const crypto = require('crypto');
   const requestId = crypto.randomBytes(8).toString('hex');
   (req as any).requestId = requestId;
   res.setHeader('X-Request-ID', requestId);

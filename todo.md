@@ -3441,3 +3441,11 @@
 - [x] Restart server and verify stability (restarted with webdev_restart_server)
 - [x] Test all tRPC endpoints (auth.me, cda.calculate, commission.getPlans) - server running
 - [x] Test CDA Builder end-to-end with real transaction data - ready for user testing
+
+## tRPC Routing Issue Fix
+- [x] Check if Express backend server is running on port 3000 (NOT running - found the issue!)
+- [x] Verify Vite proxy configuration in vite.config.ts (config is fine)
+- [x] Check backend server startup logs for errors (server never started - package.json dev script was wrong)
+- [x] Test backend server directly with curl (returns valid JSON now!)
+- [x] Fix routing and restart servers (fixed package.json dev script + require() errors)
+- [x] Verify tRPC endpoints return JSON not HTML (WORKING!)
