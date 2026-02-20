@@ -62,14 +62,15 @@ export default function ExpandableTransactionRow({
   const [isExpanded, setIsExpanded] = useState(false);
   const [, setLocation] = useLocation();
   
-  // Simplified CDA generation mutation
-  const generateCDAMutation = trpc.cdaSimple.generateQuick.useMutation({
+  // Fixed CDA generation mutation with commission plan support
+  const generateCDAMutation = trpc.cdaFixed.generateFromTransaction.useMutation({
     onSuccess: (result) => {
-      if (result.success && result.calculation) {
+      if (result.success && result.calculation && result.cdaData) {
         toast.success(`✅ CDA Generated! Commission: ${formatCurrency(result.calculation.grossCommission)}`);
-        // Navigate to CDA builder with the generated data for review/editing
         const encoded = encodeCDAData(result.cdaData);
         setLocation(`/cda-builder?data=${encoded}`);
+      } else if (result.requiresPlanAssignment) {
+        toast.error(`⚠️ ${result.error}`);
       } else {
         toast.error(`❌ CDA Generation Failed: ${result.error || 'Unknown error'}`);
       }
@@ -95,7 +96,7 @@ export default function ExpandableTransactionRow({
       propertyAddress: transaction.address || 'Unknown Property',
       salePrice: transaction.salePrice || transaction.price || 0,
       agentName,
-      commissionRate: transaction.commissionRate || 3,
+
       closingDate: transaction.closingDate,
       mlsNumber: transaction.mlsNumber,
       transactionType,

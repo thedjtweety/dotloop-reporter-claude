@@ -17,6 +17,7 @@ import { commissionRouter } from './commissionRouter';
 import { commissionRecalculationRouter } from './routers/commission-recalculation';
 import { cdaRouter } from './routers/cda';
 import { cdaSimpleRouter } from './routers/cda-simple';
+import { cdaFixedRouter } from './routers/cda-fixed';
 // import { tierHistoryRouter } from './tierHistoryRouter'; // Removed: tierHistory table was dropped in migration
 // Note: tierHistoryRouter.ts file contains imports of the removed tierHistory table
 import { seedRouter } from './seedRouter';
@@ -233,6 +234,7 @@ export const appRouter = router({
   // tierHistory: tierHistoryRouter, // Removed: tierHistory table was dropped in migration
   cda: cdaRouter,
   cdaSimple: cdaSimpleRouter,
+  cdaFixed: cdaFixedRouter,
   seed: seedRouter,
   health: healthRouter,
 });
