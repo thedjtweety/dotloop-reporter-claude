@@ -3449,3 +3449,13 @@
 - [x] Test backend server directly with curl (returns valid JSON now!)
 - [x] Fix routing and restart servers (fixed package.json dev script + require() errors)
 - [x] Verify tRPC endpoints return JSON not HTML (WORKING!)
+
+## Health Check System
+- [x] Create /health endpoint with system status checks
+- [x] Add database connectivity check to health endpoint
+- [x] Include uptime, memory usage, and process info in health response
+- [x] Add health check route to Express server (/health, /health/live, /health/ready)
+- [x] Test health endpoint returns correct status codes (all working!)
+- [x] Implement process monitoring script for automatic restart (scripts/health-monitor.mjs)
+- [x] Add health monitoring to package.json scripts (pnpm health:check, pnpm health:monitor)
+- [x] Document health check usage and monitoring setup (HEALTH_CHECK_GUIDE.md)

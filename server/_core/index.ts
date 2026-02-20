@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { securityHeaders, csrfProtection, requestLoggingMiddleware, bruteForceProtection } from "../middleware/security-headers";
 import { uploadLimiter, apiLimiter, authLimiter } from "../middleware/rate-limiter";
 import { corsMiddleware } from "../middleware/security-headers";
+import { healthCheck, livenessProbe, readinessProbe } from "../health";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -49,6 +50,11 @@ async function startServer() {
   // Rate limiting for different endpoints
   app.use("/api/upload", uploadLimiter.middleware());
   app.use("/api/trpc", apiLimiter.middleware());
+  
+  // Health check endpoints (no CSRF or rate limiting)
+  app.get("/health", healthCheck);
+  app.get("/health/live", livenessProbe);
+  app.get("/health/ready", readinessProbe);
   
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
