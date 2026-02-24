@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -85,6 +85,30 @@ export default function SimpleCDABuilder() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Read query parameters on mount to pre-populate CDA data
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const dataParam = params.get('data');
+    
+    if (dataParam) {
+      try {
+        const decodedData = JSON.parse(decodeURIComponent(dataParam));
+        setCDAData(decodedData);
+        setUploadSuccess(true);
+      } catch (e) {
+        console.error('Failed to decode CDA data from URL:', e);
+        setError('Failed to load pre-populated CDA data');
+      }
+    }
+  }, []);
+
+  // Clear the data param from URL after loading
+  useEffect(() => {
+    if (cdaData && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [cdaData]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
