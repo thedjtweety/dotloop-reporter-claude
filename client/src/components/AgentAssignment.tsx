@@ -44,6 +44,10 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
   const [assignments, setAssignments] = useState<AgentPlanAssignment[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [recalculatingAgent, setRecalculatingAgent] = useState<string | null>(null);
+  
+  // Get the recalculation mutation
+  const recalculateMutation = trpc.commissionRecalculation.recalculateForAgent.useMutation();
 
   useEffect(() => {
     setPlans(getCommissionPlans());
@@ -75,7 +79,7 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
     }
   }, [highlightAgent]);
 
-  const handleAssignPlan = (agentName: string, planId: string) => {
+  const handleAssignPlan = async (agentName: string, planId: string) => {
     const existing = assignments.find(a => a.agentName === agentName);
     const newAssignments = assignments.filter(a => a.agentName !== agentName);
     
@@ -99,6 +103,28 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
     }
     setAssignments(newAssignments);
     saveAgentAssignments(newAssignments);
+    
+    // Trigger real-time commission recalculation
+    if (planId !== 'none') {
+      setRecalculatingAgent(agentName);
+      try {
+        const result = await recalculateMutation.mutateAsync({
+          agentName,
+        });
+        
+        if (result.success) {
+          toast.success(`✓ Commission recalculated for ${agentName}: ${result.transactionCount} transactions, $${(result.totalCommission / 100).toFixed(2)} total`);
+        } else {
+          toast.error(result.error || 'Failed to recalculate commissions');
+        }
+      } catch (error) {
+        console.error('Recalculation error:', error);
+        toast.error('Failed to recalculate commissions');
+      } finally {
+        setRecalculatingAgent(null);
+      }
+    }
+    
     // Dispatch custom event to notify other components (like leaderboard) of the change
     window.dispatchEvent(new CustomEvent('commission-assignment-updated'));
     onAssignmentChange?.();

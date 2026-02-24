@@ -3596,3 +3596,24 @@
 - [ ] Ensure CDA button is accessible on all transaction views (Closed, Active, Under Contract, Archived)
 - [ ] Test CDA button functionality from transaction row
 - [ ] Ensure CDA button works with filtered/drilled-down transactions
+
+
+## Phase 30: Real-Time Commission Recalculation
+- [ ] Create commission recalculation endpoint in server/routers
+- [ ] Implement automatic recalculation when commission plan is assigned
+- [ ] Update AgentLeaderboard to display calculated commissions instead of "Plan not assigned"
+- [ ] Add real-time updates when plan assignment changes
+- [ ] Test recalculation with multiple agents and plans
+- [ ] Verify commission values update correctly in UI
+
+
+## Phase 30: Real-Time Commission Recalculation
+- [x] Implement commission recalculation endpoint (commissionRecalculation router)
+- [x] Add recalculateForAgent mutation for single agent recalculation
+- [x] Add getAgentCommissionSummary query for fetching calculated commissions
+- [x] Update AgentAssignment component to trigger recalculation when plan is assigned
+- [x] Add loading state and toast notifications for recalculation feedback
+- [x] Test recalculation with assigned commission plans
+- [ ] Update AgentLeaderboard to display calculated commissions instead of "Plan not assigned"
+- [ ] Add real-time commission display in leaderboard (replacing status badge)
+- [ ] Test end-to-end workflow: assign plan → recalculate → display commissions
