@@ -318,8 +318,8 @@ export default function TransactionTable({
         </div>
       )}
 
-      <div className="w-full overflow-x-auto sm:overflow-x-visible landscape:overflow-x-visible -mx-4 sm:mx-0 landscape:mx-0 px-4 sm:px-0 landscape:px-0">
-      <Table className="w-full min-w-[600px] sm:min-w-full">
+      <div className="w-full overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+      <Table className="w-full">
         <TableHeader>
           <TableRow className="border-border">
             {onSelectionChange && (
@@ -422,7 +422,7 @@ export default function TransactionTable({
               </TableHead>
             )}
             {isColumnVisible('actions') && (
-              <TableHead className="font-semibold text-xs py-2 px-2 w-[90px]">Actions</TableHead>
+              <TableHead className="font-semibold text-xs py-2 px-2 w-[90px] sticky right-0 bg-background z-10 border-l border-border">Actions</TableHead>
             )}
           </TableRow>
         </TableHeader>

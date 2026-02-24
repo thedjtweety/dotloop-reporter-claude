@@ -3579,3 +3579,20 @@
 - [x] Integrate CDA saving into SimpleCDABuilder (auto-save when PDF is generated)
 - [x] Add "View History" button to CDA Builder page
 - [x] Add route for CDA History page (/cda-history)
+
+
+## Phase 33: Correct CDA Generator Flow (REVISED)
+- [ ] Remove SimpleCDABuilder standalone page (not needed)
+- [ ] Remove CDAHistory page (not needed)
+- [ ] Add CDA button to transaction Actions column in dashboard
+- [ ] Create CDA modal/page triggered from transaction row
+- [ ] Auto-populate CDA form with transaction data (no CSV re-upload)
+- [ ] Generate PDF from selected transaction
+- [ ] Test CDA generation from dashboard transaction
+
+
+## Phase 32: Make CDA Button Easily Accessible on All Transactions
+- [ ] Verify CDA button is visible in transaction table Actions column
+- [ ] Ensure CDA button is accessible on all transaction views (Closed, Active, Under Contract, Archived)
+- [ ] Test CDA button functionality from transaction row
+- [ ] Ensure CDA button works with filtered/drilled-down transactions

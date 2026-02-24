@@ -240,7 +240,7 @@ export default function ExpandableTransactionRow({
           </TableCell>
         )}
         {visibleColumns.includes('actions') && (
-          <TableCell className={compact ? 'py-1 px-2' : 'py-2 px-4'}>
+          <TableCell className={`${compact ? 'py-1 px-2' : 'py-2 px-4'} sticky right-0 bg-background z-10 border-l border-border`}>
             {renderCellContent('actions')}
           </TableCell>
         )}
