@@ -1,9 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+/**
+ * Simple CDA Builder Page
+ * Allows users to upload CSV and generate CDA documents
+ */
+
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, Download, AlertCircle, CheckCircle2, Loader2, History, Edit2 } from 'lucide-react';
 import CDAEditModal from '@/components/CDAEditModal';
+import CDAFormEditor from '@/components/CDAFormEditor';
 import { generateCDAPDF, downloadCDAPDF } from '@/lib/cdaPdfGenerator';
 import { generateCompleteCDAPDF, type CDAFormData } from '@/lib/cdaPdfGeneratorComplete';
 
@@ -88,6 +94,7 @@ export default function SimpleCDABuilder() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [showFormEditor, setShowFormEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Read query parameters on mount to pre-populate CDA data
@@ -98,48 +105,63 @@ export default function SimpleCDABuilder() {
     if (dataParam) {
       try {
         const decodedData = JSON.parse(decodeURIComponent(dataParam));
-        // Ensure numeric fields are properly converted
-        const normalizedData: CDAData = {
-          ...decodedData,
+        
+        // Normalize numeric fields
+        const normalized: CDAData = {
+          propertyAddress: decodedData.propertyAddress || '',
+          mlsNumber: decodedData.mlsNumber,
           salePrice: Number(decodedData.salePrice) || 0,
           totalCommissionRate: Number(decodedData.totalCommissionRate) || 0,
           totalGrossCommission: Number(decodedData.totalGrossCommission) || 0,
+          sellerName: decodedData.sellerName || '',
+          sellerEmail: decodedData.sellerEmail,
+          closingDate: decodedData.closingDate,
+          buyerName: decodedData.buyerName,
+          buyerAddress: decodedData.buyerAddress,
+          buyerPhone: decodedData.buyerPhone,
+          buyerEmail: decodedData.buyerEmail,
           sellingSplitPercent: Number(decodedData.sellingSplitPercent) || 50,
           listingSplitPercent: Number(decodedData.listingSplitPercent) || 50,
           sellingGrossCommission: Number(decodedData.sellingGrossCommission) || 0,
           listingGrossCommission: Number(decodedData.listingGrossCommission) || 0,
-          sellingAgent1SplitPercent: Number(decodedData.sellingAgent1SplitPercent) || 0,
+          sellingCompanyName: decodedData.sellingCompanyName,
+          sellingCompanyAddress: decodedData.sellingCompanyAddress,
+          sellingAgent1Name: decodedData.sellingAgent1Name || '',
+          sellingAgent1SplitPercent: Number(decodedData.sellingAgent1SplitPercent) || 50,
           sellingAgent1Commission: Number(decodedData.sellingAgent1Commission) || 0,
+          sellingAgent2Name: decodedData.sellingAgent2Name,
           sellingAgent2SplitPercent: Number(decodedData.sellingAgent2SplitPercent) || 0,
           sellingAgent2Commission: Number(decodedData.sellingAgent2Commission) || 0,
           sellingBrokerSplitPercent: Number(decodedData.sellingBrokerSplitPercent) || 0,
           sellingBrokerageCommission: Number(decodedData.sellingBrokerageCommission) || 0,
           sellingCommissionAfterFees: Number(decodedData.sellingCommissionAfterFees) || 0,
-          listingAgent1SplitPercent: Number(decodedData.listingAgent1SplitPercent) || 0,
+          listingCompanyName: decodedData.listingCompanyName,
+          listingCompanyAddress: decodedData.listingCompanyAddress,
+          listingAgent1Name: decodedData.listingAgent1Name || '',
+          listingAgent1SplitPercent: Number(decodedData.listingAgent1SplitPercent) || 50,
           listingAgent1Commission: Number(decodedData.listingAgent1Commission) || 0,
+          listingAgent2Name: decodedData.listingAgent2Name,
           listingAgent2SplitPercent: Number(decodedData.listingAgent2SplitPercent) || 0,
           listingAgent2Commission: Number(decodedData.listingAgent2Commission) || 0,
           listingBrokerSplitPercent: Number(decodedData.listingBrokerSplitPercent) || 0,
           listingBrokerageCommission: Number(decodedData.listingBrokerageCommission) || 0,
           listingCommissionAfterFees: Number(decodedData.listingCommissionAfterFees) || 0,
+          referralCompanyName: decodedData.referralCompanyName,
           referralPercent: Number(decodedData.referralPercent) || 0,
+          referralType: decodedData.referralType,
           referralFee: Number(decodedData.referralFee) || 0,
         };
-        setCDAData(normalizedData);
+        
+        setCDAData(normalized);
         setUploadSuccess(true);
-      } catch (e) {
-        console.error('Failed to decode CDA data from URL:', e);
-        setError('Failed to load pre-populated CDA data');
+        
+        // Clear URL parameter for security
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (err) {
+        console.error('Failed to decode CDA data from URL:', err);
       }
     }
   }, []);
-
-  // Clear the data param from URL after loading
-  useEffect(() => {
-    if (cdaData && window.history.replaceState) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [cdaData]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -147,7 +169,7 @@ export default function SimpleCDABuilder() {
 
     // Validate file type
     if (!selectedFile.name.endsWith('.csv')) {
-      setError('Please upload a CSV file');
+      setError('Please select a CSV file');
       return;
     }
 
@@ -279,7 +301,7 @@ export default function SimpleCDABuilder() {
         listingCommissionAfterFees,
         referralCompanyName: row.referralCompanyName,
         referralPercent,
-        referralType: referralType as 'selling' | 'listing',
+        referralType,
         referralFee,
       };
 
@@ -287,95 +309,42 @@ export default function SimpleCDABuilder() {
       setUploadSuccess(true);
       setIsLoading(false);
     } catch (err) {
-      setError(`Error parsing CSV: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`Failed to parse CSV: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsLoading(false);
-    }
-  };
-
-  const saveCDAToHistory = (pdfBlob: Blob) => {
-    try {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        const history = JSON.parse(localStorage.getItem('cda_history') || '[]');
-        const newRecord = {
-          id: `cda_${Date.now()}`,
-          propertyAddress: cdaData?.propertyAddress || '',
-          salePrice: cdaData?.salePrice || 0,
-          grossCommission: cdaData?.totalGrossCommission || 0,
-          generatedAt: new Date().toISOString(),
-          pdfData: base64,
-        };
-        history.push(newRecord);
-        localStorage.setItem('cda_history', JSON.stringify(history));
-      };
-      reader.readAsDataURL(pdfBlob);
-    } catch (error) {
-      console.error('Failed to save CDA to history:', error);
     }
   };
 
   const handleGeneratePDF = async () => {
     if (!cdaData) return;
-
-    setIsGeneratingPDF(true);
-    setError('');
-
-    try {
-      // Map CDAData to CDAFormData for the complete PDF generator
-      const formData: Partial<CDAFormData> = {
-        sellingCommission: true,
-        listingCommission: true,
-        propertyAddress: cdaData.propertyAddress,
-        mls: cdaData.mlsNumber,
-        buyerName: cdaData.buyerName,
-        buyerAddress: cdaData.buyerAddress,
-        buyerPhone: cdaData.buyerPhone,
-        buyerEmail: cdaData.buyerEmail,
-        sellerName: cdaData.sellerName,
-        sellerEmail: cdaData.sellerEmail,
-        closingDate: cdaData.closingDate,
-        purchasePrice: cdaData.salePrice,
-        totalGrossCommission: cdaData.totalGrossCommission,
-        totalGrossCommissionPercent: cdaData.totalCommissionRate,
-        sellingGrossCommission: cdaData.sellingGrossCommission,
-        sellingGrossCommissionPercent: cdaData.sellingSplitPercent,
-        listingGrossCommission: cdaData.listingGrossCommission,
-        listingGrossCommissionPercent: cdaData.listingSplitPercent,
-        sellingCompanyAddress: cdaData.sellingCompanyAddress,
-        listingCompanyAddress: cdaData.listingCompanyAddress,
-        sellingAgent1Name: cdaData.sellingAgent1Name,
-        sellingAgent1Percent: cdaData.sellingAgent1SplitPercent,
-        sellingAgent1Total: cdaData.sellingAgent1Commission,
-        sellingAgent2Name: cdaData.sellingAgent2Name,
-        sellingAgent2Percent: cdaData.sellingAgent2SplitPercent,
-        sellingAgent2Total: cdaData.sellingAgent2Commission,
-        listingAgent1Name: cdaData.listingAgent1Name,
-        listingAgent1Percent: cdaData.listingAgent1SplitPercent,
-        listingAgent1Total: cdaData.listingAgent1Commission,
-        listingAgent2Name: cdaData.listingAgent2Name,
-        listingAgent2Percent: cdaData.listingAgent2SplitPercent,
-        listingAgent2Total: cdaData.listingAgent2Commission,
-        sellingBrokeragePercent: cdaData.sellingBrokerSplitPercent,
-        sellingBrokerageTotalDue: cdaData.sellingBrokerageCommission,
-        listingBrokeragePercent: cdaData.listingBrokerSplitPercent,
-        listingBrokerageTotalDue: cdaData.listingBrokerageCommission,
-        salePrice: cdaData.salePrice,
-        grossCommission: cdaData.totalGrossCommission,
-        grossCommissionPercent: cdaData.totalCommissionRate,
-      };
-      generateCompleteCDAPDF(formData);
-    } catch (err) {
-      setError(`Failed to generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`);
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+    // Show form editor instead of directly generating PDF
+    setShowFormEditor(true);
   };
 
   const handleSaveEdits = (updatedData: CDAData) => {
     setCDAData(updatedData);
     setEditModalOpen(false);
   };
+
+  // Show form editor if data is loaded and user clicked Download CDA PDF
+  if (cdaData && showFormEditor) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+          <div className="container flex h-16 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-display font-bold text-foreground">CDA Form Review</h1>
+            </div>
+            <Button variant="outline" onClick={() => setShowFormEditor(false)}>
+              Back to Summary
+            </Button>
+          </div>
+        </header>
+        <main className="container py-8">
+          <CDAFormEditor cdaData={cdaData as any} />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-8 px-4">
