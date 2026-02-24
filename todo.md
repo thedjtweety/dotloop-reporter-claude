@@ -3617,3 +3617,13 @@
 - [ ] Update AgentLeaderboard to display calculated commissions instead of "Plan not assigned"
 - [ ] Add real-time commission display in leaderboard (replacing status badge)
 - [ ] Test end-to-end workflow: assign plan → recalculate → display commissions
+
+
+## Phase 31: Commission Display & Caching Features
+- [x] Implement getAgentCommissionSummary endpoint to fetch calculated commissions for all agents
+- [x] Create CommissionLeaderboard component to display real commission values
+- [x] Add bulk commission recalculation endpoint with progress tracking
+- [x] Implement "Recalculate All" button in CommissionLeaderboard
+- [x] Add commission calculation caching layer with in-memory storage (via router)
+- [x] Implement cache invalidation on plan assignment changes
+- [ ] Test all three features end-to-end
