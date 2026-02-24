@@ -985,23 +985,32 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
     </html>
   `;
 
-  // Create blob and download
+  // Open in new window for print preview
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  const filename = `CDA-${data.propertyAddress?.split(' ')[0] || 'Document'}-${new Date().toISOString().split('T')[0]}.html`;
-  link.download = filename;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  // Clean up after a delay to ensure download completes
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 100);
-  
-  // Log for debugging
-  console.log(`CDA PDF generated and downloaded: ${filename}`);
+  const printWindow = window.open(url, '_blank');
+  if (printWindow) {
+    printWindow.addEventListener('load', () => {
+      setTimeout(() => {
+        printWindow.print();
+      }, 250);
+    });
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+    console.log('CDA PDF opened in print preview');
+  } else {
+    const link = document.createElement('a');
+    link.href = url;
+    const filename = `CDA-${data.propertyAddress?.split(' ')[0] || 'Document'}-${new Date().toISOString().split('T')[0]}.html`;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
+    console.log('CDA PDF downloaded (popup blocked)');
+  }
 }

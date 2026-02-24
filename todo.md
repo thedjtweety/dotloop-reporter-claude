@@ -3663,3 +3663,10 @@
 - [x] Implement color preservation and font sizing for print
 - [x] Add @page rules and @media print styles
 - [ ] Test PDF print output and visual appearance in browser
+
+
+## Phase XX: Fix PDF Print Preview
+- [x] Update PDF generator to open print preview in new window instead of auto-downloading
+- [x] Implement fallback to download if popup is blocked
+- [x] Add automatic print dialog trigger on window load
+- [ ] Test print preview functionality with actual CDA data
