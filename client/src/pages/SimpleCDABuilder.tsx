@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Download, AlertCircle, CheckCircle2, Loader2, History } from 'lucide-react';
+import { Upload, Download, AlertCircle, CheckCircle2, Loader2, History, Edit2 } from 'lucide-react';
+import CDAEditModal from '@/components/CDAEditModal';
+import { generateCDAPDF, downloadCDAPDF } from '@/lib/cdaPdfGenerator';
 
 interface CDAData {
   propertyAddress: string;
@@ -84,6 +86,7 @@ export default function SimpleCDABuilder() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Read query parameters on mount to pre-populate CDA data
@@ -312,42 +315,26 @@ export default function SimpleCDABuilder() {
   };
 
   const handleGeneratePDF = async () => {
-    if (!file) return;
+    if (!cdaData) return;
 
     setIsGeneratingPDF(true);
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/cda/upload-and-generate', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate PDF');
-      }
-
-      // Download the PDF
-      const blob = await response.blob();
-      saveCDAToHistory(blob);
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `CDA_${cdaData?.propertyAddress?.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // Generate PDF from current CDA data
+      const pdfBlob = await generateCDAPDF(cdaData);
+      saveCDAToHistory(pdfBlob);
+      downloadCDAPDF(pdfBlob, cdaData.propertyAddress);
     } catch (err) {
       setError(`Failed to generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsGeneratingPDF(false);
     }
+  };
+
+  const handleSaveEdits = (updatedData: CDAData) => {
+    setCDAData(updatedData);
+    setEditModalOpen(false);
   };
 
   return (
@@ -446,7 +433,18 @@ export default function SimpleCDABuilder() {
             )}
 
             <Card className="p-6">
-              <h2 className="text-xl font-bold text-foreground mb-4">CDA Summary</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-foreground">CDA Summary</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditModalOpen(true)}
+                  className="gap-2"
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Edit
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-foreground/70">Property Address</p>
@@ -490,7 +488,7 @@ export default function SimpleCDABuilder() {
               </Button>
               <Button
                 onClick={handleGeneratePDF}
-                disabled={isGeneratingPDF}
+                disabled={isGeneratingPDF || !cdaData}
                 className="flex-1 gap-2"
                 size="lg"
               >
@@ -507,6 +505,16 @@ export default function SimpleCDABuilder() {
                 )}
               </Button>
             </div>
+
+            {/* Edit Modal */}
+            {cdaData && (
+              <CDAEditModal
+                open={editModalOpen}
+                cdaData={cdaData}
+                onClose={() => setEditModalOpen(false)}
+                onSave={handleSaveEdits}
+              />
+            )}
           </div>
         )}
       </div>

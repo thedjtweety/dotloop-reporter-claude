@@ -3627,3 +3627,22 @@
 - [x] Add commission calculation caching layer with in-memory storage (via router)
 - [x] Implement cache invalidation on plan assignment changes
 - [ ] Test all three features end-to-end
+
+## Phase XX: CDA Editor Enhancements
+- [ ] Add edit button to CDA Summary card
+- [ ] Create editable fields for all CDA summary data (property address, sale price, commission rate, agent names, etc.)
+- [ ] Implement edit modal or inline editing UI
+- [ ] Add save/cancel functionality for edits
+- [ ] Update encoded CDA data when user makes edits
+- [ ] Fix "Download CDA PDF" button functionality (currently does nothing)
+- [ ] Implement PDF generation and download logic
+- [ ] Test edit functionality with various data inputs
+- [ ] Test PDF download with edited data
+
+
+## Phase XX: CDA Editor Enhancements
+- [x] Add Edit button to CDA Summary
+- [x] Create CDAEditModal component with comprehensive form fields
+- [x] Implement PDF generation utility with professional styling
+- [x] Fix PDF download button functionality
+- [x] Test edit modal and PDF download on dev server
