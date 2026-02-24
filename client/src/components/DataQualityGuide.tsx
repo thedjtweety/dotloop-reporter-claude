@@ -12,15 +12,12 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, AlertCircle, CheckCircle2, Users, Calendar, DollarSign, Tag, FileText } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import CSVPreparationGuide from '@/components/CSVPreparationGuide';
-import { useLocation } from 'wouter';
-import { Play } from 'lucide-react';
 
 interface DataQualityGuideProps {
   onOpenGuide?: () => void;
 }
 
 export default function DataQualityGuide({ onOpenGuide }: DataQualityGuideProps = {}) {
-  const [, setLocation] = useLocation();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
@@ -203,10 +200,6 @@ export default function DataQualityGuide({ onOpenGuide }: DataQualityGuideProps 
           <div className="flex gap-2 pt-2 flex-wrap">
             <Button variant="outline" size="sm" onClick={onOpenGuide}>
               View Full Guide
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setLocation('/video-walkthroughs')}>
-              <Play className="h-4 w-4 mr-2" />
-              Watch Tutorials
             </Button>
           </div>
         </div>
