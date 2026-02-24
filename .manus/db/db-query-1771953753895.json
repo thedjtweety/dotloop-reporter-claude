@@ -1,0 +1,40 @@
+{
+  "query": "SELECT DISTINCT agentName FROM agent_assignments WHERE agentName LIKE '%Karen%' LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 24ruGQuiASWpGv5.root --database gtMbYvvduSqhsHRvj39YWw --execute SELECT DISTINCT agentName FROM agent_assignments WHERE agentName LIKE '%Karen%' LIMIT 10;",
+  "rows": [
+    {
+      "agentName": "Karen Anderson"
+    },
+    {
+      "agentName": "Karen Garcia"
+    },
+    {
+      "agentName": "Karen Gonzalez"
+    },
+    {
+      "agentName": "Karen Hernandez"
+    },
+    {
+      "agentName": "Karen Johnson"
+    },
+    {
+      "agentName": "Karen Jones"
+    },
+    {
+      "agentName": "Karen Miller"
+    },
+    {
+      "agentName": "Karen Rodriguez"
+    },
+    {
+      "agentName": "Karen Smith"
+    },
+    {
+      "agentName": "Karen Thomas"
+    }
+  ],
+  "messages": [],
+  "stdout": "agentName\nKaren Anderson\nKaren Garcia\nKaren Gonzalez\nKaren Hernandez\nKaren Johnson\nKaren Jones\nKaren Miller\nKaren Rodriguez\nKaren Smith\nKaren Thomas\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}

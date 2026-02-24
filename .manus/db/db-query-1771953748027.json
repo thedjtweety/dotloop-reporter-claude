@@ -1,0 +1,58 @@
+{
+  "query": "SELECT agentName, planId FROM agent_assignments WHERE agentName LIKE '%Karen%' OR agentName LIKE '%Karen Davis%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 24ruGQuiASWpGv5.root --database gtMbYvvduSqhsHRvj39YWw --execute SELECT agentName, planId FROM agent_assignments WHERE agentName LIKE '%Karen%' OR agentName LIKE '%Karen Davis%';",
+  "rows": [
+    {
+      "agentName": "Karen Garcia",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Smith",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Hernandez",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Jones",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Gonzalez",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Johnson",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Rodriguez",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Wilson",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Miller",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Williams",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Thomas",
+      "planId": "6olo5tf3f"
+    },
+    {
+      "agentName": "Karen Anderson",
+      "planId": "6olo5tf3f"
+    }
+  ],
+  "messages": [],
+  "stdout": "agentName\tplanId\nKaren Garcia\t6olo5tf3f\nKaren Smith\t6olo5tf3f\nKaren Hernandez\t6olo5tf3f\nKaren Jones\t6olo5tf3f\nKaren Gonzalez\t6olo5tf3f\nKaren Johnson\t6olo5tf3f\nKaren Rodriguez\t6olo5tf3f\nKaren Wilson\t6olo5tf3f\nKaren Miller\t6olo5tf3f\nKaren Williams\t6olo5tf3f\nKaren Thomas\t6olo5tf3f\nKaren Anderson\t6olo5tf3f\n",
+  "stderr": "",
+  "execution_time_ms": 50
+}

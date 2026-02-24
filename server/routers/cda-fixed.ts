@@ -3,7 +3,7 @@ import { publicProcedure, router } from '../_core/trpc';
 import { calculateCDA } from '../lib/cda-calculator';
 import { getDb } from '../db';
 import { commissionPlans, agentAssignments } from '../../drizzle/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ilike } from 'drizzle-orm';
 
 /**
  * Fixed CDA Router
@@ -43,10 +43,12 @@ export const cdaFixedRouter = router({
         }
 
         // Step 2: Find agent's commission plan assignment
+        // Use case-insensitive search and trim whitespace
+        const trimmedAgentName = input.agentName.trim();
         const [assignment] = await db
           .select()
           .from(agentAssignments)
-          .where(eq(agentAssignments.agentName, input.agentName))
+          .where(ilike(agentAssignments.agentName, trimmedAgentName))
           .limit(1);
 
         if (!assignment) {
@@ -160,10 +162,11 @@ export const cdaFixedRouter = router({
           };
         }
 
+        const trimmedAgentName = input.agentName.trim();
         const [assignment] = await db
           .select()
           .from(agentAssignments)
-          .where(eq(agentAssignments.agentName, input.agentName))
+          .where(ilike(agentAssignments.agentName, trimmedAgentName))
           .limit(1);
 
         if (!assignment) {

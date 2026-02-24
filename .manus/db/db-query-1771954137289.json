@@ -1,0 +1,70 @@
+{
+  "query": "SELECT * FROM agent_assignments LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 24ruGQuiASWpGv5.root --database gtMbYvvduSqhsHRvj39YWw --execute SELECT * FROM agent_assignments LIMIT 5;",
+  "rows": [
+    {
+      "id": "--I9WGxluBhAhCBvU6jgi",
+      "tenantId": "1",
+      "agentName": "Jennifer Smith",
+      "planId": "6olo5tf3f",
+      "teamId": "NULL",
+      "anniversaryDate": "NULL",
+      "startDate": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-15 00:54:08",
+      "updatedAt": "2026-01-15 00:54:08"
+    },
+    {
+      "id": "-egaDqBzVLlmHOeOxQUzb",
+      "tenantId": "1",
+      "agentName": "Karen Garcia",
+      "planId": "6olo5tf3f",
+      "teamId": "NULL",
+      "anniversaryDate": "NULL",
+      "startDate": "NULL",
+      "isActive": "0",
+      "createdAt": "2026-01-15 00:35:25",
+      "updatedAt": "2026-01-15 00:43:12"
+    },
+    {
+      "id": "-oXcZtZyoOSDUIMv6QOoK",
+      "tenantId": "1",
+      "agentName": "Donald Martinez",
+      "planId": "6olo5tf3f",
+      "teamId": "NULL",
+      "anniversaryDate": "NULL",
+      "startDate": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-15 00:54:10",
+      "updatedAt": "2026-01-15 00:54:10"
+    },
+    {
+      "id": "-sFIVV_HHtKJ3w7xjQ7SR",
+      "tenantId": "1",
+      "agentName": "Charles Taylor",
+      "planId": "6olo5tf3f",
+      "teamId": "NULL",
+      "anniversaryDate": "NULL",
+      "startDate": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-15 00:47:10",
+      "updatedAt": "2026-01-15 00:47:10"
+    },
+    {
+      "id": "-t215DWv63lRdTXrXNQwn",
+      "tenantId": "1",
+      "agentName": "Jennifer Gonzalez",
+      "planId": "6olo5tf3f",
+      "teamId": "NULL",
+      "anniversaryDate": "NULL",
+      "startDate": "NULL",
+      "isActive": "1",
+      "createdAt": "2026-01-15 00:47:09",
+      "updatedAt": "2026-01-15 00:47:09"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttenantId\tagentName\tplanId\tteamId\tanniversaryDate\tstartDate\tisActive\tcreatedAt\tupdatedAt\n--I9WGxluBhAhCBvU6jgi\t1\tJennifer Smith\t6olo5tf3f\tNULL\tNULL\tNULL\t1\t2026-01-15 00:54:08\t2026-01-15 00:54:08\n-egaDqBzVLlmHOeOxQUzb\t1\tKaren Garcia\t6olo5tf3f\tNULL\tNULL\tNULL\t0\t2026-01-15 00:35:25\t2026-01-15 00:43:12\n-oXcZtZyoOSDUIMv6QOoK\t1\tDonald Martinez\t6olo5tf3f\tNULL\tNULL\tNULL\t1\t2026-01-15 00:54:10\t2026-01-15 00:54:10\n-sFIVV_HHtKJ3w7xjQ7SR\t1\tCharles Taylor\t6olo5tf3f\tNULL\tNULL\tNULL\t1\t2026-01-15 00:47:10\t2026-01-15 00:47:10\n-t215DWv63lRdTXrXNQwn\t1\tJennifer Gonzalez\t6olo5tf3f\tNULL\tNULL\tNULL\t1\t2026-01-15 00:47:09\t2026-01-15 00:47:09\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}
