@@ -1,0 +1,70 @@
+{
+  "query": "SELECT DISTINCT agentName FROM agent_assignments LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 24ruGQuiASWpGv5.root --database gtMbYvvduSqhsHRvj39YWw --execute SELECT DISTINCT agentName FROM agent_assignments LIMIT 20;",
+  "rows": [
+    {
+      "agentName": "Alice Johnson"
+    },
+    {
+      "agentName": "Anthony Anderson"
+    },
+    {
+      "agentName": "Anthony Brown"
+    },
+    {
+      "agentName": "Anthony Garcia"
+    },
+    {
+      "agentName": "Anthony Gonzalez"
+    },
+    {
+      "agentName": "Anthony Johnson"
+    },
+    {
+      "agentName": "Anthony Jones"
+    },
+    {
+      "agentName": "Anthony Martinez"
+    },
+    {
+      "agentName": "Anthony Miller"
+    },
+    {
+      "agentName": "Anthony Rodriguez"
+    },
+    {
+      "agentName": "Anthony Smith"
+    },
+    {
+      "agentName": "Barbara Brown"
+    },
+    {
+      "agentName": "Barbara Davis"
+    },
+    {
+      "agentName": "Barbara Gonzalez"
+    },
+    {
+      "agentName": "Barbara Hernandez"
+    },
+    {
+      "agentName": "Barbara Jones"
+    },
+    {
+      "agentName": "Barbara Martinez"
+    },
+    {
+      "agentName": "Barbara Moore"
+    },
+    {
+      "agentName": "Barbara Rodriguez"
+    },
+    {
+      "agentName": "Barbara Thomas"
+    }
+  ],
+  "messages": [],
+  "stdout": "agentName\nAlice Johnson\nAnthony Anderson\nAnthony Brown\nAnthony Garcia\nAnthony Gonzalez\nAnthony Johnson\nAnthony Jones\nAnthony Martinez\nAnthony Miller\nAnthony Rodriguez\nAnthony Smith\nBarbara Brown\nBarbara Davis\nBarbara Gonzalez\nBarbara Hernandez\nBarbara Jones\nBarbara Martinez\nBarbara Moore\nBarbara Rodriguez\nBarbara Thomas\n",
+  "stderr": "",
+  "execution_time_ms": 56
+}

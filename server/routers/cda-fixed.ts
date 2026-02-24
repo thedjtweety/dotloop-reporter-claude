@@ -3,7 +3,7 @@ import { publicProcedure, router } from '../_core/trpc';
 import { calculateCDA } from '../lib/cda-calculator';
 import { getDb } from '../db';
 import { commissionPlans, agentAssignments } from '../../drizzle/schema';
-import { eq, ilike } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * Fixed CDA Router
@@ -45,11 +45,14 @@ export const cdaFixedRouter = router({
         // Step 2: Find agent's commission plan assignment
         // Use case-insensitive search and trim whitespace
         const trimmedAgentName = input.agentName.trim();
-        const [assignment] = await db
+        // Fetch all assignments and do case-insensitive matching in JavaScript
+        const allAssignments = await db
           .select()
-          .from(agentAssignments)
-          .where(ilike(agentAssignments.agentName, trimmedAgentName))
-          .limit(1);
+          .from(agentAssignments);
+        
+        const assignment = allAssignments.find(a => 
+          a.agentName.toLowerCase() === trimmedAgentName.toLowerCase()
+        );
 
         if (!assignment) {
           return {
