@@ -733,17 +733,16 @@ function HomeContent() {
               </div>
             </div>
             
-            {/* Show Upload History for authenticated users, RecentUploads for guests */}
-            {isAuthenticated && user ? (
-              <div className="mt-12 text-left">
-                <UploadHistory 
-                  onSelectUpload={(file) => {
-                    handleRecentSelect(file);
-                  }}
-                  currentUploadId={recentFiles.find(f => f.data === allRecords)?.id}
-                />
-              </div>
-            ) : recentFiles.length > 0 && (
+            {/* Show Upload History to all users */}
+            <div className="mt-12 text-left">
+              <UploadHistory 
+                onSelectUpload={(file) => {
+                  handleRecentSelect(file);
+                }}
+                currentUploadId={recentFiles.find(f => f.data === allRecords)?.id}
+              />
+            </div>
+            {recentFiles.length > 0 && (
               <div className="mt-12 text-left">
                 <RecentUploads 
                   files={recentFiles} 

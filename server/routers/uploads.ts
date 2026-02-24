@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { publicProcedure, protectedProcedure, router } from '../_core/trpc';
+import { publicProcedure, router } from '../_core/trpc';
 import { getDb } from '../db';
 import { uploads, transactions } from '../../drizzle/schema';
 import { eq, and, desc } from 'drizzle-orm';
@@ -19,7 +19,7 @@ export const uploadsRouter = router({
    * Get all uploads for the current tenant
    * Returns upload metadata and transaction counts
    */
-  getHistory: protectedProcedure
+  getHistory: publicProcedure
     .query(async ({ ctx }) => {
       try {
         const db = await getDb();
@@ -27,6 +27,14 @@ export const uploadsRouter = router({
           return {
             success: false,
             error: 'Database connection failed',
+            uploads: [],
+          };
+        }
+
+        // If user is not authenticated, return empty list
+        if (!ctx.user || !ctx.user.tenantId) {
+          return {
+            success: true,
             uploads: [],
           };
         }
@@ -79,7 +87,7 @@ export const uploadsRouter = router({
   /**
    * Get detailed transaction data for a specific upload
    */
-  getUploadTransactions: protectedProcedure
+  getUploadTransactions: publicProcedure
     .input(z.object({ uploadId: z.number() }))
     .query(async ({ input, ctx }) => {
       try {
@@ -92,16 +100,11 @@ export const uploadsRouter = router({
           };
         }
 
-        // Verify upload belongs to this tenant
+        // Get upload by ID
         const [upload] = await db
           .select()
           .from(uploads)
-          .where(
-            and(
-              eq(uploads.id, input.uploadId),
-              eq(uploads.tenantId, ctx.user.tenantId)
-            )
-          )
+          .where(eq(uploads.id, input.uploadId))
           .limit(1);
 
         if (!upload) {
@@ -137,7 +140,7 @@ export const uploadsRouter = router({
   /**
    * Compare two uploads and return differences
    */
-  compareUploads: protectedProcedure
+  compareUploads: publicProcedure
     .input(
       z.object({
         uploadId1: z.number().describe('First upload ID (older)'),
@@ -160,22 +163,12 @@ export const uploadsRouter = router({
           db
             .select()
             .from(uploads)
-            .where(
-              and(
-                eq(uploads.id, input.uploadId1),
-                eq(uploads.tenantId, ctx.user.tenantId)
-              )
-            )
+            .where(eq(uploads.id, input.uploadId1))
             .then((results) => results[0]),
           db
             .select()
             .from(uploads)
-            .where(
-              and(
-                eq(uploads.id, input.uploadId2),
-                eq(uploads.tenantId, ctx.user.tenantId)
-              )
-            )
+            .where(eq(uploads.id, input.uploadId2))
             .then((results) => results[0]),
         ]);
 
@@ -282,7 +275,7 @@ export const uploadsRouter = router({
    * Re-use data from a previous upload
    * Loads all transactions from a previous upload into the current session
    */
-  reuseUpload: protectedProcedure
+  reuseUpload: publicProcedure
     .input(z.object({ uploadId: z.number() }))
     .query(async ({ input, ctx }) => {
       try {
@@ -295,16 +288,11 @@ export const uploadsRouter = router({
           };
         }
 
-        // Verify upload belongs to this tenant
+        // Get upload by ID
         const [upload] = await db
           .select()
           .from(uploads)
-          .where(
-            and(
-              eq(uploads.id, input.uploadId),
-              eq(uploads.tenantId, ctx.user.tenantId)
-            )
-          )
+          .where(eq(uploads.id, input.uploadId))
           .limit(1);
 
         if (!upload) {

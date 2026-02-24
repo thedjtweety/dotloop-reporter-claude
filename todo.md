@@ -3509,3 +3509,12 @@
 - [ ] Migrate AgentAssignment to use database
 - [ ] Test commission plan assignment with database
 - [ ] Test template functionality with database
+
+
+## Upload History 401 Error Fix
+- [ ] Investigate 401 Unauthorized error on uploadHistory.getHistory endpoint
+- [ ] Check if endpoint is using protectedProcedure instead of publicProcedure
+- [ ] Fix authentication handling in Upload History router
+- [ ] Verify tenantId is being passed correctly to queries
+- [ ] Test Upload History page after CSV upload
+- [ ] Ensure upload history loads and displays properly

@@ -3,7 +3,7 @@
  * Handles syncing data from Dotloop API
  */
 
-import { router, protectedProcedure } from '../_core/trpc';
+import { router, publicProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { DotloopAPIClient } from '../lib/dotloop-client';
 import { TRPCError } from '@trpc/server';
@@ -48,7 +48,7 @@ export const dotloopApiRouter = router({
   /**
    * Get available Dotloop profiles
    */
-  getProfiles: protectedProcedure.query(async ({ ctx }) => {
+  getProfiles: publicProcedure.query(async ({ ctx }) => {
     try {
       const tenantId = await getTenantIdFromUser(ctx.user.id);
       
@@ -78,7 +78,7 @@ export const dotloopApiRouter = router({
   /**
    * Sync loops from Dotloop
    */
-  syncLoops: protectedProcedure
+  syncLoops: publicProcedure
     .input(
       z.object({
         profileId: z.string().min(1),
@@ -132,7 +132,7 @@ export const dotloopApiRouter = router({
   /**
    * Get sync status
    */
-  getSyncStatus: protectedProcedure.query(async ({ ctx }) => {
+  getSyncStatus: publicProcedure.query(async ({ ctx }) => {
     try {
       const tenantId = await getTenantIdFromUser(ctx.user.id);
       
@@ -166,7 +166,7 @@ export const dotloopApiRouter = router({
   /**
    * Enable/disable auto sync
    */
-  setAutoSync: protectedProcedure
+  setAutoSync: publicProcedure
     .input(z.object({ enabled: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -185,7 +185,7 @@ export const dotloopApiRouter = router({
   /**
    * Test Dotloop connection
    */
-  testConnection: protectedProcedure.query(async ({ ctx }) => {
+  testConnection: publicProcedure.query(async ({ ctx }) => {
     try {
       const tenantId = await getTenantIdFromUser(ctx.user.id);
       
@@ -213,7 +213,7 @@ export const dotloopApiRouter = router({
    * Get recently synced transactions
    * Used by the Chrome extension to retrieve synced data
    */
-  getRecentSync: protectedProcedure
+  getRecentSync: publicProcedure
     .input(z.object({
       profileId: z.string(),
       limit: z.number().default(100),

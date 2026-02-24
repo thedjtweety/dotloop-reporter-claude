@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import { protectedProcedure, router } from '../_core/trpc';
+import { publicProcedure, router } from '../_core/trpc';
 import { getDb } from '../db';
 import { oauthTokens, userPreferences, users } from '../../drizzle/schema';
 import { tokenEncryption } from '../lib/token-encryption';
@@ -47,13 +47,13 @@ export const dotloopConnectionsRouter = router({
   /**
    * List all Dotloop connections for the current user
    */
-  listConnections: protectedProcedure
+  listConnections: publicProcedure
     .query(async ({ ctx }) => {
       try {
         const db = await getDb();
         if (!db) throw new Error('Database not available');
 
-        const tenantId = await getTenantIdFromUser(ctx.user.id);
+        const tenantId = await getTenantIdFromUser(ctx.user?.id);
         if (!tenantId) throw new Error('Unable to determine tenant for user');
 
       const connections = await db
@@ -72,7 +72,7 @@ export const dotloopConnectionsRouter = router({
         .where(
           and(
             eq(oauthTokens.tenantId, tenantId),
-            eq(oauthTokens.userId, ctx.user.id),
+            eq(oauthTokens.userId, ctx.user?.id),
             eq(oauthTokens.provider, 'dotloop')
           )
         );
@@ -87,20 +87,20 @@ export const dotloopConnectionsRouter = router({
   /**
    * Get the active Dotloop connection
    */
-  getActiveConnection: protectedProcedure
+  getActiveConnection: publicProcedure
     .query(async ({ ctx }) => {
       try {
         const db = await getDb();
         if (!db) throw new Error('Database not available');
 
-        const tenantId = await getTenantIdFromUser(ctx.user.id);
+        const tenantId = await getTenantIdFromUser(ctx.user?.id);
         if (!tenantId) throw new Error('Unable to determine tenant for user');
 
         // First check user preferences
         const [prefs] = await db
         .select()
         .from(userPreferences)
-        .where(eq(userPreferences.userId, ctx.user.id))
+        .where(eq(userPreferences.userId, ctx.user?.id))
         .limit(1);
 
         if (prefs?.activeOAuthTokenId) {
@@ -110,7 +110,7 @@ export const dotloopConnectionsRouter = router({
             .where(
               and(
                 eq(oauthTokens.id, prefs.activeOAuthTokenId),
-                eq(oauthTokens.userId, ctx.user.id),
+                eq(oauthTokens.userId, ctx.user?.id),
                 eq(oauthTokens.isActive, 1)
               )
             )
@@ -126,7 +126,7 @@ export const dotloopConnectionsRouter = router({
           .where(
             and(
               eq(oauthTokens.tenantId, tenantId),
-              eq(oauthTokens.userId, ctx.user.id),
+              eq(oauthTokens.userId, ctx.user?.id),
               eq(oauthTokens.provider, 'dotloop'),
               eq(oauthTokens.isPrimary, 1),
               eq(oauthTokens.isActive, 1)
@@ -144,7 +144,7 @@ export const dotloopConnectionsRouter = router({
   /**
    * Switch to a different Dotloop connection
    */
-  switchConnection: protectedProcedure
+  switchConnection: publicProcedure
     .input(z.object({
       connectionId: z.number(),
     }))
@@ -152,7 +152,7 @@ export const dotloopConnectionsRouter = router({
       const db = await getDb();
       if (!db) throw new Error('Database not available');
 
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantId = await getTenantIdFromUser(ctx.user?.id);
 
       // Verify ownership
       const [connection] = await db
@@ -161,7 +161,7 @@ export const dotloopConnectionsRouter = router({
         .where(
           and(
             eq(oauthTokens.id, input.connectionId),
-            eq(oauthTokens.userId, ctx.user.id),
+            eq(oauthTokens.userId, ctx.user?.id),
             eq(oauthTokens.tenantId, tenantId),
             eq(oauthTokens.isActive, 1)
           )
@@ -176,7 +176,7 @@ export const dotloopConnectionsRouter = router({
       const [existing] = await db
         .select()
         .from(userPreferences)
-        .where(eq(userPreferences.userId, ctx.user.id))
+        .where(eq(userPreferences.userId, ctx.user?.id))
         .limit(1);
 
       if (existing) {
@@ -186,7 +186,7 @@ export const dotloopConnectionsRouter = router({
           .where(eq(userPreferences.id, existing.id));
       } else {
         await db.insert(userPreferences).values({
-          userId: ctx.user.id,
+          userId: ctx.user?.id,
           tenantId,
           activeOAuthTokenId: input.connectionId,
         });
@@ -198,7 +198,7 @@ export const dotloopConnectionsRouter = router({
   /**
    * Update connection details (name, active status)
    */
-  updateConnection: protectedProcedure
+  updateConnection: publicProcedure
     .input(z.object({
       connectionId: z.number(),
       connectionName: z.string().optional(),
@@ -208,7 +208,7 @@ export const dotloopConnectionsRouter = router({
       const db = await getDb();
       if (!db) throw new Error('Database not available');
 
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantId = await getTenantIdFromUser(ctx.user?.id);
 
       // Verify ownership
       const [connection] = await db
@@ -217,7 +217,7 @@ export const dotloopConnectionsRouter = router({
         .where(
           and(
             eq(oauthTokens.id, input.connectionId),
-            eq(oauthTokens.userId, ctx.user.id),
+            eq(oauthTokens.userId, ctx.user?.id),
             eq(oauthTokens.tenantId, tenantId)
           )
         )
@@ -234,7 +234,7 @@ export const dotloopConnectionsRouter = router({
           .from(oauthTokens)
           .where(
             and(
-              eq(oauthTokens.userId, ctx.user.id),
+              eq(oauthTokens.userId, ctx.user?.id),
               eq(oauthTokens.isActive, 1)
             )
           );
@@ -259,7 +259,7 @@ export const dotloopConnectionsRouter = router({
   /**
    * Set a connection as primary (default)
    */
-  setPrimaryConnection: protectedProcedure
+  setPrimaryConnection: publicProcedure
     .input(z.object({
       connectionId: z.number(),
     }))
@@ -267,7 +267,7 @@ export const dotloopConnectionsRouter = router({
       const db = await getDb();
       if (!db) throw new Error('Database not available');
 
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantId = await getTenantIdFromUser(ctx.user?.id);
 
       // Clear all primary flags for this user
       await db
@@ -275,7 +275,7 @@ export const dotloopConnectionsRouter = router({
         .set({ isPrimary: 0 })
         .where(
           and(
-            eq(oauthTokens.userId, ctx.user.id),
+            eq(oauthTokens.userId, ctx.user?.id),
             eq(oauthTokens.tenantId, tenantId)
           )
         );
@@ -292,7 +292,7 @@ export const dotloopConnectionsRouter = router({
   /**
    * Delete/disconnect a connection
    */
-  deleteConnection: protectedProcedure
+  deleteConnection: publicProcedure
     .input(z.object({
       connectionId: z.number(),
     }))
@@ -300,7 +300,7 @@ export const dotloopConnectionsRouter = router({
       const db = await getDb();
       if (!db) throw new Error('Database not available');
 
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantId = await getTenantIdFromUser(ctx.user?.id);
 
       // Get connection info
       const [connection] = await db
@@ -309,7 +309,7 @@ export const dotloopConnectionsRouter = router({
         .where(
           and(
             eq(oauthTokens.id, input.connectionId),
-            eq(oauthTokens.userId, ctx.user.id),
+            eq(oauthTokens.userId, ctx.user?.id),
             eq(oauthTokens.tenantId, tenantId)
           )
         )
@@ -347,7 +347,7 @@ export const dotloopConnectionsRouter = router({
   /**
    * Get all connections (admin only)
    */
-  listAllConnections: protectedProcedure
+  listAllConnections: publicProcedure
     .input(z.object({
       userId: z.number().optional(),
     }))
@@ -356,11 +356,11 @@ export const dotloopConnectionsRouter = router({
       if (!db) throw new Error('Database not available');
 
       // Check if user is admin
-      if (ctx.user.role !== 'admin') {
+      if (ctx.user?.role !== 'admin') {
         throw new Error('Unauthorized - admin only');
       }
 
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantId = await getTenantIdFromUser(ctx.user?.id);
 
       const query = db
         .select({

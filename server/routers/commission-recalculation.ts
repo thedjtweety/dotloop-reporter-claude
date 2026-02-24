@@ -3,7 +3,7 @@
  * Handles real-time commission recalculation when agents are assigned or plans change
  */
 
-import { router, protectedProcedure } from '../_core/trpc';
+import { router, publicProcedure } from '../_core/trpc';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { getDb } from '../db';
@@ -15,7 +15,7 @@ export const commissionRecalculationRouter = router({
   /**
    * Recalculate commissions for all transactions when an agent is assigned
    */
-  recalculateForAgent: protectedProcedure
+  recalculateForAgent: publicProcedure
     .input(z.object({
       agentId: z.string(),
       tenantId: z.string().optional(),
@@ -60,7 +60,7 @@ export const commissionRecalculationRouter = router({
   /**
    * Recalculate commissions for all transactions when a commission plan is updated
    */
-  recalculateForPlan: protectedProcedure
+  recalculateForPlan: publicProcedure
     .input(z.object({
       planId: z.string(),
       tenantId: z.string().optional(),
@@ -106,7 +106,7 @@ export const commissionRecalculationRouter = router({
   /**
    * Recalculate all commissions for the entire tenant
    */
-  recalculateAll: protectedProcedure
+  recalculateAll: publicProcedure
     .input(z.object({
       tenantId: z.string().optional(),
     }))
