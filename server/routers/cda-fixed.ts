@@ -82,16 +82,29 @@ export const cdaFixedRouter = router({
         const agentSplitPercent = plan.splitPercentage;
         const brokerSplitPercent = 100 - agentSplitPercent;
 
+        // Calculate gross commission for display
+        const totalCommissionRate = 3; // Default 3% - can be customized if needed
+        const totalGrossCommission = input.salePrice * (totalCommissionRate / 100);
+        const sellingSplitPercent = 50;
+        const listingSplitPercent = 50;
+        const sellingGrossCommission = totalGrossCommission * (sellingSplitPercent / 100);
+        const listingGrossCommission = totalGrossCommission * (listingSplitPercent / 100);
+        const sellingCommissionAfterFees = sellingGrossCommission * (agentSplitPercent / 100);
+        const listingCommissionAfterFees = listingGrossCommission * (agentSplitPercent / 100);
+
         const cdaData = {
           propertyAddress: input.propertyAddress,
           salePrice: input.salePrice,
-          totalCommissionRate: 3, // Default 3% - can be customized if needed
+          totalCommissionRate: totalCommissionRate,
+          totalGrossCommission: totalGrossCommission,
           closingDate: input.closingDate,
           mlsNumber: input.mlsNumber,
 
           // Default: 50/50 split between listing and selling
-          sellingSplitPercent: 50,
-          listingSplitPercent: 50,
+          sellingSplitPercent: sellingSplitPercent,
+          listingSplitPercent: listingSplitPercent,
+          sellingGrossCommission: sellingGrossCommission,
+          listingGrossCommission: listingGrossCommission,
 
           // Selling side - use plan split
           sellingAgent1Name:
@@ -99,8 +112,10 @@ export const cdaFixedRouter = router({
               ? input.agentName
               : 'N/A',
           sellingAgent1SplitPercent: agentSplitPercent,
+          sellingAgent1Commission: sellingCommissionAfterFees,
           sellingBrokerSplitPercent: brokerSplitPercent,
-          sellingOtherAdjustments: [],
+          sellingBrokerageCommission: sellingGrossCommission - sellingCommissionAfterFees,
+          sellingCommissionAfterFees: sellingCommissionAfterFees,
 
           // Listing side - use plan split
           listingAgent1Name:
@@ -108,11 +123,17 @@ export const cdaFixedRouter = router({
               ? input.agentName
               : 'N/A',
           listingAgent1SplitPercent: agentSplitPercent,
+          listingAgent1Commission: listingCommissionAfterFees,
           listingBrokerSplitPercent: brokerSplitPercent,
-          listingOtherAdjustments: [],
+          listingBrokerageCommission: listingGrossCommission - listingCommissionAfterFees,
+          listingCommissionAfterFees: listingCommissionAfterFees,
 
           // No referrals by default
           referralPercent: 0,
+          
+          // Default seller/buyer info (can be populated from transaction if available)
+          sellerName: 'Seller Name',
+          buyerName: 'Buyer Name',
         };
 
         // Step 5: Calculate CDA

@@ -94,7 +94,34 @@ export default function SimpleCDABuilder() {
     if (dataParam) {
       try {
         const decodedData = JSON.parse(decodeURIComponent(dataParam));
-        setCDAData(decodedData);
+        // Ensure numeric fields are properly converted
+        const normalizedData: CDAData = {
+          ...decodedData,
+          salePrice: Number(decodedData.salePrice) || 0,
+          totalCommissionRate: Number(decodedData.totalCommissionRate) || 0,
+          totalGrossCommission: Number(decodedData.totalGrossCommission) || 0,
+          sellingSplitPercent: Number(decodedData.sellingSplitPercent) || 50,
+          listingSplitPercent: Number(decodedData.listingSplitPercent) || 50,
+          sellingGrossCommission: Number(decodedData.sellingGrossCommission) || 0,
+          listingGrossCommission: Number(decodedData.listingGrossCommission) || 0,
+          sellingAgent1SplitPercent: Number(decodedData.sellingAgent1SplitPercent) || 0,
+          sellingAgent1Commission: Number(decodedData.sellingAgent1Commission) || 0,
+          sellingAgent2SplitPercent: Number(decodedData.sellingAgent2SplitPercent) || 0,
+          sellingAgent2Commission: Number(decodedData.sellingAgent2Commission) || 0,
+          sellingBrokerSplitPercent: Number(decodedData.sellingBrokerSplitPercent) || 0,
+          sellingBrokerageCommission: Number(decodedData.sellingBrokerageCommission) || 0,
+          sellingCommissionAfterFees: Number(decodedData.sellingCommissionAfterFees) || 0,
+          listingAgent1SplitPercent: Number(decodedData.listingAgent1SplitPercent) || 0,
+          listingAgent1Commission: Number(decodedData.listingAgent1Commission) || 0,
+          listingAgent2SplitPercent: Number(decodedData.listingAgent2SplitPercent) || 0,
+          listingAgent2Commission: Number(decodedData.listingAgent2Commission) || 0,
+          listingBrokerSplitPercent: Number(decodedData.listingBrokerSplitPercent) || 0,
+          listingBrokerageCommission: Number(decodedData.listingBrokerageCommission) || 0,
+          listingCommissionAfterFees: Number(decodedData.listingCommissionAfterFees) || 0,
+          referralPercent: Number(decodedData.referralPercent) || 0,
+          referralFee: Number(decodedData.referralFee) || 0,
+        };
+        setCDAData(normalizedData);
         setUploadSuccess(true);
       } catch (e) {
         console.error('Failed to decode CDA data from URL:', e);
@@ -427,11 +454,11 @@ export default function SimpleCDABuilder() {
                 </div>
                 <div>
                   <p className="text-foreground/70">Sale Price</p>
-                  <p className="font-semibold text-foreground">${cdaData.salePrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="font-semibold text-foreground">${(cdaData.salePrice || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p className="text-foreground/70">Total Commission</p>
-                  <p className="font-semibold text-foreground">${cdaData.totalGrossCommission.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p className="font-semibold text-foreground">${(cdaData.totalGrossCommission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
                 <div>
                   <p className="text-foreground/70">Commission Rate</p>
