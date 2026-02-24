@@ -3702,3 +3702,9 @@
 - [x] Integrate editor into SimpleCDABuilder workflow
 - [x] Add Print Preview and Download PDF buttons from editor
 - [ ] Test end-to-end workflow from transaction to PDF
+
+
+## Phase XX: Fix Commission Disbursement Section
+- [x] Debug why commission values aren't populating in PDF
+- [x] Update PDF generator HTML to include calculated amounts (sellingBrokerageCommission, referralFee, agent commissions)
+- [ ] Test with sample CDA data

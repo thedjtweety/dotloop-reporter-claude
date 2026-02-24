@@ -923,22 +923,22 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to BROKERAGE</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.sellingBrokerageCommission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to REFERRAL COMPANY</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.referralFee || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to SELLING AGENT 1</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.sellingAgent1Commission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to SELLING AGENT 2</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.sellingAgent2Commission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
           </div>
 
@@ -947,22 +947,22 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to BROKERAGE</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.listingBrokerageCommission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to REFERRAL COMPANY</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.referralFee || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to LISTING AGENT 1</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.listingAgent1Commission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
             <div class="commission-line">
               <input type="text" value="$" style="width: 30px; text-align: center;">
               <span class="label">to LISTING AGENT 2</span>
-              <input type="text" value="">
+              <input type="text" value="${(data.listingAgent2Commission || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}">
             </div>
           </div>
         </div>
