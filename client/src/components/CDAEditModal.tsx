@@ -66,6 +66,33 @@ interface CDAEditModalProps {
 export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEditModalProps) {
   const [editedData, setEditedData] = useState<CDAData>(cdaData);
 
+  // Calculate commission disbursements
+  const calculateCommissions = (data: CDAData) => {
+    const totalGrossCommission = data.salePrice * (data.totalCommissionRate / 100);
+    const sellingGrossCommission = totalGrossCommission * (data.sellingSplitPercent / 100);
+    const listingGrossCommission = totalGrossCommission * (data.listingSplitPercent / 100);
+    
+    const sellingAgent1Commission = sellingGrossCommission * (data.sellingAgent1SplitPercent / 100);
+    const sellingAgent2Commission = data.sellingAgent2SplitPercent ? sellingGrossCommission * (data.sellingAgent2SplitPercent / 100) : 0;
+    const sellingBrokerageCommission = sellingGrossCommission - sellingAgent1Commission - sellingAgent2Commission;
+    
+    const listingAgent1Commission = listingGrossCommission * (data.listingAgent1SplitPercent / 100);
+    const listingAgent2Commission = data.listingAgent2SplitPercent ? listingGrossCommission * (data.listingAgent2SplitPercent / 100) : 0;
+    const listingBrokerageCommission = listingGrossCommission - listingAgent1Commission - listingAgent2Commission;
+    
+    return {
+      totalGrossCommission,
+      sellingGrossCommission,
+      listingGrossCommission,
+      sellingAgent1Commission,
+      sellingAgent2Commission,
+      sellingBrokerageCommission,
+      listingAgent1Commission,
+      listingAgent2Commission,
+      listingBrokerageCommission,
+    };
+  };
+
   const handleChange = (field: keyof CDAData, value: any) => {
     setEditedData(prev => ({
       ...prev,
@@ -79,7 +106,21 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
   };
 
   const handleSave = () => {
-    onSave(editedData);
+    // Calculate and update commission fields before saving
+    const calcs = calculateCommissions(editedData);
+    const updatedData = {
+      ...editedData,
+      totalGrossCommission: calcs.totalGrossCommission,
+      sellingGrossCommission: calcs.sellingGrossCommission,
+      listingGrossCommission: calcs.listingGrossCommission,
+      sellingAgent1Commission: calcs.sellingAgent1Commission,
+      sellingAgent2Commission: calcs.sellingAgent2Commission,
+      sellingBrokerageCommission: calcs.sellingBrokerageCommission,
+      listingAgent1Commission: calcs.listingAgent1Commission,
+      listingAgent2Commission: calcs.listingAgent2Commission,
+      listingBrokerageCommission: calcs.listingBrokerageCommission,
+    };
+    onSave(updatedData);
     onClose();
   };
 
@@ -332,6 +373,60 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Commission Calculations Display */}
+            <div className="space-y-4 bg-green-50 dark:bg-green-950 p-4 rounded-lg border border-green-200 dark:border-green-800">
+              <h3 className="font-semibold text-foreground">Commission Disbursement Calculations</h3>
+              {(() => {
+                const calcs = calculateCommissions(editedData);
+                return (
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-foreground/70">Total Gross Commission:</span>
+                      <span className="font-semibold text-foreground">${calcs.totalGrossCommission.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-green-300 dark:border-green-700 pt-3">
+                      <p className="font-semibold text-foreground mb-2">Selling Commission: ${calcs.sellingGrossCommission.toFixed(2)}</p>
+                      <div className="ml-4 space-y-1 text-foreground/70">
+                        <div className="flex justify-between">
+                          <span>→ Agent 1:</span>
+                          <span>${calcs.sellingAgent1Commission.toFixed(2)}</span>
+                        </div>
+                        {editedData.sellingAgent2Name && (
+                          <div className="flex justify-between">
+                            <span>→ Agent 2:</span>
+                            <span>${calcs.sellingAgent2Commission.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-semibold text-foreground">
+                          <span>→ Brokerage:</span>
+                          <span>${calcs.sellingBrokerageCommission.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="border-t border-green-300 dark:border-green-700 pt-3">
+                      <p className="font-semibold text-foreground mb-2">Listing Commission: ${calcs.listingGrossCommission.toFixed(2)}</p>
+                      <div className="ml-4 space-y-1 text-foreground/70">
+                        <div className="flex justify-between">
+                          <span>→ Agent 1:</span>
+                          <span>${calcs.listingAgent1Commission.toFixed(2)}</span>
+                        </div>
+                        {editedData.listingAgent2Name && (
+                          <div className="flex justify-between">
+                            <span>→ Agent 2:</span>
+                            <span>${calcs.listingAgent2Commission.toFixed(2)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-semibold text-foreground">
+                          <span>→ Brokerage:</span>
+                          <span>${calcs.listingBrokerageCommission.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800 flex gap-3">

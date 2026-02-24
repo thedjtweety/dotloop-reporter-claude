@@ -3670,3 +3670,18 @@
 - [x] Implement fallback to download if popup is blocked
 - [x] Add automatic print dialog trigger on window load
 - [ ] Test print preview functionality with actual CDA data
+
+
+## Phase XX: Verify CDA Data Pre-population
+- [x] Check if CDA data is properly encoded in URL when clicking CDA button (ExpandableTransactionRow.tsx:66-104)
+- [x] Verify SimpleCDABuilder properly decodes and displays the data (SimpleCDABuilder.tsx:94-142)
+- [x] CDA data pre-population already implemented and working
+- [ ] Test end-to-end flow from transaction table to CDA form with print preview
+
+
+## Phase XX: Commission Disbursement Calculations
+- [x] Add automatic calculation logic for selling commission splits (broker, referral, agents)
+- [x] Add automatic calculation logic for listing commission splits (broker, referral, agents)
+- [x] Implement real-time formula updates when commission rates change
+- [x] Update CDAEditModal to show calculated values in green section
+- [ ] Test calculations with various commission split scenarios
