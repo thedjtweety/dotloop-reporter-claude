@@ -127,31 +127,82 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
           padding: 0;
           box-sizing: border-box;
         }
+        html, body {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
         body {
-          font-family: Arial, sans-serif;
+          font-family: 'Arial', 'Helvetica', sans-serif;
           background: white;
           color: #333;
           line-height: 1.4;
+          font-size: 12px;
         }
         .page {
           width: 8.5in;
           height: 11in;
-          margin: 0 auto;
+          margin: 0;
           padding: 0.5in;
           background: white;
           page-break-after: always;
           break-after: page;
+          box-sizing: border-box;
+          position: relative;
+          display: block;
+        }
+        @page {
+          size: 8.5in 11in;
+          margin: 0.5in;
+          padding: 0;
+        }
+        @media print {
+          * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+          .page {
+            width: 100%;
+            height: 100%;
+            margin: 0 !important;
+            padding: 0.5in !important;
+            page-break-after: always;
+            break-after: page;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          .page:last-child {
+            page-break-after: avoid;
+          }
         }
         .header {
           background: linear-gradient(90deg, #4a90e2 0%, #357abd 100%);
           color: white;
           padding: 15px;
           margin: -0.5in -0.5in 20px -0.5in;
-          font-size: 28px;
+          font-size: 20px;
           font-weight: bold;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          page-break-after: avoid;
+          page-break-inside: avoid;
+        }
+        @media print {
+          .header {
+            margin: -0.5in -0.5in 15px -0.5in;
+            padding: 12px;
+            font-size: 18px;
+          }
         }
         .header-title {
           font-size: 24px;
@@ -175,18 +226,27 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
         }
         .section-title {
           color: #4a90e2;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: bold;
-          margin-top: 15px;
-          margin-bottom: 8px;
+          margin-top: 12px;
+          margin-bottom: 6px;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          page-break-after: avoid;
+          page-break-inside: avoid;
+        }
+        @media print {
+          .section-title {
+            margin-top: 10px;
+            margin-bottom: 5px;
+          }
         }
         .form-row {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          margin-bottom: 12px;
+          gap: 15px;
+          margin-bottom: 10px;
+          page-break-inside: avoid;
         }
         .form-row.full {
           grid-template-columns: 1fr;
@@ -194,33 +254,53 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
         .form-row.three-col {
           grid-template-columns: 1fr 1fr 1fr;
         }
+        @media print {
+          .form-row {
+            gap: 12px;
+            margin-bottom: 8px;
+          }
+        }
         .form-group {
           display: flex;
           flex-direction: column;
+          page-break-inside: avoid;
         }
         .form-group label {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: bold;
-          margin-bottom: 4px;
+          margin-bottom: 3px;
           color: #333;
         }
         .form-group input,
         .form-group textarea {
           border: none;
           border-bottom: 1px solid #333;
-          padding: 6px 4px;
-          font-size: 12px;
-          font-family: Arial, sans-serif;
+          padding: 5px 3px;
+          font-size: 11px;
+          font-family: 'Arial', sans-serif;
           background: transparent;
         }
         .form-group textarea {
           resize: none;
-          height: 40px;
+          height: 35px;
         }
         .form-group input:focus,
         .form-group textarea:focus {
           outline: none;
-          background: #f0f0f0;
+          background: #f9f9f9;
+        }
+        @media print {
+          .form-group input,
+          .form-group textarea {
+            border-bottom: 1px solid #333 !important;
+            background: transparent !important;
+            padding: 4px 2px;
+            font-size: 10px;
+          }
+          .form-group input:focus,
+          .form-group textarea:focus {
+            background: transparent !important;
+          }
         }
         .currency {
           text-align: right;
@@ -230,25 +310,41 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
         }
         .table {
           width: 100%;
-          margin: 10px 0;
+          margin: 8px 0;
           border-collapse: collapse;
-          font-size: 12px;
+          font-size: 11px;
+          page-break-inside: avoid;
         }
         .table th {
           background: #f0f0f0;
-          padding: 6px;
+          padding: 5px;
           text-align: left;
           font-weight: bold;
           border-bottom: 1px solid #333;
         }
         .table td {
-          padding: 6px;
+          padding: 5px;
           border-bottom: 1px solid #ddd;
         }
         .table .total-row {
           background: #f9f9f9;
           font-weight: bold;
           border-top: 2px solid #333;
+        }
+        @media print {
+          .table {
+            page-break-inside: avoid;
+          }
+          .table th {
+            background: #f0f0f0 !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .table .total-row {
+            background: #f9f9f9 !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
         }
         .inline-group {
           display: flex;
@@ -261,8 +357,15 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
         }
         .signature-box {
           border: 1px solid #333;
-          height: 60px;
-          margin-top: 10px;
+          height: 50px;
+          margin-top: 8px;
+          page-break-inside: avoid;
+        }
+        @media print {
+          .signature-box {
+            border: 1px solid #333 !important;
+            height: 50px;
+          }
         }
         .page-break {
           page-break-after: always;
@@ -274,42 +377,94 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
         .commission-disbursement {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 30px;
-          margin-top: 20px;
+          gap: 20px;
+          margin-top: 15px;
+          page-break-inside: avoid;
         }
         .commission-side {
           border: 1px solid #ddd;
-          padding: 15px;
-          border-radius: 4px;
+          padding: 12px;
+          border-radius: 0;
+          page-break-inside: avoid;
+        }
+        @media print {
+          .commission-disbursement {
+            gap: 15px;
+            page-break-inside: avoid;
+          }
+          .commission-side {
+            border: 1px solid #333 !important;
+            page-break-inside: avoid;
+          }
         }
         .commission-side-title {
           color: #4a90e2;
           font-weight: bold;
-          margin-bottom: 10px;
-          font-size: 13px;
+          margin-bottom: 8px;
+          font-size: 12px;
+          page-break-after: avoid;
         }
         .commission-line {
           display: grid;
-          grid-template-columns: 60px 1fr 100px;
-          gap: 10px;
-          margin-bottom: 8px;
+          grid-template-columns: 50px 1fr 80px;
+          gap: 8px;
+          margin-bottom: 6px;
           align-items: center;
-          font-size: 12px;
+          font-size: 11px;
+          page-break-inside: avoid;
         }
         .commission-line input {
           border: none;
           border-bottom: 1px solid #333;
-          padding: 4px;
+          padding: 3px;
+          font-size: 10px;
         }
         .commission-line .label {
-          font-size: 11px;
+          font-size: 10px;
           color: #666;
+        }
+        @media print {
+          .commission-line input {
+            border-bottom: 1px solid #333 !important;
+            background: transparent !important;
+          }
+        }
+        /* Print-specific optimizations */
+        @media print {
+          body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+          .page {
+            margin: 0 !important;
+            padding: 0.5in !important;
+            page-break-after: always;
+            box-shadow: none !important;
+          }
+          /* Prevent orphaned headers */
+          .section-title {
+            page-break-after: avoid;
+          }
+          .form-row {
+            page-break-inside: avoid;
+          }
+          .form-group {
+            page-break-inside: avoid;
+          }
+          /* Ensure text is visible */
+          * {
+            color: #333 !important;
+          }
+          a {
+            text-decoration: none;
+          }
         }
       </style>
     </head>
     <body>
       <!-- PAGE 1: REQUEST -->
-      <div class="page">
+      <div class="page" style="page-break-after: always;">
         <div class="header">
           <div class="header-title">COMMISSION DISBURSEMENT <span class="highlight">REQUEST</span></div>
           <div class="checkbox-group">
@@ -655,7 +810,7 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
         </div>
 
         <!-- Footer -->
-        <div style="margin-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; page-break-inside: avoid;">
           <div class="form-group">
             <label>Commission Disbursement Requested by:</label>
             <input type="text" value="${data.commissionDisbursementRequestedBy || ''}">
@@ -668,7 +823,7 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
       </div>
 
       <!-- PAGE 2: AUTHORIZATION -->
-      <div class="page">
+      <div class="page" style="page-break-after: avoid;">
         <div class="header">
           <div class="header-title">COMMISSION DISBURSEMENT <span class="highlight">AUTHORIZATION</span></div>
         </div>
@@ -831,13 +986,22 @@ export function generateCompleteCDAPDF(data: Partial<CDAFormData>) {
   `;
 
   // Create blob and download
-  const blob = new Blob([html], { type: 'text/html' });
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `CDA-${data.propertyAddress?.split(' ')[0] || 'Document'}-${new Date().toISOString().split('T')[0]}.html`;
+  const filename = `CDA-${data.propertyAddress?.split(' ')[0] || 'Document'}-${new Date().toISOString().split('T')[0]}.html`;
+  link.download = filename;
+  link.style.display = 'none';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  
+  // Clean up after a delay to ensure download completes
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
+  
+  // Log for debugging
+  console.log(`CDA PDF generated and downloaded: ${filename}`);
 }
