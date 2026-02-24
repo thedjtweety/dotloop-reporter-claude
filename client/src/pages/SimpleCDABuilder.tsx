@@ -462,15 +462,15 @@ export default function SimpleCDABuilder() {
                 </div>
                 <div>
                   <p className="text-foreground/70">Commission Rate</p>
-                  <p className="font-semibold text-foreground">{cdaData.totalCommissionRate.toFixed(2)}%</p>
+                  <p className="font-semibold text-foreground">{(cdaData.totalCommissionRate || 0).toFixed(2)}%</p>
                 </div>
                 <div>
                   <p className="text-foreground/70">Selling Agent</p>
-                  <p className="font-semibold text-foreground">{cdaData.sellingAgent1Name}</p>
+                  <p className="font-semibold text-foreground">{cdaData.sellingAgent1Name || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-foreground/70">Listing Agent</p>
-                  <p className="font-semibold text-foreground">{cdaData.listingAgent1Name}</p>
+                  <p className="font-semibold text-foreground">{cdaData.listingAgent1Name || 'N/A'}</p>
                 </div>
               </div>
             </Card>
