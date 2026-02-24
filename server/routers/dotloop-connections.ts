@@ -93,14 +93,17 @@ export const dotloopConnectionsRouter = router({
         const db = await getDb();
         if (!db) throw new Error('Database not available');
 
-        const tenantId = await getTenantIdFromUser(ctx.user?.id);
+        const userId = ctx.user?.id;
+        if (!userId) throw new Error('User not authenticated');
+        
+        const tenantId = await getTenantIdFromUser(userId);
         if (!tenantId) throw new Error('Unable to determine tenant for user');
 
         // First check user preferences
         const [prefs] = await db
         .select()
         .from(userPreferences)
-        .where(eq(userPreferences.userId, ctx.user?.id))
+        .where(eq(userPreferences.userId, userId))
         .limit(1);
 
         if (prefs?.activeOAuthTokenId) {

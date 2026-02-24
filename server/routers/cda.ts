@@ -41,6 +41,7 @@ export const cdaRouter = router({
   calculate: publicProcedure
     .input(cdaInputSchema)
     .mutation(async ({ input }) => {
+      console.log('[CDA Calculate] Received input:', input);
       const result = calculateCDA(input);
       return result;
     }),

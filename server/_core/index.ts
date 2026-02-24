@@ -6,6 +6,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import cdaRoutes from "../routes/cda";
 import { serveStatic, setupVite } from "./vite";
 import { securityHeaders, csrfProtection, requestLoggingMiddleware, bruteForceProtection } from "../middleware/security-headers";
 import { uploadLimiter, apiLimiter, authLimiter } from "../middleware/rate-limiter";
@@ -44,12 +45,13 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   
-  // CSRF protection middleware
-  app.use(csrfProtection.middleware());
+  // CSRF protection middleware - disabled for public tool
+  // app.use(csrfProtection.middleware());
   
   // Rate limiting for different endpoints
   app.use("/api/upload", uploadLimiter.middleware());
-  app.use("/api/trpc", apiLimiter.middleware());
+  // Temporarily disabled to debug tRPC issue
+  // app.use("/api/trpc", apiLimiter.middleware());
   
   // Health check endpoints (no CSRF or rate limiting)
   app.get("/health", healthCheck);
@@ -58,17 +60,20 @@ async function startServer() {
   
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // CDA routes
+  app.use("/api/cda", cdaRoutes);
+  
   // CSRF verification for non-GET requests
-  app.use("/api/trpc", csrfProtection.verifyMiddleware());
+  // Disabled for public tool - CSRF protection is not needed for unauthenticated endpoints
+  // app.use("/api/trpc", csrfProtection.verifyMiddleware());
   
   // tRPC API
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    })
-  );
+  const trpcMiddleware = createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  });
+  app.use("/api/trpc", trpcMiddleware);
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

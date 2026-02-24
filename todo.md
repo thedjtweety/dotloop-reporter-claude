@@ -3518,3 +3518,32 @@
 - [ ] Verify tenantId is being passed correctly to queries
 - [ ] Test Upload History page after CSV upload
 - [ ] Ensure upload history loads and displays properly
+
+
+## Phase 30: Simplified CDA Builder (Current)
+- [ ] Redesign CDA Builder UI for simple 3-step workflow
+- [ ] Hide CDA form inputs (only show after CSV upload)
+- [ ] Create simple CSV upload zone with file validation
+- [ ] Display "Generate CDA" button only after successful CSV upload
+- [ ] Implement CSV data parsing to extract transaction details
+- [ ] Auto-populate form fields from CSV data
+- [ ] Fix tRPC endpoint issue for cda.calculate mutation
+- [ ] Create professional PDF generation from CDA data
+- [ ] Add PDF download button
+- [ ] Test complete workflow: Upload → Generate → Download
+- [ ] Remove unused CDA template functionality
+- [ ] Simplify UI to focus on core workflow
+
+
+## Phase 30: Simplified CDA Generator
+- [x] Remove complex CDA Builder with multiple forms and tabs
+- [x] Create SimpleCDABuilder component with 3-step workflow (Upload → Parse → Download)
+- [x] Implement proper CSV parser with quote handling
+- [x] Create Express route for CDA PDF generation (/api/cda/upload-and-generate)
+- [x] Implement comprehensive commission calculations (selling/listing splits, agent commissions, broker commissions, referral fees)
+- [x] Create professional 2-page PDF generator matching the example format
+- [x] Add file validation (CSV only, max 10MB)
+- [x] Add required field validation
+- [x] Display CDA summary with calculated values before PDF generation
+- [x] Test full workflow: CSV upload → Parse → Download PDF
+- [x] Verify PDF contains all calculated fields properly filled
