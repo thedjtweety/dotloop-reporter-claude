@@ -3685,3 +3685,11 @@
 - [x] Implement real-time formula updates when commission rates change
 - [x] Update CDAEditModal to show calculated values in green section
 - [ ] Test calculations with various commission split scenarios
+
+
+## Phase XX: Referral Company & Validation
+- [x] Add referral company commission split fields to CDAEditModal
+- [x] Implement commission validation rules (splits total 100%)
+- [x] Add validation error alerts and warnings
+- [x] Update calculations to include referral company splits
+- [ ] Test validation with various commission scenarios

@@ -60,11 +60,43 @@ interface CDAEditModalProps {
   open: boolean;
   cdaData: CDAData;
   onClose: () => void;
-  onSave: (updatedData: CDAData) => void;
+  onSave: (data: CDAData) => void;
 }
 
 export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEditModalProps) {
   const [editedData, setEditedData] = useState<CDAData>(cdaData);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // Validate commission splits
+  const validateCommissions = (data: CDAData) => {
+    const errors: string[] = [];
+    const sellingTotal = (data.sellingAgent1SplitPercent || 0) + (data.sellingAgent2SplitPercent || 0) + (data.sellingBrokerSplitPercent || 0);
+    const listingTotal = (data.listingAgent1SplitPercent || 0) + (data.listingAgent2SplitPercent || 0) + (data.listingBrokerSplitPercent || 0);
+    
+    if (data.referralType === 'selling' && data.referralPercent) {
+      const sellingWithReferral = sellingTotal + (data.referralPercent || 0);
+      if (Math.abs(sellingWithReferral - 100) > 0.01) {
+        errors.push(`Selling side splits total ${sellingWithReferral.toFixed(2)}% instead of 100%`);
+      }
+    } else {
+      if (Math.abs(sellingTotal - 100) > 0.01) {
+        errors.push(`Selling side splits total ${sellingTotal.toFixed(2)}% instead of 100%`);
+      }
+    }
+    
+    if (data.referralType === 'listing' && data.referralPercent) {
+      const listingWithReferral = listingTotal + (data.referralPercent || 0);
+      if (Math.abs(listingWithReferral - 100) > 0.01) {
+        errors.push(`Listing side splits total ${listingWithReferral.toFixed(2)}% instead of 100%`);
+      }
+    } else {
+      if (Math.abs(listingTotal - 100) > 0.01) {
+        errors.push(`Listing side splits total ${listingTotal.toFixed(2)}% instead of 100%`);
+      }
+    }
+    
+    return errors;
+  };
 
   // Calculate commission disbursements
   const calculateCommissions = (data: CDAData) => {
@@ -72,13 +104,19 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
     const sellingGrossCommission = totalGrossCommission * (data.sellingSplitPercent / 100);
     const listingGrossCommission = totalGrossCommission * (data.listingSplitPercent / 100);
     
+    let referralCommission = 0;
+    if (data.referralPercent && data.referralType) {
+      const referralBase = data.referralType === 'selling' ? sellingGrossCommission : listingGrossCommission;
+      referralCommission = referralBase * (data.referralPercent / 100);
+    }
+    
     const sellingAgent1Commission = sellingGrossCommission * (data.sellingAgent1SplitPercent / 100);
     const sellingAgent2Commission = data.sellingAgent2SplitPercent ? sellingGrossCommission * (data.sellingAgent2SplitPercent / 100) : 0;
-    const sellingBrokerageCommission = sellingGrossCommission - sellingAgent1Commission - sellingAgent2Commission;
+    const sellingBrokerageCommission = sellingGrossCommission - sellingAgent1Commission - sellingAgent2Commission - (data.referralType === 'selling' ? referralCommission : 0);
     
     const listingAgent1Commission = listingGrossCommission * (data.listingAgent1SplitPercent / 100);
     const listingAgent2Commission = data.listingAgent2SplitPercent ? listingGrossCommission * (data.listingAgent2SplitPercent / 100) : 0;
-    const listingBrokerageCommission = listingGrossCommission - listingAgent1Commission - listingAgent2Commission;
+    const listingBrokerageCommission = listingGrossCommission - listingAgent1Commission - listingAgent2Commission - (data.referralType === 'listing' ? referralCommission : 0);
     
     return {
       totalGrossCommission,
@@ -90,6 +128,7 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
       listingAgent1Commission,
       listingAgent2Commission,
       listingBrokerageCommission,
+      referralCommission,
     };
   };
 
@@ -98,6 +137,7 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
       ...prev,
       [field]: value
     }));
+    setValidationErrors([]);
   };
 
   const handleNumericChange = (field: keyof CDAData, value: string) => {
@@ -106,7 +146,12 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
   };
 
   const handleSave = () => {
-    // Calculate and update commission fields before saving
+    const errors = validateCommissions(editedData);
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
     const calcs = calculateCommissions(editedData);
     const updatedData = {
       ...editedData,
@@ -119,6 +164,7 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
       listingAgent1Commission: calcs.listingAgent1Commission,
       listingAgent2Commission: calcs.listingAgent2Commission,
       listingBrokerageCommission: calcs.listingBrokerageCommission,
+      referralFee: calcs.referralCommission,
     };
     onSave(updatedData);
     onClose();
@@ -131,8 +177,18 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
           <DialogTitle>Edit CDA Summary</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[calc(90vh-200px)] pr-4">
+        <ScrollArea className="h-[calc(90vh-120px)] pr-4">
           <div className="space-y-6 pr-4">
+            {/* Validation Errors */}
+            {validationErrors.length > 0 && (
+              <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                <p className="font-semibold text-red-900 dark:text-red-100 mb-2">Commission Split Errors:</p>
+                {validationErrors.map((error, idx) => (
+                  <p key={idx} className="text-sm text-red-800 dark:text-red-200">• {error}</p>
+                ))}
+              </div>
+            )}
+
             {/* Property Information */}
             <div className="space-y-4">
               <h3 className="font-semibold text-foreground">Property Information</h3>
@@ -143,7 +199,7 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                     id="propertyAddress"
                     value={editedData.propertyAddress}
                     onChange={(e) => handleChange('propertyAddress', e.target.value)}
-                    placeholder="123 Main St"
+                    placeholder="123 Main St, City, State 12345"
                   />
                 </div>
                 <div className="space-y-2">
@@ -158,15 +214,16 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
               </div>
             </div>
 
-            {/* Sale Information */}
+            {/* Commission Information */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Sale Information</h3>
+              <h3 className="font-semibold text-foreground">Commission Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="salePrice">Sale Price *</Label>
                   <Input
                     id="salePrice"
                     type="number"
+                    step="0.01"
                     value={editedData.salePrice}
                     onChange={(e) => handleNumericChange('salePrice', e.target.value)}
                     placeholder="0.00"
@@ -184,95 +241,23 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="closingDate">Closing Date</Label>
-                <Input
-                  id="closingDate"
-                  type="date"
-                  value={editedData.closingDate || ''}
-                  onChange={(e) => handleChange('closingDate', e.target.value)}
-                />
-              </div>
             </div>
 
-            {/* Seller Information */}
+            {/* Selling Side */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Seller Information</h3>
+              <h3 className="font-semibold text-foreground">Selling Side</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="sellerName">Seller Name *</Label>
+                  <Label htmlFor="sellingCompanyName">Company Name</Label>
                   <Input
-                    id="sellerName"
-                    value={editedData.sellerName}
-                    onChange={(e) => handleChange('sellerName', e.target.value)}
-                    placeholder="Seller Name"
+                    id="sellingCompanyName"
+                    value={editedData.sellingCompanyName || ''}
+                    onChange={(e) => handleChange('sellingCompanyName', e.target.value)}
+                    placeholder="Company Name"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sellerEmail">Seller Email</Label>
-                  <Input
-                    id="sellerEmail"
-                    type="email"
-                    value={editedData.sellerEmail || ''}
-                    onChange={(e) => handleChange('sellerEmail', e.target.value)}
-                    placeholder="seller@example.com"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Buyer Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Buyer Information</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="buyerName">Buyer Name</Label>
-                  <Input
-                    id="buyerName"
-                    value={editedData.buyerName || ''}
-                    onChange={(e) => handleChange('buyerName', e.target.value)}
-                    placeholder="Buyer Name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="buyerEmail">Buyer Email</Label>
-                  <Input
-                    id="buyerEmail"
-                    type="email"
-                    value={editedData.buyerEmail || ''}
-                    onChange={(e) => handleChange('buyerEmail', e.target.value)}
-                    placeholder="buyer@example.com"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="buyerAddress">Buyer Address</Label>
-                  <Input
-                    id="buyerAddress"
-                    value={editedData.buyerAddress || ''}
-                    onChange={(e) => handleChange('buyerAddress', e.target.value)}
-                    placeholder="Address"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="buyerPhone">Buyer Phone</Label>
-                  <Input
-                    id="buyerPhone"
-                    value={editedData.buyerPhone || ''}
-                    onChange={(e) => handleChange('buyerPhone', e.target.value)}
-                    placeholder="(555) 123-4567"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Selling Agent Information */}
-            <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Selling Agent</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sellingAgent1Name">Agent Name *</Label>
+                  <Label htmlFor="sellingAgent1Name">Agent 1 Name *</Label>
                   <Input
                     id="sellingAgent1Name"
                     value={editedData.sellingAgent1Name}
@@ -280,8 +265,10 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                     placeholder="Agent Name"
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="sellingAgent1SplitPercent">Split Percentage (%)</Label>
+                  <Label htmlFor="sellingAgent1SplitPercent">Agent 1 Split (%)</Label>
                   <Input
                     id="sellingAgent1SplitPercent"
                     type="number"
@@ -291,15 +278,55 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                     placeholder="0.00"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sellingAgent2Name">Agent 2 Name</Label>
+                  <Input
+                    id="sellingAgent2Name"
+                    value={editedData.sellingAgent2Name || ''}
+                    onChange={(e) => handleChange('sellingAgent2Name', e.target.value)}
+                    placeholder="Agent Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sellingAgent2SplitPercent">Agent 2 Split (%)</Label>
+                  <Input
+                    id="sellingAgent2SplitPercent"
+                    type="number"
+                    step="0.01"
+                    value={editedData.sellingAgent2SplitPercent || 0}
+                    onChange={(e) => handleNumericChange('sellingAgent2SplitPercent', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sellingBrokerSplitPercent">Brokerage Split (%)</Label>
+                <Input
+                  id="sellingBrokerSplitPercent"
+                  type="number"
+                  step="0.01"
+                  value={editedData.sellingBrokerSplitPercent}
+                  onChange={(e) => handleNumericChange('sellingBrokerSplitPercent', e.target.value)}
+                  placeholder="0.00"
+                />
               </div>
             </div>
 
-            {/* Listing Agent Information */}
+            {/* Listing Side */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Listing Agent</h3>
+              <h3 className="font-semibold text-foreground">Listing Side</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="listingAgent1Name">Agent Name *</Label>
+                  <Label htmlFor="listingCompanyName">Company Name</Label>
+                  <Input
+                    id="listingCompanyName"
+                    value={editedData.listingCompanyName || ''}
+                    onChange={(e) => handleChange('listingCompanyName', e.target.value)}
+                    placeholder="Company Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="listingAgent1Name">Agent 1 Name *</Label>
                   <Input
                     id="listingAgent1Name"
                     value={editedData.listingAgent1Name}
@@ -307,8 +334,10 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                     placeholder="Agent Name"
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="listingAgent1SplitPercent">Split Percentage (%)</Label>
+                  <Label htmlFor="listingAgent1SplitPercent">Agent 1 Split (%)</Label>
                   <Input
                     id="listingAgent1SplitPercent"
                     type="number"
@@ -318,31 +347,76 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                     placeholder="0.00"
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="listingAgent2Name">Agent 2 Name</Label>
+                  <Input
+                    id="listingAgent2Name"
+                    value={editedData.listingAgent2Name || ''}
+                    onChange={(e) => handleChange('listingAgent2Name', e.target.value)}
+                    placeholder="Agent Name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="listingAgent2SplitPercent">Agent 2 Split (%)</Label>
+                  <Input
+                    id="listingAgent2SplitPercent"
+                    type="number"
+                    step="0.01"
+                    value={editedData.listingAgent2SplitPercent || 0}
+                    onChange={(e) => handleNumericChange('listingAgent2SplitPercent', e.target.value)}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="listingBrokerSplitPercent">Brokerage Split (%)</Label>
+                <Input
+                  id="listingBrokerSplitPercent"
+                  type="number"
+                  step="0.01"
+                  value={editedData.listingBrokerSplitPercent}
+                  onChange={(e) => handleNumericChange('listingBrokerSplitPercent', e.target.value)}
+                  placeholder="0.00"
+                />
               </div>
             </div>
 
-            {/* Company Information */}
+            {/* Referral Company */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-foreground">Company Information</h3>
+              <h3 className="font-semibold text-foreground">Referral Company (Optional)</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="sellingCompanyName">Selling Company</Label>
+                  <Label htmlFor="referralCompanyName">Company Name</Label>
                   <Input
-                    id="sellingCompanyName"
-                    value={editedData.sellingCompanyName || ''}
-                    onChange={(e) => handleChange('sellingCompanyName', e.target.value)}
-                    placeholder="Company Name"
+                    id="referralCompanyName"
+                    value={editedData.referralCompanyName || ''}
+                    onChange={(e) => handleChange('referralCompanyName', e.target.value)}
+                    placeholder="Referral Company"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="listingCompanyName">Listing Company</Label>
+                  <Label htmlFor="referralPercent">Commission Split (%)</Label>
                   <Input
-                    id="listingCompanyName"
-                    value={editedData.listingCompanyName || ''}
-                    onChange={(e) => handleChange('listingCompanyName', e.target.value)}
-                    placeholder="Company Name"
+                    id="referralPercent"
+                    type="number"
+                    step="0.01"
+                    value={editedData.referralPercent || 0}
+                    onChange={(e) => handleNumericChange('referralPercent', e.target.value)}
+                    placeholder="0.00"
                   />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="referralType">Applied To</Label>
+                <select
+                  id="referralType"
+                  value={editedData.referralType || 'selling'}
+                  onChange={(e) => handleChange('referralType', e.target.value as 'selling' | 'listing')}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                >
+                  <option value="selling">Selling Side</option>
+                  <option value="listing">Listing Side</option>
+                </select>
               </div>
             </div>
 
@@ -399,6 +473,12 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                             <span>${calcs.sellingAgent2Commission.toFixed(2)}</span>
                           </div>
                         )}
+                        {editedData.referralType === 'selling' && editedData.referralPercent && (
+                          <div className="flex justify-between">
+                            <span>→ Referral:</span>
+                            <span>${calcs.referralCommission.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between font-semibold text-foreground">
                           <span>→ Brokerage:</span>
                           <span>${calcs.sellingBrokerageCommission.toFixed(2)}</span>
@@ -418,6 +498,12 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                             <span>${calcs.listingAgent2Commission.toFixed(2)}</span>
                           </div>
                         )}
+                        {editedData.referralType === 'listing' && editedData.referralPercent && (
+                          <div className="flex justify-between">
+                            <span>→ Referral:</span>
+                            <span>${calcs.referralCommission.toFixed(2)}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between font-semibold text-foreground">
                           <span>→ Brokerage:</span>
                           <span>${calcs.listingBrokerageCommission.toFixed(2)}</span>
@@ -433,7 +519,7 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
               <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div className="text-sm text-foreground">
                 <p className="font-semibold mb-1">Fields marked with * are required</p>
-                <p className="text-foreground/70">All changes will be reflected in the generated PDF</p>
+                <p className="text-foreground/70">All commission splits must total 100% on each side</p>
               </div>
             </div>
           </div>
