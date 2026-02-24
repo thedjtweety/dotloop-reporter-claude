@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, Download, AlertCircle, CheckCircle2, Loader2, History, Edit2 } from 'lucide-react';
 import CDAEditModal from '@/components/CDAEditModal';
 import { generateCDAPDF, downloadCDAPDF } from '@/lib/cdaPdfGenerator';
+import { generateCompleteCDAPDF, type CDAFormData } from '@/lib/cdaPdfGeneratorComplete';
 
 interface CDAData {
   propertyAddress: string;
@@ -321,10 +322,49 @@ export default function SimpleCDABuilder() {
     setError('');
 
     try {
-      // Generate PDF from current CDA data
-      const pdfBlob = await generateCDAPDF(cdaData);
-      saveCDAToHistory(pdfBlob);
-      downloadCDAPDF(pdfBlob, cdaData.propertyAddress);
+      // Map CDAData to CDAFormData for the complete PDF generator
+      const formData: Partial<CDAFormData> = {
+        sellingCommission: true,
+        listingCommission: true,
+        propertyAddress: cdaData.propertyAddress,
+        mls: cdaData.mlsNumber,
+        buyerName: cdaData.buyerName,
+        buyerAddress: cdaData.buyerAddress,
+        buyerPhone: cdaData.buyerPhone,
+        buyerEmail: cdaData.buyerEmail,
+        sellerName: cdaData.sellerName,
+        sellerEmail: cdaData.sellerEmail,
+        closingDate: cdaData.closingDate,
+        purchasePrice: cdaData.salePrice,
+        totalGrossCommission: cdaData.totalGrossCommission,
+        totalGrossCommissionPercent: cdaData.totalCommissionRate,
+        sellingGrossCommission: cdaData.sellingGrossCommission,
+        sellingGrossCommissionPercent: cdaData.sellingSplitPercent,
+        listingGrossCommission: cdaData.listingGrossCommission,
+        listingGrossCommissionPercent: cdaData.listingSplitPercent,
+        sellingCompanyAddress: cdaData.sellingCompanyAddress,
+        listingCompanyAddress: cdaData.listingCompanyAddress,
+        sellingAgent1Name: cdaData.sellingAgent1Name,
+        sellingAgent1Percent: cdaData.sellingAgent1SplitPercent,
+        sellingAgent1Total: cdaData.sellingAgent1Commission,
+        sellingAgent2Name: cdaData.sellingAgent2Name,
+        sellingAgent2Percent: cdaData.sellingAgent2SplitPercent,
+        sellingAgent2Total: cdaData.sellingAgent2Commission,
+        listingAgent1Name: cdaData.listingAgent1Name,
+        listingAgent1Percent: cdaData.listingAgent1SplitPercent,
+        listingAgent1Total: cdaData.listingAgent1Commission,
+        listingAgent2Name: cdaData.listingAgent2Name,
+        listingAgent2Percent: cdaData.listingAgent2SplitPercent,
+        listingAgent2Total: cdaData.listingAgent2Commission,
+        sellingBrokeragePercent: cdaData.sellingBrokerSplitPercent,
+        sellingBrokerageTotalDue: cdaData.sellingBrokerageCommission,
+        listingBrokeragePercent: cdaData.listingBrokerSplitPercent,
+        listingBrokerageTotalDue: cdaData.listingBrokerageCommission,
+        salePrice: cdaData.salePrice,
+        grossCommission: cdaData.totalGrossCommission,
+        grossCommissionPercent: cdaData.totalCommissionRate,
+      };
+      generateCompleteCDAPDF(formData);
     } catch (err) {
       setError(`Failed to generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
