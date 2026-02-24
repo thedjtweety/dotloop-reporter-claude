@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Download, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Upload, Download, AlertCircle, CheckCircle2, Loader2, History } from 'lucide-react';
 
 interface CDAData {
   propertyAddress: string;
@@ -237,6 +237,29 @@ export default function SimpleCDABuilder() {
     }
   };
 
+  const saveCDAToHistory = (pdfBlob: Blob) => {
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        const history = JSON.parse(localStorage.getItem('cda_history') || '[]');
+        const newRecord = {
+          id: `cda_${Date.now()}`,
+          propertyAddress: cdaData?.propertyAddress || '',
+          salePrice: cdaData?.salePrice || 0,
+          grossCommission: cdaData?.totalGrossCommission || 0,
+          generatedAt: new Date().toISOString(),
+          pdfData: base64,
+        };
+        history.push(newRecord);
+        localStorage.setItem('cda_history', JSON.stringify(history));
+      };
+      reader.readAsDataURL(pdfBlob);
+    } catch (error) {
+      console.error('Failed to save CDA to history:', error);
+    }
+  };
+
   const handleGeneratePDF = async () => {
     if (!file) return;
 
@@ -259,6 +282,8 @@ export default function SimpleCDABuilder() {
 
       // Download the PDF
       const blob = await response.blob();
+      saveCDAToHistory(blob);
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -277,9 +302,19 @@ export default function SimpleCDABuilder() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">CDA Generator</h1>
-          <p className="text-foreground/70">Upload a CSV file to generate a professional Commission Disbursement Authorization</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">CDA Generator</h1>
+            <p className="text-foreground/70">Upload a CSV file to generate a professional Commission Disbursement Authorization</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => window.location.href = '/cda-history'}
+            className="gap-2"
+          >
+            <History className="h-4 w-4" />
+            View History
+          </Button>
         </div>
 
         {error && (

@@ -3547,3 +3547,35 @@
 - [x] Display CDA summary with calculated values before PDF generation
 - [x] Test full workflow: CSV upload → Parse → Download PDF
 - [x] Verify PDF contains all calculated fields properly filled
+
+
+## Phase 31: CDA History & Archival
+- [ ] Create cdaHistory database table schema (id, userId, propertyAddress, salePrice, totalCommission, sellingAgent, listingAgent, createdAt, pdfUrl, pdfKey)
+- [ ] Run database migration for CDA history table
+- [ ] Create backend API endpoint to store CDA record after PDF generation
+- [ ] Create backend API endpoint to retrieve user's CDA history (with pagination)
+- [ ] Create backend API endpoint to retrieve single CDA PDF
+- [ ] Create backend API endpoint to delete CDA record
+- [ ] Build CDA History UI component showing list of previously generated CDAs
+- [ ] Add CDA History tab to SimpleCDABuilder
+- [ ] Integrate CDA storage into PDF generation flow (auto-save after PDF creation)
+- [ ] Add ability to re-download previously generated CDAs
+- [ ] Test CDA history storage and retrieval
+
+
+## Phase 31: Simplified CDA Generator
+- [x] Replace complex CDA Builder with simple 3-step workflow
+- [x] Create SimpleCDABuilder component (Upload CSV → Parse & Calculate → Download PDF)
+- [x] Implement CSV parsing with proper quote handling
+- [x] Auto-calculate all commission breakdowns (selling/listing splits, agent commissions, broker fees)
+- [x] Generate professional 2-page PDF matching example format
+- [x] Test end-to-end workflow with sample data
+
+## Phase 32: CDA History & Archival
+- [x] Create CDAHistory component with localStorage-based storage
+- [x] Display all previously generated CDAs with property address, sale price, commission, and date
+- [x] Add download button to retrieve previously generated PDFs
+- [x] Add delete button to remove CDA records
+- [x] Integrate CDA saving into SimpleCDABuilder (auto-save when PDF is generated)
+- [x] Add "View History" button to CDA Builder page
+- [x] Add route for CDA History page (/cda-history)

@@ -23,6 +23,7 @@ import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import SimpleCDABuilder from "./pages/SimpleCDABuilder";
+import CDAHistory from "./pages/CDAHistory";
 import UploadHistory from "./pages/UploadHistory";
 
 
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
       <Route path="/cda-builder" component={SimpleCDABuilder} />
+      <Route path="/cda-history" component={CDAHistory} />
       <Route path="/uploads" component={UploadHistory} />
 
       <Route path="{/404}" component={NotFound} />

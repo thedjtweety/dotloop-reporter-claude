@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import Papa from 'papaparse';
 import { generateCDAPDF } from '../lib/cdaPdfGenerator';
+import { saveCDARecord } from '../lib/cdaHistory';
+import { storagePut } from '../storage';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -187,13 +189,24 @@ router.post('/upload-and-generate', upload.single('file'), async (req: Request, 
 
     // Generate PDF
     const pdfBuffer = await generateCDAPDF(cdaData);
+    const fileName = `CDA_${cdaData.propertyAddress.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    // Save PDF to S3
+    let pdfUrl = '';
+    try {
+      const { url } = await storagePut(
+        `cda-documents/${Date.now()}_${fileName}`,
+        pdfBuffer,
+        'application/pdf'
+      );
+      pdfUrl = url;
+    } catch (storageError) {
+      console.error('Error saving PDF to S3:', storageError);
+    }
 
     // Send PDF
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="CDA_${cdaData.propertyAddress.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf"`
-    );
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.send(pdfBuffer);
   } catch (error) {
     console.error('CDA generation error:', error);
