@@ -34,9 +34,9 @@ export default function CommissionLeaderboard() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [isRecalculatingAll, setIsRecalculatingAll] = useState(false);
 
-  // Fetch commission summary
-  const commissionSummaryQuery = trpc.commissionRecalculation.getAgentCommissionSummary.useQuery(
-    undefined,
+  // Fetch commission summary for all agents
+  const commissionSummaryQuery = trpc.commissionRecalculation.getAllAgentCommissionSummaries.useQuery(
+    {},
     {
       refetchInterval: 30000, // Refetch every 30 seconds
     }
@@ -131,7 +131,9 @@ export default function CommissionLeaderboard() {
   }
 
   const data = commissionSummaryQuery.data;
-  const hasAssignedAgents = sortedAgents.filter((a) => a.hasAssignment).length > 0;
+  const totalCommission = sortedAgents.reduce((sum, a) => sum + (a.totalCommission || 0), 0);
+  const totalAgents = sortedAgents.length;
+  const hasAssignedAgents = sortedAgents.filter((a) => a.status === 'calculated').length > 0;
 
   return (
     <Card className="overflow-hidden flex flex-col">
@@ -175,19 +177,19 @@ export default function CommissionLeaderboard() {
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="text-sm text-foreground/70 mb-1">Total Agents</div>
             <div className="text-2xl font-bold text-foreground">
-              {data?.totalAgents || 0}
+              {totalAgents}
             </div>
           </div>
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="text-sm text-foreground/70 mb-1">Assigned Plans</div>
             <div className="text-2xl font-bold text-foreground">
-              {sortedAgents.filter((a) => a.hasAssignment).length}
+              {sortedAgents.filter((a) => a.status === 'calculated').length}
             </div>
           </div>
           <div className="bg-muted/50 rounded-lg p-4">
             <div className="text-sm text-foreground/70 mb-1">Total Commission</div>
             <div className="text-2xl font-bold text-primary">
-              {formatCurrency(data?.totalCommission || 0)}
+              {formatCurrency(totalCommission)}
             </div>
           </div>
         </div>
@@ -237,15 +239,20 @@ export default function CommissionLeaderboard() {
                     {agent.planName}
                   </TableCell>
                   <TableCell>
-                    {agent.hasAssignment ? (
+                    {agent.status === 'calculated' ? (
                       <Badge className="gap-1 bg-green-500/20 text-green-700 dark:text-green-400 hover:bg-green-500/30">
                         <CheckCircle className="w-3 h-3" />
-                        Assigned
+                        Calculated
+                      </Badge>
+                    ) : agent.status === 'no_plan_assigned' ? (
+                      <Badge variant="secondary" className="gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        No Plan
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="gap-1">
                         <AlertCircle className="w-3 h-3" />
-                        No Plan
+                        {agent.status || 'Unknown'}
                       </Badge>
                     )}
                   </TableCell>
@@ -259,8 +266,8 @@ export default function CommissionLeaderboard() {
       {/* Footer Info */}
       {hasAssignedAgents && (
         <div className="p-4 border-t border-border bg-muted/30 text-sm text-foreground/70">
-          Showing {sortedAgents.filter((a) => a.hasAssignment).length} agents with assigned
-          commission plans. Click "Recalculate All" to update commission calculations.
+          Showing {sortedAgents.filter((a) => a.status === 'calculated').length} agents with calculated
+          commissions. Click "Recalculate All" to update commission calculations.
         </div>
       )}
     </Card>

@@ -3708,3 +3708,10 @@
 - [x] Debug why commission values aren't populating in PDF
 - [x] Update PDF generator HTML to include calculated amounts (sellingBrokerageCommission, referralFee, agent commissions)
 - [ ] Test with sample CDA data
+
+## Current Issues - Commission Recalculation & CDA Generation
+- [x] Fix db.select is not a function error in commission router (added null checks for getDb())
+- [x] Fix /api/trpc/commission.eForAgent2batch=1:1 500 error (added missing getAllAgentCommissionSummaries endpoint)
+- [x] Implement commission recalculation after plan assignment (added recalculateAll endpoint)
+- [ ] Test CDA generation after commission plan assignment
+- [ ] Verify commission values display correctly in transaction leaderboard
