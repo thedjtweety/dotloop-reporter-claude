@@ -3715,3 +3715,47 @@
 - [x] Implement commission recalculation after plan assignment (added recalculateAll endpoint)
 - [ ] Test CDA generation after commission plan assignment
 - [ ] Verify commission values display correctly in transaction leaderboard
+
+
+## Production Readiness & Reliability (Proactive Implementation)
+
+### Error Handling & Validation
+- [ ] Add comprehensive try-catch with structured error logging in all tRPC procedures
+- [ ] Implement input validation schemas for all CSV parsing and calculations
+- [ ] Add file size limits and type validation on CSV upload (client + server)
+- [ ] Create error recovery strategies for failed calculations
+- [ ] Add transaction rollback logic for partial failures
+
+### Performance & Scalability
+- [ ] Implement request rate limiting (prevent abuse from blog spike)
+- [ ] Add query result caching for commission plans and agent assignments
+- [ ] Optimize database queries with proper indexing
+- [ ] Add pagination for large transaction lists
+- [ ] Implement lazy loading for charts and tables
+
+### Monitoring & Observability
+- [ ] Add structured logging to all critical paths (CSV parsing, calculations, exports)
+- [ ] Create health check endpoint (/health) for uptime monitoring
+- [ ] Add error tracking with context (user, operation, timestamp)
+- [ ] Implement performance metrics collection
+- [ ] Add database connection health checks
+
+### Resilience & Failover
+- [ ] Add circuit breaker pattern for external dependencies
+- [ ] Implement graceful degradation (show cached data if calculation fails)
+- [ ] Add retry logic with exponential backoff for transient failures
+- [ ] Create fallback UI states for loading/error scenarios
+- [ ] Add timeout handling for long-running operations
+
+### Data Integrity
+- [ ] Add validation for commission calculations (sanity checks)
+- [ ] Implement checksum verification for CSV imports
+- [ ] Add audit logging for all calculations
+- [ ] Create data consistency checks between frontend and backend
+
+### Testing & Documentation
+- [ ] Write integration tests for CSV parsing pipeline
+- [ ] Add unit tests for commission calculation edge cases
+- [ ] Create load testing script for concurrent users
+- [ ] Document error codes and recovery procedures
+- [ ] Add runbook for common failure scenarios

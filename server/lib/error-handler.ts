@@ -325,3 +325,134 @@ export function logApiCall(
     duration,
   });
 }
+
+
+/**
+ * Validation utilities for data integrity
+ */
+
+/**
+ * Validate CSV file before processing
+ */
+export function validateCSVFile(file: { size: number; name: string; type: string }): { valid: boolean; error?: string } {
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+  const ALLOWED_TYPES = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File size (${(file.size / 1024 / 1024).toFixed(2)}MB) exceeds maximum (50MB)`,
+    };
+  }
+
+  if (!ALLOWED_TYPES.includes(file.type) && !file.name.endsWith('.csv')) {
+    return {
+      valid: false,
+      error: 'File must be a CSV file (text/csv)',
+    };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * Validate transaction data for integrity
+ */
+export function validateTransactionData(transaction: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!transaction.loopName || typeof transaction.loopName !== 'string' || transaction.loopName.trim().length === 0) {
+    errors.push('Loop name is required');
+  }
+
+  if (!transaction.closingDate || isNaN(new Date(transaction.closingDate).getTime())) {
+    errors.push('Valid closing date is required');
+  }
+
+  if (typeof transaction.salePrice !== 'number' || transaction.salePrice < 0) {
+    errors.push('Sale price must be a non-negative number');
+  }
+
+  if (typeof transaction.commissionRate !== 'number' || transaction.commissionRate < 0 || transaction.commissionRate > 100) {
+    errors.push('Commission rate must be between 0 and 100');
+  }
+
+  if (!transaction.agents || typeof transaction.agents !== 'string' || transaction.agents.trim().length === 0) {
+    errors.push('At least one agent is required');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validate commission calculation result (sanity checks)
+ */
+export function validateCommissionResult(result: any, salePrice: number): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (typeof result.agentNetCommission !== 'number') {
+    errors.push('Commission must be a number');
+  } else if (isNaN(result.agentNetCommission)) {
+    errors.push('Commission calculation resulted in invalid number (NaN)');
+  } else if (result.agentNetCommission < 0) {
+    errors.push('Commission cannot be negative');
+  } else if (result.agentNetCommission > salePrice) {
+    errors.push(`Commission ($${result.agentNetCommission}) exceeds sale price ($${salePrice})`);
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validate commission plan data
+ */
+export function validateCommissionPlan(plan: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!plan.name || typeof plan.name !== 'string') {
+    errors.push('Plan name is required');
+  }
+
+  if (typeof plan.splitPercentage !== 'number' || plan.splitPercentage < 0 || plan.splitPercentage > 100) {
+    errors.push('Split percentage must be between 0 and 100');
+  }
+
+  if (typeof plan.capAmount !== 'number' || plan.capAmount < 0) {
+    errors.push('Cap amount must be non-negative');
+  }
+
+  if (plan.postCapSplit !== undefined && (typeof plan.postCapSplit !== 'number' || plan.postCapSplit < 0 || plan.postCapSplit > 100)) {
+    errors.push('Post-cap split must be between 0 and 100');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validate agent assignment data
+ */
+export function validateAgentAssignment(assignment: any): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (!assignment.agentName || typeof assignment.agentName !== 'string' || assignment.agentName.trim().length === 0) {
+    errors.push('Agent name is required');
+  }
+
+  if (!assignment.planId || typeof assignment.planId !== 'string') {
+    errors.push('Commission plan ID is required');
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
