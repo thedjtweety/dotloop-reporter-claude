@@ -98,7 +98,28 @@ export function getAgentAssignments(): AgentPlanAssignment[] {
 }
 
 export function saveAgentAssignments(assignments: AgentPlanAssignment[]) {
-  localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+  try {
+    localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+  } catch (error) {
+    // Handle QuotaExceededError by clearing old data and retrying
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      console.warn('[Commission Storage] localStorage quota exceeded, clearing old data...');
+      // Clear demo data if it exists (largest data set)
+      try {
+        localStorage.removeItem('dotloop_demo_data');
+        localStorage.removeItem('dotloop_recent_files');
+        // Retry the save
+        localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+        console.log('[Commission Storage] Successfully saved assignments after cleanup');
+      } catch (retryError) {
+        console.error('[Commission Storage] Failed to save assignments even after cleanup:', retryError);
+        throw new Error('Failed to save assignments to localStorage');
+      }
+    } else {
+      console.error('[Commission Storage] Error saving assignments:', error);
+      throw new Error('Failed to save assignments to localStorage');
+    }
+  }
 }
 
 export function getTeams(): Team[] {
