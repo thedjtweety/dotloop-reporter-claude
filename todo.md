@@ -3882,3 +3882,32 @@
 - [ ] Fix planId format mismatch: template-standard-6040 should be just plan ID
 - [ ] Find and fix useEffect dependency array issues causing re-renders
 - [ ] Verify commission flow works without console spam
+
+
+## Phase 53: Database Persistence for Commission Plans & Assignments
+- [ ] Analyze current localStorage implementation in CommissionPlansManager
+- [ ] Analyze current localStorage implementation in AgentAssignment
+- [ ] Analyze current localStorage implementation in BulkPlanAssignment
+- [ ] Review commission_plans and agent_assignments database tables
+- [ ] Review existing tRPC procedures (savePlan, saveAssignment, etc.)
+- [ ] Enhance savePlan procedure to handle all plan fields (including tiers, sliding scale)
+- [x] Enhance saveAssignment procedure to handle all assignment fields
+- [x] Create getPlans procedure that fetches from database
+- [x] Create getAssignments procedure that fetches from database
+- [x] Create deletePlan procedure for plan deletion
+- [x] Create deleteAssignment procedure for assignment deletion
+- [x] Update CommissionPlansManager to use tRPC mutations instead of localStorage
+- [x] Update CommissionPlansManager to fetch plans from database on mount
+- [x] Update AgentAssignment to use tRPC mutations instead of localStorage
+- [x] Update AgentAssignment to fetch assignments from database on mount
+- [x] Update BulkPlanAssignment to create plans in database before assigning
+- [x] Update CommissionCalculator to fetch plans/assignments from database
+- [x] Write vitest tests for savePlan procedure (all field types)
+- [x] Write vitest tests for saveAssignment procedure
+- [x] Write vitest tests for getPlans procedure
+- [x] Write vitest tests for getAssignments procedure
+- [x] Test end-to-end: create plan → assign agents → calculate commissions
+- [x] Test data persistence across page reloads
+- [x] Test data persistence across browser restarts
+- [x] Verify no localStorage dependencies remain in commission components
+- [x] Save checkpoint with database persistence
