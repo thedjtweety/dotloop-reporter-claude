@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
-// Commission data is fetched from database via tRPC
+import { getCommissionPlans, getAgentAssignments, PLANS_KEY, ASSIGNMENTS_KEY } from '@/lib/commission';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,10 +44,10 @@ export default function CommissionCalculator() {
   const [hasData, setHasData] = useState(false);
 
 
-  // Fetch commission data from database via tRPC
-  const { data: plans = [], isLoading: plansLoading, error: plansError } = trpc.commission.getPlans.useQuery(undefined, { staleTime: 0 });
-  const { data: teams = [], isLoading: teamsLoading, error: teamsError } = trpc.commission.getTeams.useQuery(undefined, { staleTime: 0 });
-  const { data: assignments = [], isLoading: assignmentsLoading, error: assignmentsError } = trpc.commission.getAssignments.useQuery(undefined, { staleTime: 0 });
+  // Fetch data from tRPC with staleTime: 0 to ensure fresh data
+  const { data: plans, isLoading: plansLoading, error: plansError, refetch: refetchPlans } = trpc.commission.getPlans.useQuery(undefined, { staleTime: 0 });
+  const { data: teams, isLoading: teamsLoading, error: teamsError, refetch: refetchTeams } = trpc.commission.getTeams.useQuery(undefined, { staleTime: 0 });
+  const { data: assignments, isLoading: assignmentsLoading, error: assignmentsError, refetch: refetchAssignments } = trpc.commission.getAssignments.useQuery(undefined, { staleTime: 0 });
   const calculateMutation = trpc.commission.calculate.useMutation();
 
   // Log query status for debugging
@@ -127,12 +127,34 @@ export default function CommissionCalculator() {
         return;
       }
 
-      if (!plans || plans.length === 0) {
+      // Fallback to localStorage if no plans from server (for demo mode)
+      let currentPlans = plansResult?.data || [];
+      if (currentPlans.length === 0) {
+        try {
+          currentPlans = getCommissionPlans();
+          console.log('[CommissionCalculator] Using plans from localStorage:', currentPlans.length);
+        } catch (e) {
+          console.error('[CommissionCalculator] Failed to load plans:', e);
+        }
+      }
+
+      // Fallback to localStorage if no assignments from server (for demo mode)
+      let currentAssignments = assignmentsResult?.data || [];
+      if (currentAssignments.length === 0) {
+        try {
+          currentAssignments = getAgentAssignments();
+          console.log('[CommissionCalculator] Using assignments from localStorage:', currentAssignments.length);
+        } catch (e) {
+          console.error('[CommissionCalculator] Failed to load assignments:', e);
+        }
+      }
+
+      if (!currentPlans || currentPlans.length === 0) {
         setError('No commission plans configured. Please create a plan in the Plans tab first.');
         return;
       }
 
-      if (!assignments || assignments.length === 0) {
+      if (!currentAssignments || currentAssignments.length === 0) {
         setError('No agent assignments configured. Please assign agents to plans in the Agents tab first.');
         return;
       }
@@ -149,13 +171,13 @@ export default function CommissionCalculator() {
         sellSidePercent: Number(t.sellSidePercent) || 50,
       }));
 
-      // Call calculation API with database-fetched data
+      // Call calculation API
       const response = await calculateMutation.mutateAsync({
         transactions: transactionInputs,
-        planIds: plans.map(p => p.id),
-        teamIds: teams.map(t => t.id),
-        agentAssignments: assignments.map(a => ({
-          id: a.id,
+        planIds: currentPlans.map(p => p.id),
+        teamIds: teams?.map(t => t.id) || [],
+        agentAssignments: currentAssignments.map(a => ({
+          id: a.id || Math.random().toString(36).substr(2, 9),
           agentName: a.agentName,
           planId: a.planId,
           teamId: a.teamId,
@@ -175,7 +197,7 @@ export default function CommissionCalculator() {
   // Display summary stats
   const transactionCount = transactions.length;
   const agentCount = new Set(transactions.map(t => t.agents).join(',')).size;
-  const planCount = plans.length;
+  const planCount = (plans?.length || 0) + (result ? 0 : 0);
 
   return (
     <div className="space-y-6">

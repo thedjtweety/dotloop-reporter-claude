@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { 
   CommissionPlan, 
   Team,
-  AgentPlanAssignment
+  AgentPlanAssignment, 
+  getCommissionPlans, 
+  getTeams,
+  getAgentAssignments, 
+  saveAgentAssignments 
 } from '@/lib/commission';
 import { DotloopRecord } from '@/lib/csvParser';
 import { trpc } from '@/lib/trpc';
@@ -45,16 +49,10 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
   // Get the recalculation mutation
   const recalculateMutation = trpc.commissionRecalculation.recalculateForAgent.useMutation();
 
-  // Fetch plans, teams, and assignments from database
-  const { data: dbPlans = [] } = trpc.commission.getPlans.useQuery();
-  const { data: dbTeams = [] } = trpc.commission.getTeams.useQuery();
-  const { data: dbAssignments = [] } = trpc.commission.getAssignments.useQuery();
-  const saveAssignmentMutation = trpc.commission.saveAssignment.useMutation();
-
   useEffect(() => {
-    setPlans(dbPlans);
-    setTeams(dbTeams);
-    setAssignments(dbAssignments);
+    setPlans(getCommissionPlans());
+    setTeams(getTeams());
+    setAssignments(getAgentAssignments());
 
     // Extract unique agents from records
     const uniqueAgents = new Set<string>();
@@ -64,7 +62,7 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
       }
     });
     setAgents(Array.from(uniqueAgents).sort());
-  }, [records, dbPlans, dbTeams, dbAssignments]);
+  }, [records]);
 
   useEffect(() => {
     if (highlightAgent) {
@@ -83,27 +81,28 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
 
   const handleAssignPlan = async (agentName: string, planId: string) => {
     const existing = assignments.find(a => a.agentName === agentName);
-    const assignmentId = existing?.id || Math.random().toString(36).substr(2, 9);
+    const newAssignments = assignments.filter(a => a.agentName !== agentName);
     
     if (planId !== 'none') {
-      const assignment: AgentPlanAssignment = {
-        id: assignmentId,
+      newAssignments.push({
+        id: existing?.id || Math.random().toString(36).substr(2, 9),
         agentName,
         planId,
-        teamId: existing?.teamId,
+        teamId: existing?.teamId, // Preserve team
         startDate: existing?.startDate || new Date().toISOString().split('T')[0]
-      };
-      
-      try {
-        await saveAssignmentMutation.mutateAsync(assignment);
-        const newAssignments = assignments.filter(a => a.agentName !== agentName);
-        newAssignments.push(assignment);
-        setAssignments(newAssignments);
-      } catch (error) {
-        toast.error(`Failed to save assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return;
-      }
+      });
+    } else if (existing?.teamId) {
+       // Keep assignment if team exists but plan removed? No, require plan for now.
+       // Actually, let's allow partial assignment.
+       newAssignments.push({
+         id: existing.id,
+         agentName,
+         planId: 'none',
+         teamId: existing.teamId
+       });
     }
+    setAssignments(newAssignments);
+    saveAgentAssignments(newAssignments);
     
     // Trigger real-time commission recalculation
     if (planId !== 'none') {
@@ -131,79 +130,52 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
     onAssignmentChange?.();
   };
 
-  const handleAssignTeam = async (agentName: string, teamId: string) => {
+  const handleAssignTeam = (agentName: string, teamId: string) => {
     const existing = assignments.find(a => a.agentName === agentName);
+    const newAssignments = assignments.filter(a => a.agentName !== agentName);
+    
     const newTeamId = teamId === 'none' ? undefined : teamId;
 
     if (existing) {
-      const updated: AgentPlanAssignment = {
+      newAssignments.push({
         ...existing,
         teamId: newTeamId
-      };
-      try {
-        await saveAssignmentMutation.mutateAsync(updated);
-        const newAssignments = assignments.filter(a => a.agentName !== agentName);
-        newAssignments.push(updated);
-        setAssignments(newAssignments);
-      } catch (error) {
-        toast.error(`Failed to save assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return;
-      }
+      });
     } else if (newTeamId) {
-      const assignment: AgentPlanAssignment = {
+      newAssignments.push({
         id: Math.random().toString(36).substr(2, 9),
         agentName,
-        planId: 'none',
+        planId: 'none', // Placeholder
         teamId: newTeamId,
         startDate: new Date().toISOString().split('T')[0]
-      };
-      try {
-        await saveAssignmentMutation.mutateAsync(assignment);
-        const newAssignments = [...assignments, assignment];
-        setAssignments(newAssignments);
-      } catch (error) {
-        toast.error(`Failed to save assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return;
-      }
+      });
     }
+    setAssignments(newAssignments);
+    saveAgentAssignments(newAssignments);
     // Dispatch custom event to notify other components of the change
     window.dispatchEvent(new CustomEvent('commission-assignment-updated'));
   };
 
-  const handleAnniversaryChange = async (agentName: string, date: string) => {
+  const handleAnniversaryChange = (agentName: string, date: string) => {
     const existing = assignments.find(a => a.agentName === agentName);
+    const newAssignments = assignments.filter(a => a.agentName !== agentName);
     
     if (existing) {
-      const updated: AgentPlanAssignment = {
+      newAssignments.push({
         ...existing,
         anniversaryDate: date
-      };
-      try {
-        await saveAssignmentMutation.mutateAsync(updated);
-        const newAssignments = assignments.filter(a => a.agentName !== agentName);
-        newAssignments.push(updated);
-        setAssignments(newAssignments);
-      } catch (error) {
-        toast.error(`Failed to save assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return;
-      }
+      });
     } else {
-      const assignment: AgentPlanAssignment = {
+      newAssignments.push({
         id: Math.random().toString(36).substr(2, 9),
         agentName,
         planId: 'none',
         anniversaryDate: date,
         startDate: new Date().toISOString().split('T')[0]
-      };
-      try {
-        await saveAssignmentMutation.mutateAsync(assignment);
-        const newAssignments = [...assignments, assignment];
-        setAssignments(newAssignments);
-      } catch (error) {
-        toast.error(`Failed to save assignment: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return;
-      }
+      });
     }
+    setAssignments(newAssignments);
+    saveAgentAssignments(newAssignments);
     // Dispatch custom event to notify other components of the change
     window.dispatchEvent(new CustomEvent('commission-assignment-updated'));
   };
