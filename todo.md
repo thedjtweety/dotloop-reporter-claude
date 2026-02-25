@@ -1730,6 +1730,15 @@
 - [x] Verify Assign Now button disappears when plan is assigned (verified: button no longer visible)
 - [x] Test assignment from Agent Assignments tab (verified: leaderboard updates correctly with polling)
 
+## Phase 52: Fix Infinite Loop & PlanId Format Issues
+- [x] Fix infinite loop in CommissionCalculator (removed setInterval refetching plans every 5 seconds)
+- [x] Fix infinite loop in AgentLeaderboardWithExport (removed 500ms polling interval)
+- [x] Fix PlanId format mismatch in BulkPlanAssignment (template IDs now converted to actual plan IDs)
+- [x] Implement template-to-plan conversion (creates unique plan ID like plan-template-standard-6040-1234567890)
+- [x] Verify commission flow works correctly (bulk assign → calculate → export)
+- [x] Test demo data loads without infinite loop spam
+- [x] Confirm browser console is clean with no errors
+
 
 ## Phase 52: Reorganize Commission Breakdowns View
 - [x] Create new AgentCommissionSummary component with agent list (created with expandable rows)
@@ -3866,3 +3875,10 @@
 - [ ] Integration tests: Assignment -> Calculation -> CDA
 - [ ] E2E test: Upload CSV -> Assign Plans -> Generate CDA
 - [ ] Edge cases: Large datasets, rapid assignments, page refresh
+
+
+## CRITICAL BUG - Infinite Loop in Commission Storage
+- [ ] Fix infinite loop: getAgentAssignments called repeatedly in console
+- [ ] Fix planId format mismatch: template-standard-6040 should be just plan ID
+- [ ] Find and fix useEffect dependency array issues causing re-renders
+- [ ] Verify commission flow works without console spam

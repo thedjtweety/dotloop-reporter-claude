@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { CommissionPlan, AgentPlanAssignment, getCommissionPlans, saveAgentAssignments, ASSIGNMENTS_KEY } from '@/lib/commission';
-import { getTemplates, getTemplateCategories, createPlanFromTemplate } from '@/lib/commissionTemplates';
+import { CommissionPlan, AgentPlanAssignment, getCommissionPlans, saveAgentAssignments, saveCommissionPlans, ASSIGNMENTS_KEY } from '@/lib/commission';
+import { getTemplates, getTemplateCategories, createPlanFromTemplate, getTemplateById } from '@/lib/commissionTemplates';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -83,7 +83,32 @@ export default function BulkPlanAssignment({
     setIsLoading(true);
 
     try {
-      const planId = selectedPlanId || selectedTemplateId;
+      let planId = selectedPlanId;
+      
+      // If a template was selected, convert it to a plan
+      if (selectedTemplateId) {
+        const template = getTemplateById(selectedTemplateId);
+        if (!template) {
+          throw new Error(`Template not found: ${selectedTemplateId}`);
+        }
+        
+        // Create a new plan from the template with a unique ID
+        const newPlanId = `plan-${template.id}-${Date.now()}`;
+        const newPlan = createPlanFromTemplate(template, template.name, newPlanId);
+        
+        // Save the new plan to localStorage
+        const allPlans = getCommissionPlans();
+        allPlans.push(newPlan);
+        saveCommissionPlans(allPlans);
+        
+        console.log('[BulkPlanAssignment] Created plan from template:', {
+          templateId: selectedTemplateId,
+          newPlanId,
+          planName: template.name,
+        });
+        
+        planId = newPlanId;
+      }
       
       // Create new assignments array - remove old assignments for selected agents
       const newAssignments = assignments.filter(
@@ -148,11 +173,11 @@ export default function BulkPlanAssignment({
     <>
       <Button
         onClick={() => setIsOpen(true)}
-        variant="outline"
         className="gap-2"
+        disabled={agents.length === 0}
       >
         <Users className="w-4 h-4" />
-        Bulk Assign Plans
+        Bulk Assign Plans ({selectedAgents.size} selected)
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -160,150 +185,157 @@ export default function BulkPlanAssignment({
           <DialogHeader>
             <DialogTitle>Bulk Assign Commission Plans</DialogTitle>
             <DialogDescription>
-              Select multiple agents and assign them to a plan or template at once
+              Select agents and assign them to a commission plan
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'plans' | 'templates')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="templates" className="gap-2">
-                <Zap className="w-4 h-4" />
-                Templates
-              </TabsTrigger>
-              <TabsTrigger value="plans">Existing Plans</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="templates" className="space-y-4">
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {categories.map(category => {
-                  const categoryTemplates = templates.filter(t => t.category === category.id);
-                  if (categoryTemplates.length === 0) return null;
-
-                  return (
-                    <div key={category.id} className="space-y-2">
-                      <h4 className="font-semibold text-sm text-muted-foreground">{category.label}</h4>
-                      <div className="space-y-2 pl-2">
-                        {categoryTemplates.map(template => (
-                          <label
-                            key={template.id}
-                            className="flex items-start gap-3 p-2 rounded hover:bg-muted cursor-pointer"
-                          >
-                            <input
-                              type="radio"
-                              name="template"
-                              value={template.id}
-                              checked={selectedTemplateId === template.id}
-                              onChange={(e) => {
-                                setSelectedTemplateId(e.target.value);
-                                setSelectedPlanId('');
-                              }}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{template.name}</p>
-                              <p className="text-xs text-muted-foreground">{template.description}</p>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+          <div className="space-y-6">
+            {/* Agent Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-foreground">Select Agents</h3>
+                <Badge variant="secondary">
+                  {selectedAgents.size} / {displayAgents.length}
+                </Badge>
               </div>
-            </TabsContent>
 
-            <TabsContent value="plans" className="space-y-4">
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {plans.map(plan => (
-                  <label
-                    key={plan.id}
-                    className="flex items-start gap-3 p-2 rounded hover:bg-muted cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="plan"
-                      value={plan.id}
-                      checked={selectedPlanId === plan.id}
-                      onChange={(e) => {
-                        setSelectedPlanId(e.target.value);
-                        setSelectedTemplateId('');
-                      }}
-                      className="mt-1"
+              <Card className="p-4 max-h-64 overflow-y-auto">
+                <div className="space-y-2">
+                  {/* Select All checkbox */}
+                  <div className="flex items-center gap-2 pb-2 border-b border-border">
+                    <Checkbox
+                      checked={selectedAgents.size === displayAgents.length && displayAgents.length > 0}
+                      onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                     />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{plan.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {plan.splitPercentage}% split
-                        {plan.capAmount > 0 && ` • $${plan.capAmount.toLocaleString()} cap`}
-                      </p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
+                    <span className="text-sm font-medium text-foreground">Select All Agents</span>
+                  </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-sm">Select Agents</h4>
-              <Badge variant="outline">{selectedAgents.size} selected</Badge>
-            </div>
-
-            <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50">
-              <Checkbox
-                checked={selectedAgents.size === displayAgents.length && displayAgents.length > 0}
-                onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
-              />
-              <span className="text-sm font-medium">Select All Agents</span>
-            </div>
-
-            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-              {displayAgents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No agents available
-                </p>
-              ) : (
-                displayAgents.map(agent => {
-                  const currentAssignment = assignments.find(a => a.agentName === agent);
-                  return (
-                    <label key={agent} className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded">
-                      <Checkbox
-                        checked={selectedAgents.has(agent)}
-                        onCheckedChange={(checked) => handleSelectAgent(agent, checked as boolean)}
-                      />
-                      <div className="flex-1">
-                        <span className="text-sm">{agent}</span>
-                        {currentAssignment && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            (Current: {currentAssignment.planId})
-                          </span>
+                  {/* Agent list */}
+                  {displayAgents.map((agent) => {
+                    const assignment = assignments.find(a => a.agentName === agent);
+                    const currentPlan = assignment ? plans.find(p => p.id === assignment.planId) : null;
+                    
+                    return (
+                      <div key={agent} className="flex items-center gap-2">
+                        <Checkbox
+                          checked={selectedAgents.has(agent)}
+                          onCheckedChange={(checked) => handleSelectAgent(agent, checked as boolean)}
+                        />
+                        <span className="text-sm text-foreground flex-1">{agent}</span>
+                        {currentPlan && (
+                          <Badge variant="outline" className="text-xs">
+                            {currentPlan.name}
+                          </Badge>
                         )}
                       </div>
-                    </label>
-                  );
-                })
-              )}
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+
+            {/* Plan Selection */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Select Plan</h3>
+              
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'plans' | 'templates')}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="templates" className="gap-2">
+                    <Zap className="w-4 h-4" />
+                    Templates
+                  </TabsTrigger>
+                  <TabsTrigger value="plans">Custom Plans</TabsTrigger>
+                </TabsList>
+
+                {/* Templates Tab */}
+                <TabsContent value="templates" className="space-y-3">
+                  {categories.map((category) => {
+                    const categoryTemplates = templates.filter(t => t.category === category.id);
+                    if (categoryTemplates.length === 0) return null;
+
+                    return (
+                      <div key={category.id} className="space-y-2">
+                        <h4 className="text-sm font-medium text-foreground">{category.label}</h4>
+                        <div className="grid gap-2">
+                          {categoryTemplates.map((template) => (
+                            <Card
+                              key={template.id}
+                              className={`p-3 cursor-pointer transition-colors ${
+                                selectedTemplateId === template.id
+                                  ? 'bg-primary/10 border-primary'
+                                  : 'hover:bg-accent/50'
+                              }`}
+                              onClick={() => {
+                                setSelectedTemplateId(template.id);
+                                setSelectedPlanId('');
+                              }}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-medium text-foreground">{template.name}</p>
+                                  <p className="text-xs text-foreground/70">{template.description}</p>
+                                </div>
+                                {selectedTemplateId === template.id && (
+                                  <Badge className="bg-primary">Selected</Badge>
+                                )}
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </TabsContent>
+
+                {/* Custom Plans Tab */}
+                <TabsContent value="plans" className="space-y-3">
+                  {plans.length === 0 ? (
+                    <p className="text-sm text-foreground/70">No custom plans yet. Create one from a template first.</p>
+                  ) : (
+                    <div className="grid gap-2">
+                      {plans.map((plan) => (
+                        <Card
+                          key={plan.id}
+                          className={`p-3 cursor-pointer transition-colors ${
+                            selectedPlanId === plan.id
+                              ? 'bg-primary/10 border-primary'
+                              : 'hover:bg-accent/50'
+                          }`}
+                          onClick={() => {
+                            setSelectedPlanId(plan.id);
+                            setSelectedTemplateId('');
+                          }}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium text-foreground">{plan.name}</p>
+                              <p className="text-xs text-foreground/70">
+                                {plan.splitPercentage}% split
+                                {plan.capAmount > 0 && `, ${plan.capAmount.toLocaleString()} cap`}
+                              </p>
+                            </div>
+                            {selectedPlanId === plan.id && (
+                              <Badge className="bg-primary">Selected</Badge>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
             <Button
               onClick={handleAssignPlan}
-              disabled={selectedAgents.size === 0 || (!selectedPlanId && !selectedTemplateId) || isLoading}
+              disabled={isLoading || selectedAgents.size === 0 || (!selectedPlanId && !selectedTemplateId)}
             >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Assigning...
-                </>
-              ) : selectedAgents.size > 0 ? (
-                `Assign to ${selectedAgents.size} Agent${selectedAgents.size !== 1 ? 's' : ''}`
-              ) : (
-                'Select agents to assign'
-              )}
+              {isLoading ? 'Assigning...' : `Assign to ${selectedAgents.size} Agent(s)`}
             </Button>
           </DialogFooter>
         </DialogContent>

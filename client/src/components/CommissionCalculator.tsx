@@ -58,15 +58,12 @@ export default function CommissionCalculator() {
     console.log('Plans:', plans?.length || 0, 'Teams:', teams?.length || 0, 'Assignments:', assignments?.length || 0);
   }, [plans, teams, assignments, plansError, teamsError, assignmentsError]);
 
-  // Refetch data when component mounts to ensure latest plans and assignments
+  // Refetch data once when component mounts to ensure latest plans and assignments
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetchPlans();
-      refetchTeams();
-      refetchAssignments();
-    }, 5000); // Refetch every 5 seconds to keep data fresh
-    return () => clearInterval(interval);
-  }, [refetchPlans, refetchTeams, refetchAssignments]);
+    refetchPlans();
+    refetchTeams();
+    refetchAssignments();
+  }, []); // Empty dependency array - only run once on mount
 
   // Load recent transaction data on mount
   useEffect(() => {

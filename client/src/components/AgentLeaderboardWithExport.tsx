@@ -83,15 +83,9 @@ export default function AgentLeaderboardWithExport({ agents, records = [], agent
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('commission-assignment-updated', handleAssignmentUpdate);
     
-    // Poll for changes every 500ms as fallback
-    const pollInterval = setInterval(() => {
-      setLocalAssignments(getAgentAssignments());
-    }, 500);
-    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('commission-assignment-updated', handleAssignmentUpdate);
-      clearInterval(pollInterval);
     };
   }, []);
 
