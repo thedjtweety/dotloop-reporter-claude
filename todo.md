@@ -3902,3 +3902,12 @@
 - [ ] Test demo mode with sample data
 - [ ] Test bulk assignment with multiple agents
 - [ ] Test commission calculation and export
+
+
+## Phase 56: Fix Commission Plan Dropdown in Agent Assignments
+- [x] Identify root cause: AgentAssignment was using localStorage only instead of database
+- [x] Fix AgentAssignment to fetch plans from database using trpc.commission.getPlans.useQuery()
+- [x] Add fallback to localStorage if database is unavailable
+- [x] Test dropdown now shows correct plans: Performance Tier Plan, Conservative Plan, Aggressive Growth Plan, Standard Sliding Scale
+- [x] Test assignment workflow: Select plan for agent, verify it persists with correct details (split %, cap amount)
+- [x] Verified end-to-end: Dropdown shows database plans, assignment works, details display correctly

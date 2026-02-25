@@ -48,10 +48,34 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
   
   // Get the recalculation mutation
   const recalculateMutation = trpc.commissionRecalculation.recalculateForAgent.useMutation();
+  
+  // Fetch plans and teams from database
+  const { data: dbPlans } = trpc.commission.getPlans.useQuery(undefined, {
+    retry: false,
+  });
+  const { data: dbTeams } = trpc.commission.getTeams.useQuery(undefined, {
+    retry: false,
+  });
 
   useEffect(() => {
-    setPlans(getCommissionPlans());
-    setTeams(getTeams());
+    // Use database plans if available, otherwise fall back to localStorage
+    if (dbPlans && dbPlans.length > 0) {
+      setPlans(dbPlans);
+    } else {
+      setPlans(getCommissionPlans());
+    }
+  }, [dbPlans]);
+
+  useEffect(() => {
+    // Use database teams if available, otherwise fall back to localStorage
+    if (dbTeams && dbTeams.length > 0) {
+      setTeams(dbTeams);
+    } else {
+      setTeams(getTeams());
+    }
+  }, [dbTeams]);
+
+  useEffect(() => {
     setAssignments(getAgentAssignments());
 
     // Extract unique agents from records
