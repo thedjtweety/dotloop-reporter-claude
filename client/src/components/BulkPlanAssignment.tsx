@@ -45,6 +45,7 @@ export default function BulkPlanAssignment({
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'plans' | 'templates'>('templates');
+  const [isLoading, setIsLoading] = useState(false);
 
   const plans = useMemo(() => getCommissionPlans(), []);
   const templates = useMemo(() => getTemplates(), []);
@@ -68,7 +69,7 @@ export default function BulkPlanAssignment({
     }
   };
 
-  const handleAssignPlan = () => {
+  const handleAssignPlan = async () => {
     if (selectedAgents.size === 0) {
       toast.error('Please select at least one agent');
       return;
@@ -79,28 +80,59 @@ export default function BulkPlanAssignment({
       return;
     }
 
-    const planId = selectedPlanId || selectedTemplateId;
-    const newAssignments = assignments.filter(
-      a => !selectedAgents.has(a.agentName)
-    );
+    setIsLoading(true);
 
-    selectedAgents.forEach(agentName => {
-      newAssignments.push({
-        id: Math.random().toString(36).substr(2, 9),
-        agentName,
-        planId,
-        startDate: new Date().toISOString().split('T')[0],
+    try {
+      const planId = selectedPlanId || selectedTemplateId;
+      
+      // Create new assignments array - remove old assignments for selected agents
+      const newAssignments = assignments.filter(
+        a => !selectedAgents.has(a.agentName)
+      );
+
+      // Add new assignments for selected agents
+      selectedAgents.forEach(agentName => {
+        newAssignments.push({
+          id: `${agentName}-${planId}-${Date.now()}`,
+          agentName,
+          planId,
+          startDate: new Date().toISOString().split('T')[0],
+        });
       });
-    });
 
-    saveAgentAssignments(newAssignments);
-    onAssignmentComplete(newAssignments);
+      console.log('[BulkPlanAssignment] Saving assignments:', {
+        count: newAssignments.length,
+        selectedCount: selectedAgents.size,
+        planId,
+      });
 
-    toast.success(`Assigned ${selectedAgents.size} agent(s) to plan`);
-    setIsOpen(false);
-    setSelectedAgents(new Set());
-    setSelectedPlanId('');
-    setSelectedTemplateId('');
+      // Save to localStorage
+      saveAgentAssignments(newAssignments);
+
+      // Verify save was successful
+      const saved = localStorage.getItem('agent_assignments');
+      if (!saved) {
+        throw new Error('Failed to save assignments to localStorage');
+      }
+
+      console.log('[BulkPlanAssignment] Assignments saved successfully');
+
+      // Update parent component state
+      onAssignmentComplete(newAssignments);
+
+      toast.success(`Successfully assigned ${selectedAgents.size} agent(s) to plan`);
+      
+      // Reset modal state
+      setIsOpen(false);
+      setSelectedAgents(new Set());
+      setSelectedPlanId('');
+      setSelectedTemplateId('');
+    } catch (error) {
+      console.error('[BulkPlanAssignment] Error assigning plans:', error);
+      toast.error('Failed to assign plans. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Show all agents - allow editing/reassigning plans to any agent
@@ -249,16 +281,23 @@ export default function BulkPlanAssignment({
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+            <Button variant="outline" onClick={() => setIsOpen(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button
               onClick={handleAssignPlan}
-              disabled={selectedAgents.size === 0 || (!selectedPlanId && !selectedTemplateId)}
+              disabled={selectedAgents.size === 0 || (!selectedPlanId && !selectedTemplateId) || isLoading}
             >
-              {selectedAgents.size > 0
-                ? `Assign to ${selectedAgents.size} Agent${selectedAgents.size !== 1 ? 's' : ''}`
-                : 'Select agents to assign'}
+              {isLoading ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Assigning...
+                </>
+              ) : selectedAgents.size > 0 ? (
+                `Assign to ${selectedAgents.size} Agent${selectedAgents.size !== 1 ? 's' : ''}`
+              ) : (
+                'Select agents to assign'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

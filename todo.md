@@ -3799,3 +3799,8 @@
 ## Bug Fixes - Bulk Assign Plans
 - [x] Enable Bulk Assign Plans button to allow editing/reassigning plans to all agents
 - [x] Test bulk plan reassignment functionality (button now active, shows all agents with current plans)
+
+
+## Bug Fixes - Bulk Assign Not Saving
+- [x] Fix bulk assign plans not saving assignments to agents (added error handling and logging)
+- [x] Verify assignments are persisted and displayed correctly (improved saveAgentAssignments flow)
