@@ -3781,3 +3781,21 @@
 - [x] Build graceful degradation modal component
 - [x] Integrate request queue into CSV upload flow
 - [x] Test request queuing and graceful degradation (11 tests, all passing)
+
+
+## Request Queue Integration & Offline Persistence
+- [x] Create offline queue persistence utility with localStorage (OfflineQueueStorage class)
+- [x] Integrate request queue into CSV upload mutation (useUploadQueue hook)
+- [x] Add queue recovery on app startup (auto-loads from localStorage)
+- [x] Create comprehensive test suite for offline storage
+
+
+## Bug Fixes - Agent Assignments
+- [ ] Fix missing checkboxes in Agent Assignments table
+- [ ] Enable "Bulk Assign Plans" button when agents are selected
+- [ ] Test bulk assignment functionality with multiple agents
+
+
+## Bug Fixes - Bulk Assign Plans
+- [x] Enable Bulk Assign Plans button to allow editing/reassigning plans to all agents
+- [x] Test bulk plan reassignment functionality (button now active, shows all agents with current plans)

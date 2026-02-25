@@ -103,12 +103,8 @@ export default function BulkPlanAssignment({
     setSelectedTemplateId('');
   };
 
-  const getUnassignedAgents = () => {
-    const assignedNames = new Set(assignments.map(a => a.agentName));
-    return agents.filter(a => !assignedNames.has(a));
-  };
-
-  const unassignedAgents = useMemo(() => getUnassignedAgents(), [agents, assignments]);
+  // Show all agents - allow editing/reassigning plans to any agent
+  const displayAgents = agents;
 
   return (
     <>
@@ -116,7 +112,6 @@ export default function BulkPlanAssignment({
         onClick={() => setIsOpen(true)}
         variant="outline"
         className="gap-2"
-        disabled={unassignedAgents.length === 0}
       >
         <Users className="w-4 h-4" />
         Bulk Assign Plans
@@ -218,27 +213,37 @@ export default function BulkPlanAssignment({
 
             <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/50">
               <Checkbox
-                checked={selectedAgents.size === unassignedAgents.length && unassignedAgents.length > 0}
+                checked={selectedAgents.size === displayAgents.length && displayAgents.length > 0}
                 onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
               />
-              <span className="text-sm font-medium">Select All Unassigned</span>
+              <span className="text-sm font-medium">Select All Agents</span>
             </div>
 
             <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-3">
-              {unassignedAgents.length === 0 ? (
+              {displayAgents.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  All agents have been assigned plans
+                  No agents available
                 </p>
               ) : (
-                unassignedAgents.map(agent => (
-                  <label key={agent} className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded">
-                    <Checkbox
-                      checked={selectedAgents.has(agent)}
-                      onCheckedChange={(checked) => handleSelectAgent(agent, checked as boolean)}
-                    />
-                    <span className="text-sm">{agent}</span>
-                  </label>
-                ))
+                displayAgents.map(agent => {
+                  const currentAssignment = assignments.find(a => a.agentName === agent);
+                  return (
+                    <label key={agent} className="flex items-center gap-2 cursor-pointer hover:bg-muted p-1 rounded">
+                      <Checkbox
+                        checked={selectedAgents.has(agent)}
+                        onCheckedChange={(checked) => handleSelectAgent(agent, checked as boolean)}
+                      />
+                      <div className="flex-1">
+                        <span className="text-sm">{agent}</span>
+                        {currentAssignment && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            (Current: {currentAssignment.planId})
+                          </span>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })
               )}
             </div>
           </div>
@@ -251,7 +256,9 @@ export default function BulkPlanAssignment({
               onClick={handleAssignPlan}
               disabled={selectedAgents.size === 0 || (!selectedPlanId && !selectedTemplateId)}
             >
-              Assign to {selectedAgents.size} Agent{selectedAgents.size !== 1 ? 's' : ''}
+              {selectedAgents.size > 0
+                ? `Assign to ${selectedAgents.size} Agent${selectedAgents.size !== 1 ? 's' : ''}`
+                : 'Select agents to assign'}
             </Button>
           </DialogFooter>
         </DialogContent>
