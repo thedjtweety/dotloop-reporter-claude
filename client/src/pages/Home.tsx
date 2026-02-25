@@ -645,13 +645,24 @@ function HomeContent() {
     } catch (error) {
       console.error('Error parsing CSV:', error);
       
-      if (shouldShowProgress) {
-        const activeStage = uploadProgress.stages.find(s => s.status === 'in-progress');
-        if (activeStage) {
-          uploadProgress.errorStage(
-            activeStage.id,
-            error instanceof Error ? error.message : 'Unknown error occurred'
-          );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      
+      // Check for rate limit error
+      if (errorMessage.includes('Rate limit exceeded') || errorMessage.includes('TOO_MANY_REQUESTS')) {
+        if (shouldShowProgress) {
+          const activeStage = uploadProgress.stages.find(s => s.status === 'in-progress');
+          if (activeStage) {
+            uploadProgress.errorStage(activeStage.id, 'Rate limit exceeded');
+          }
+        }
+        // Show user-friendly rate limit message
+        alert('You have reached the upload limit. Please wait a moment and try again.\n\n' + errorMessage);
+      } else {
+        if (shouldShowProgress) {
+          const activeStage = uploadProgress.stages.find(s => s.status === 'in-progress');
+          if (activeStage) {
+            uploadProgress.errorStage(activeStage.id, errorMessage);
+          }
         }
       }
       

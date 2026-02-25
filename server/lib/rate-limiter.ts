@@ -198,6 +198,11 @@ class CircuitBreaker {
 }
 
 /**
+ * Export classes for testing and external use
+ */
+export { RateLimiter, CircuitBreaker };
+
+/**
  * Retry logic with exponential backoff
  */
 export async function retryWithBackoff<T>(

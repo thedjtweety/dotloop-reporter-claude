@@ -6,6 +6,7 @@ import { z } from "zod";
 import { eq } from 'drizzle-orm';
 import { uploads } from '../drizzle/schema';
 import { validateTransactionBatch } from './transactionValidator';
+import { TRPCError } from '@trpc/server';
 import { adminRouter } from './adminRouter';
 import { performanceRouter } from './performanceRouter';
 import { auditLogRouter } from './auditLogRouter';
@@ -69,6 +70,18 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
+        // Rate limiting: prevent single user from uploading too many files
+        const { globalRateLimiter } = await import('./lib/rate-limiter');
+        const rateLimitKey = `upload:${ctx.user.id}`;
+        
+        if (!globalRateLimiter.isAllowed(rateLimitKey)) {
+          const resetTime = new Date(globalRateLimiter.getResetTime(rateLimitKey));
+          throw new TRPCError({
+            code: 'TOO_MANY_REQUESTS',
+            message: `Rate limit exceeded. Maximum 100 uploads per minute. Resets at ${resetTime.toISOString()}`,
+          });
+        }
+        
         const uploadStartTime = Date.now();
         
         // Get tenant context

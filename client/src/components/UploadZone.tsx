@@ -5,10 +5,10 @@
  */
 
 import { useState, useRef } from 'react';
-import { Upload, CheckCircle, FileSpreadsheet, ArrowRight, Play, AlertCircle } from 'lucide-react';
+import { Upload, CheckCircle, FileSpreadsheet, ArrowRight, Play, AlertCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { validateCSVFile } from '@/lib/csvValidation';
+import { validateFile, formatBytes, estimateProcessingTime } from '@/lib/fileValidation';
 
 interface UploadZoneProps {
   onFileUpload: (file: File) => void;
@@ -29,13 +29,12 @@ export default function UploadZone({ onFileUpload, onDemoClick, isLoading = fals
     setValidationError(null);
     
     try {
-      const result = await validateCSVFile(file, {
-        maxSizeMB: 10,
-      });
+      const result = validateFile(file, { maxSizeBytes: 50 * 1024 * 1024 });
       
-      if (!result.isValid) {
-        setValidationError(result.error || 'Unknown validation error');
-        onValidationError?.(result.error || 'Unknown validation error');
+      if (!result.valid) {
+        const errorMsg = result.errors.join('; ');
+        setValidationError(errorMsg);
+        onValidationError?.(errorMsg);
         setIsValidating(false);
         return;
       }
@@ -232,7 +231,7 @@ export default function UploadZone({ onFileUpload, onDemoClick, isLoading = fals
                 </div>
                 <div className="text-xs text-slate-400 mt-4 font-medium tracking-wide uppercase space-y-2">
                   <p>Supports Dotloop Broker Exports</p>
-                  <p className="text-slate-500 normal-case text-[11px]">Maximum file size: 10MB</p>
+                  <p className="text-slate-500 normal-case text-[11px]">Maximum file size: 50MB</p>
                 </div>
               </>
             )}
