@@ -12,6 +12,8 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
+import { globalRequestQueue, isRateLimitError } from '@/lib/requestQueue';
+import RateLimitModal from '@/components/RateLimitModal';
 import Footer from '@/components/Footer';
 import { Upload, TrendingUp, Home as HomeIcon, DollarSign, Calendar, Percent, Settings, ArrowLeft, AlertCircle, Trophy, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -140,6 +142,11 @@ function HomeContent() {
   const [sparklineTrends, setSparklineTrends] = useState<any>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   
+  // Rate limit modal state
+  const [showRateLimitModal, setShowRateLimitModal] = useState(false);
+  const [rateLimitRetryMs, setRateLimitRetryMs] = useState(0);
+  const [queuedRequestCount, setQueuedRequestCount] = useState(0);
+  
   // Drill-down state
   const [drillDownOpen, setDrillDownOpen] = useState(false);
   const [drillDownTitle, setDrillDownTitle] = useState('');
@@ -228,6 +235,18 @@ function HomeContent() {
 
   // Load saved mapping and recent files on mount
   const [showCSVGuide, setShowCSVGuide] = useState(false);
+
+  // Setup request queue listener
+  useEffect(() => {
+    const unsubscribe = globalRequestQueue.onStatusChange((status) => {
+      setQueuedRequestCount(status.queuedCount);
+      if (status.currentRetryMs > 0) {
+        setRateLimitRetryMs(status.currentRetryMs);
+        setShowRateLimitModal(true);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('dotloop_field_mapping');
@@ -873,6 +892,13 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Toaster />
+      {/* Rate Limit Modal */}
+      <RateLimitModal
+        isOpen={showRateLimitModal}
+        retryAfterMs={rateLimitRetryMs}
+        queuedRequests={queuedRequestCount}
+        onClose={() => setShowRateLimitModal(false)}
+      />
       {/* <SectionNav /> - Removed floating navigation */}
       <BackToTop />
       <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" onDemoClick={handleDemoMode} isDemoLoading={isLoading} />
