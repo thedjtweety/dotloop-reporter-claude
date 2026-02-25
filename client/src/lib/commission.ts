@@ -76,44 +76,85 @@ export const DEFAULT_PLANS: CommissionPlan[] = [
   }
 ];
 
-// Storage Keys
-const PLANS_KEY = 'dotloop_commission_plans';
-const ASSIGNMENTS_KEY = 'dotloop_agent_assignments';
-const TEAMS_KEY = 'dotloop_teams';
-const ADJUSTMENTS_KEY = 'dotloop_transaction_adjustments';
+// ============================================================================
+// STORAGE KEYS - EXPORTED for use across all components
+// CRITICAL: All components must use these exact keys for localStorage access
+// ============================================================================
+export const PLANS_KEY = 'dotloop_commission_plans';
+export const ASSIGNMENTS_KEY = 'dotloop_agent_assignments';
+export const TEAMS_KEY = 'dotloop_teams';
+export const ADJUSTMENTS_KEY = 'dotloop_transaction_adjustments';
 
-// Helpers
+// ============================================================================
+// STORAGE FUNCTIONS - Commission Plans
+// ============================================================================
 export function getCommissionPlans(): CommissionPlan[] {
-  const stored = localStorage.getItem(PLANS_KEY);
-  return stored ? JSON.parse(stored) : DEFAULT_PLANS;
-}
-
-export function saveCommissionPlans(plans: CommissionPlan[]) {
-  localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
-}
-
-export function getAgentAssignments(): AgentPlanAssignment[] {
-  const stored = localStorage.getItem(ASSIGNMENTS_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
-
-export function saveAgentAssignments(assignments: AgentPlanAssignment[]) {
   try {
+    const stored = localStorage.getItem(PLANS_KEY);
+    return stored ? JSON.parse(stored) : DEFAULT_PLANS;
+  } catch (error) {
+    console.error('[Commission Storage] Error loading plans:', error);
+    return DEFAULT_PLANS;
+  }
+}
+
+export function saveCommissionPlans(plans: CommissionPlan[]): void {
+  try {
+    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+    console.log('[Commission Storage] Plans saved successfully:', plans.length);
+  } catch (error) {
+    console.error('[Commission Storage] Error saving plans:', error);
+    throw new Error('Failed to save commission plans');
+  }
+}
+
+// ============================================================================
+// STORAGE FUNCTIONS - Agent Assignments
+// CRITICAL: This is the most important function - used by bulk assign and calculations
+// ============================================================================
+export function getAgentAssignments(): AgentPlanAssignment[] {
+  try {
+    const stored = localStorage.getItem(ASSIGNMENTS_KEY);
+    const assignments = stored ? JSON.parse(stored) : [];
+    console.log('[Commission Storage] Loaded assignments:', assignments.length);
+    return assignments;
+  } catch (error) {
+    console.error('[Commission Storage] Error loading assignments:', error);
+    return [];
+  }
+}
+
+export function saveAgentAssignments(assignments: AgentPlanAssignment[]): void {
+  try {
+    console.log('[Commission Storage] Saving assignments:', assignments.length);
     localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+    
+    // CRITICAL: Verify save was successful by reading back
+    const verified = localStorage.getItem(ASSIGNMENTS_KEY);
+    if (!verified) {
+      throw new Error('Verification failed: assignments not found after save');
+    }
+    
+    console.log('[Commission Storage] Assignments saved and verified successfully');
   } catch (error) {
     // Handle QuotaExceededError by clearing old data and retrying
     if (error instanceof Error && error.name === 'QuotaExceededError') {
       console.warn('[Commission Storage] localStorage quota exceeded, clearing old data...');
-      // Clear demo data if it exists (largest data set)
       try {
         localStorage.removeItem('dotloop_demo_data');
         localStorage.removeItem('dotloop_recent_files');
-        // Retry the save
         localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
+        
+        // Verify after cleanup
+        const verified = localStorage.getItem(ASSIGNMENTS_KEY);
+        if (!verified) {
+          throw new Error('Verification failed after cleanup');
+        }
+        
         console.log('[Commission Storage] Successfully saved assignments after cleanup');
       } catch (retryError) {
         console.error('[Commission Storage] Failed to save assignments even after cleanup:', retryError);
-        throw new Error('Failed to save assignments to localStorage');
+        throw new Error('Failed to save assignments to localStorage (quota exceeded)');
       }
     } else {
       console.error('[Commission Storage] Error saving assignments:', error);
@@ -122,30 +163,166 @@ export function saveAgentAssignments(assignments: AgentPlanAssignment[]) {
   }
 }
 
+// ============================================================================
+// STORAGE FUNCTIONS - Teams
+// ============================================================================
 export function getTeams(): Team[] {
-  const stored = localStorage.getItem(TEAMS_KEY);
-  return stored ? JSON.parse(stored) : [];
+  try {
+    const stored = localStorage.getItem(TEAMS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('[Commission Storage] Error loading teams:', error);
+    return [];
+  }
 }
 
-export function saveTeams(teams: Team[]) {
-  localStorage.setItem(TEAMS_KEY, JSON.stringify(teams));
+export function saveTeams(teams: Team[]): void {
+  try {
+    localStorage.setItem(TEAMS_KEY, JSON.stringify(teams));
+  } catch (error) {
+    console.error('[Commission Storage] Error saving teams:', error);
+    throw new Error('Failed to save teams');
+  }
 }
 
+// ============================================================================
+// STORAGE FUNCTIONS - Transaction Adjustments
+// ============================================================================
 export function getTransactionAdjustments(): TransactionAdjustment[] {
-  const stored = localStorage.getItem(ADJUSTMENTS_KEY);
-  return stored ? JSON.parse(stored) : [];
+  try {
+    const stored = localStorage.getItem(ADJUSTMENTS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('[Commission Storage] Error loading adjustments:', error);
+    return [];
+  }
 }
 
-export function saveTransactionAdjustments(adjustments: TransactionAdjustment[]) {
-  localStorage.setItem(ADJUSTMENTS_KEY, JSON.stringify(adjustments));
+export function saveTransactionAdjustments(adjustments: TransactionAdjustment[]): void {
+  try {
+    localStorage.setItem(ADJUSTMENTS_KEY, JSON.stringify(adjustments));
+  } catch (error) {
+    console.error('[Commission Storage] Error saving adjustments:', error);
+    throw new Error('Failed to save adjustments');
+  }
 }
 
+// ============================================================================
+// HELPER FUNCTIONS - Query and Lookup
+// ============================================================================
+
+/**
+ * Get the commission plan for a specific agent
+ * CRITICAL: Used by commission calculator and CDA generator
+ */
 export function getPlanForAgent(agentName: string): CommissionPlan | undefined {
   const assignments = getAgentAssignments();
   const plans = getCommissionPlans();
   
   const assignment = assignments.find(a => a.agentName === agentName);
-  if (!assignment) return undefined;
+  if (!assignment) {
+    console.warn(`[Commission Storage] No assignment found for agent: ${agentName}`);
+    return undefined;
+  }
   
-  return plans.find(p => p.id === assignment.planId);
+  const plan = plans.find(p => p.id === assignment.planId);
+  if (!plan) {
+    console.warn(`[Commission Storage] No plan found for planId: ${assignment.planId}`);
+    return undefined;
+  }
+  
+  return plan;
+}
+
+/**
+ * Get all assignments with their plan details
+ * CRITICAL: Used by bulk assign modal and agent leaderboard
+ */
+export function getAssignmentsWithPlans(): (AgentPlanAssignment & { planName: string; planDetails: CommissionPlan | undefined })[] {
+  const assignments = getAgentAssignments();
+  const plans = getCommissionPlans();
+  
+  return assignments.map(assignment => {
+    const plan = plans.find(p => p.id === assignment.planId);
+    return {
+      ...assignment,
+      planName: plan?.name || 'Unknown Plan',
+      planDetails: plan,
+    };
+  });
+}
+
+/**
+ * Check if an agent has an assignment
+ */
+export function hasAssignment(agentName: string): boolean {
+  const assignments = getAgentAssignments();
+  return assignments.some(a => a.agentName === agentName);
+}
+
+/**
+ * Get assignment for a specific agent
+ */
+export function getAssignmentForAgent(agentName: string): AgentPlanAssignment | undefined {
+  const assignments = getAgentAssignments();
+  return assignments.find(a => a.agentName === agentName);
+}
+
+/**
+ * Get all agents that have assignments
+ */
+export function getAssignedAgents(): string[] {
+  const assignments = getAgentAssignments();
+  return assignments.map(a => a.agentName);
+}
+
+/**
+ * Verify commission storage is working correctly
+ * CRITICAL: Run this before generating reports or CDA
+ */
+export function verifyCommissionStorage(): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  try {
+    // Check plans
+    const plans = getCommissionPlans();
+    if (!plans || plans.length === 0) {
+      errors.push('No commission plans found');
+    }
+    
+    // Check assignments
+    const assignments = getAgentAssignments();
+    if (!assignments || !Array.isArray(assignments)) {
+      errors.push('Assignments data is invalid');
+    }
+    
+    // Verify all assignments reference valid plans
+    assignments.forEach(assignment => {
+      const plan = plans.find(p => p.id === assignment.planId);
+      if (!plan) {
+        errors.push(`Assignment for ${assignment.agentName} references invalid plan: ${assignment.planId}`);
+      }
+    });
+    
+    // Verify localStorage keys exist
+    const plansStored = localStorage.getItem(PLANS_KEY);
+    const assignmentsStored = localStorage.getItem(ASSIGNMENTS_KEY);
+    
+    if (!plansStored) {
+      errors.push('Plans not found in localStorage');
+    }
+    if (!assignmentsStored) {
+      errors.push('Assignments not found in localStorage');
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  } catch (error) {
+    return {
+      valid: false,
+      errors: [`Storage verification failed: ${error}`],
+    };
+  }
 }

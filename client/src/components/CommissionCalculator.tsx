@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { getCommissionPlans, getAgentAssignments, PLANS_KEY, ASSIGNMENTS_KEY } from '@/lib/commission';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -133,13 +134,10 @@ export default function CommissionCalculator() {
       let currentPlans = plansResult?.data || [];
       if (currentPlans.length === 0) {
         try {
-          const storedPlans = localStorage.getItem('commission_plans');
-          if (storedPlans) {
-            currentPlans = JSON.parse(storedPlans);
-            console.log('Using plans from localStorage:', currentPlans.length);
-          }
+          currentPlans = getCommissionPlans();
+          console.log('[CommissionCalculator] Using plans from localStorage:', currentPlans.length);
         } catch (e) {
-          console.error('Failed to load plans from localStorage:', e);
+          console.error('[CommissionCalculator] Failed to load plans:', e);
         }
       }
 
@@ -147,13 +145,10 @@ export default function CommissionCalculator() {
       let currentAssignments = assignmentsResult?.data || [];
       if (currentAssignments.length === 0) {
         try {
-          const storedAssignments = localStorage.getItem('agent_assignments');
-          if (storedAssignments) {
-            currentAssignments = JSON.parse(storedAssignments);
-            console.log('Using assignments from localStorage:', currentAssignments.length);
-          }
+          currentAssignments = getAgentAssignments();
+          console.log('[CommissionCalculator] Using assignments from localStorage:', currentAssignments.length);
         } catch (e) {
-          console.error('Failed to load assignments from localStorage:', e);
+          console.error('[CommissionCalculator] Failed to load assignments:', e);
         }
       }
 

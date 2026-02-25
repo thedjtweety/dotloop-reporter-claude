@@ -3825,3 +3825,44 @@
 - [x] Update Home component to use IndexedDB with compression
 - [x] Test upload history with compressed data (7 tests passing)
 - [x] Test bulk assignment still works with IndexedDB
+
+
+## CRITICAL: Commission System Comprehensive Audit & Fix
+- [ ] Phase 1: Audit commission storage (localStorage vs IndexedDB conflicts)
+- [ ] Phase 2: Audit commission calculation flow and data dependencies
+- [ ] Phase 3: Audit bulk assignment flow and error handling
+- [ ] Phase 4: Audit CDA generation and commission projections
+- [ ] Phase 5: Move all commission assignments to IndexedDB (eliminate localStorage quota conflicts)
+- [ ] Phase 6: Fix commission calculation to use correct assignment data from IndexedDB
+- [ ] Phase 7: Fix bulk assignment save and state updates with proper error handling
+- [ ] Phase 8: Fix CDA generation to use correct calculated commissions
+- [ ] Phase 9: Comprehensive end-to-end testing of entire commission flow
+- [ ] Phase 10: Document all commission system architecture and data flows
+
+
+## PHASE 1: Export localStorage Keys & Fix Key Mismatches
+- [ ] Export localStorage key constants from commission.ts
+- [ ] Fix BulkPlanAssignment.tsx line 113 (wrong key in verification)
+- [ ] Fix CommissionCalculator.tsx (wrong keys for loading)
+- [ ] Fix all hardcoded localStorage key references
+- [ ] Test: Verify all keys match between save and load
+
+## PHASE 2: Move Assignments to IndexedDB
+- [ ] Create IndexedDB functions for agent assignments
+- [ ] Migrate saveAgentAssignments to use IndexedDB
+- [ ] Migrate getAgentAssignments to use IndexedDB
+- [ ] Update BulkPlanAssignment to use IndexedDB
+- [ ] Update CommissionCalculator to use IndexedDB
+- [ ] Test: Verify assignments persist after page refresh
+
+## PHASE 3: Fix CDA Generator Integration
+- [ ] Audit CDA generator data dependencies
+- [ ] Ensure CDA generator uses correct assignment data
+- [ ] Test: Generate CDA after bulk assignment
+- [ ] Verify commission calculations in CDA match dashboard
+
+## PHASE 4: Comprehensive Testing
+- [ ] Unit tests for all storage functions
+- [ ] Integration tests: Assignment -> Calculation -> CDA
+- [ ] E2E test: Upload CSV -> Assign Plans -> Generate CDA
+- [ ] Edge cases: Large datasets, rapid assignments, page refresh

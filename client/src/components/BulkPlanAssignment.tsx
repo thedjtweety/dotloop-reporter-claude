@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { CommissionPlan, AgentPlanAssignment, getCommissionPlans, saveAgentAssignments } from '@/lib/commission';
+import { CommissionPlan, AgentPlanAssignment, getCommissionPlans, saveAgentAssignments, ASSIGNMENTS_KEY } from '@/lib/commission';
 import { getTemplates, getTemplateCategories, createPlanFromTemplate } from '@/lib/commissionTemplates';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -109,10 +109,16 @@ export default function BulkPlanAssignment({
       // Save to localStorage
       saveAgentAssignments(newAssignments);
 
-      // Verify save was successful
-      const saved = localStorage.getItem('agent_assignments');
+      // Verify save was successful using correct key
+      const saved = localStorage.getItem(ASSIGNMENTS_KEY);
       if (!saved) {
-        throw new Error('Failed to save assignments to localStorage');
+        throw new Error('Failed to verify assignments were saved to localStorage');
+      }
+      
+      // Double-check by parsing the saved data
+      const savedAssignments = JSON.parse(saved);
+      if (!Array.isArray(savedAssignments) || savedAssignments.length === 0) {
+        throw new Error('Saved assignments data is invalid or empty');
       }
 
       console.log('[BulkPlanAssignment] Assignments saved successfully');

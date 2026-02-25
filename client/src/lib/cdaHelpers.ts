@@ -5,6 +5,7 @@
  */
 
 import { DotloopRecord } from './csvParser';
+import { getAgentAssignments, getCommissionPlans } from './commission';
 
 export interface CDAFormData {
   // Transaction Details
@@ -163,35 +164,31 @@ export function decodeCDAData(encoded: string): CDAFormData | null {
  */
 export function getCommissionPlanForAgent(agentName: string): CommissionPlan | undefined {
   try {
-    // Get agent assignments from localStorage
-    const assignmentsStr = localStorage.getItem('dotloop_agent_assignments');
-    if (!assignmentsStr) return undefined;
-    
-    const assignments = JSON.parse(assignmentsStr);
+    const assignments = getAgentAssignments();
     const agentAssignment = assignments.find((a: any) => a.agentName === agentName);
     
-    if (!agentAssignment) return undefined;
+    if (!agentAssignment) {
+      console.warn(`[CDA Helpers] No assignment found for agent: ${agentName}`);
+      return undefined;
+    }
     
-    // Get commission plans from localStorage
-    const plansStr = localStorage.getItem('dotloop_commission_plans');
-    if (!plansStr) return undefined;
-    
-    const plans = JSON.parse(plansStr);
+    const plans = getCommissionPlans();
     const plan = plans.find((p: any) => p.id === agentAssignment.planId);
     
-    if (!plan) return undefined;
+    if (!plan) {
+      console.warn(`[CDA Helpers] No plan found for planId: ${agentAssignment.planId}`);
+      return undefined;
+    }
     
-    // Map commission plan to CDA format
     return {
       id: plan.id,
       name: plan.name,
       agentSplitPercent: plan.splitPercentage || 80,
       brokerSplitPercent: 100 - (plan.splitPercentage || 80),
-      // Extract transaction fee from deductions if present
       transactionFee: plan.deductions?.find((d: any) => d.type === 'fixed')?.amount || 0,
     };
   } catch (error) {
-    console.error('Error fetching commission plan:', error);
+    console.error('[CDA Helpers] Error fetching commission plan:', error);
     return undefined;
   }
 }
