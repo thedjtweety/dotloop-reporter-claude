@@ -58,6 +58,7 @@ import { findMatchingTemplate, saveTemplate } from '@/lib/importTemplates';
 import { generateDemoData } from '@/lib/demoGenerator';
 import { setupDemoPlanData } from '@/lib/demoPlanSetup';
 import { getRecentFiles, saveRecentFile, deleteRecentFile } from '@/lib/storage';
+import { saveUploadToIndexedDB, getAllUploadsFromIndexedDB, deleteUploadFromIndexedDB, StoredUpload } from '@/lib/indexedDbStorage';
 import UploadZone from '@/components/UploadZone';
 import CommissionProjector from '@/components/CommissionProjector';
 import RecentUploads, { RecentFile } from '@/components/RecentUploads';
@@ -258,15 +259,23 @@ function HomeContent() {
       }
     }
 
-    // Load recent files from localStorage
-    const savedFiles = localStorage.getItem('dotloop_recent_files');
-    if (savedFiles) {
+    // Load recent files from IndexedDB
+    const loadRecentFiles = async () => {
       try {
-        setRecentFiles(JSON.parse(savedFiles));
-      } catch (e) {
-        console.error('Failed to parse recent files', e);
+        const uploads = await getAllUploadsFromIndexedDB();
+        const recentFilesList = uploads.map((upload: StoredUpload) => ({
+          id: upload.id,
+          name: upload.fileName,
+          date: new Date(upload.uploadDate).toLocaleDateString(),
+          recordCount: upload.recordCount,
+          data: upload.data,
+        }));
+        setRecentFiles(recentFilesList);
+      } catch (error) {
+        console.error('[Home] Failed to load uploads from IndexedDB:', error);
       }
-    }
+    };
+    loadRecentFiles();
   }, []);
 
   // Check for extension data on mount
@@ -339,8 +348,23 @@ function HomeContent() {
 
   const handleSaveRecent = async (name: string, records: DotloopRecord[]) => {
     try {
-      const updated = await saveRecentFile(name, records);
-      setRecentFiles(updated);
+      const upload: StoredUpload = {
+        id: `upload-${Date.now()}`,
+        fileName: name,
+        uploadDate: Date.now(),
+        recordCount: records.length,
+        data: records,
+      };
+      await saveUploadToIndexedDB(upload);
+      const uploads = await getAllUploadsFromIndexedDB();
+      const recentFilesList = uploads.map((u: StoredUpload) => ({
+        id: u.id,
+        name: u.fileName,
+        date: new Date(u.uploadDate).toLocaleDateString(),
+        recordCount: u.recordCount,
+        data: u.data,
+      }));
+      setRecentFiles(recentFilesList);
     } catch (e) {
       console.error('Failed to save recent file', e);
     }
@@ -354,11 +378,15 @@ function HomeContent() {
     setAgentMetrics(applyPlansToAllAgents(metrics1, file.data));
   };
 
-  const handleRecentDelete = (id: string, e: React.MouseEvent) => {
+  const handleRecentDelete = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = recentFiles.filter(f => f.id !== id);
-    setRecentFiles(updated);
-    localStorage.setItem('dotloop_recent_files', JSON.stringify(updated));
+    try {
+      await deleteUploadFromIndexedDB(id);
+      const updated = recentFiles.filter(f => f.id !== id);
+      setRecentFiles(updated);
+    } catch (error) {
+      console.error('[Home] Failed to delete upload:', error);
+    }
   };
 
   const handleDemoMode = () => {

@@ -3811,3 +3811,17 @@
 - [x] Debug storage conflicts between CSV data and agent assignments (removed demo data storage)
 - [x] Verify assignment persistence after CSV upload (added fallback cleanup)
 - [x] Test bulk assignment with multiple agents
+
+
+## Storage Architecture Fix - IndexedDB for CSV Data
+- [ ] Create IndexedDB utility for CSV data storage (larger capacity than localStorage)
+- [ ] Migrate CSV upload history from localStorage to IndexedDB
+- [ ] Keep agent assignments in localStorage (smaller, more frequently accessed)
+- [ ] Test bulk assignment and upload history working together
+
+
+## Storage Optimization - LZ-String Compression
+- [x] Add LZ-string compression to IndexedDB storage layer (60-80% size reduction)
+- [x] Update Home component to use IndexedDB with compression
+- [x] Test upload history with compressed data (7 tests passing)
+- [x] Test bulk assignment still works with IndexedDB
