@@ -156,7 +156,7 @@ export default function AgentLeaderboardWithExport({ agents, records = [], agent
     }
 
     return result;
-  }, [agents, searchQuery, filterType]);
+  }, [agents, searchQuery, filterType, localAssignments]);
 
   // Sort agents
   const sortedAgents = useMemo(() => {
@@ -178,13 +178,13 @@ export default function AgentLeaderboardWithExport({ agents, records = [], agent
     });
 
     return sorted;
-  }, [filteredAgents, sortField, sortDirection]);
+  }, [filteredAgents, sortField, sortDirection, localAssignments]);
 
   // Paginate
   const paginatedAgents = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return sortedAgents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [sortedAgents, currentPage]);
+  }, [sortedAgents, currentPage, localAssignments]);
 
   const totalPages = Math.ceil(sortedAgents.length / ITEMS_PER_PAGE);
 

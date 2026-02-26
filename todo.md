@@ -3920,3 +3920,10 @@
 - [x] Fix console errors showing "No plan found for planId: template-standard-*"
 - [x] Test plan assignment workflow end-to-end
 - [x] Test bulk assignment functionality
+
+
+## Phase 58: Fix Leaderboard Not Updating After Plan Assignment
+- [x] Investigate why AgentLeaderboardWithExport doesn't refresh when plan is assigned in Agent Assignments tab
+- [x] Check if leaderboard is caching assignment data or not refetching from database
+- [x] Fix data refresh mechanism to show updated plan assignments (added localAssignments to memoized dependencies)
+- [x] Test: Assign plan to agent in Agents tab, verify leaderboard shows updated plan immediately
