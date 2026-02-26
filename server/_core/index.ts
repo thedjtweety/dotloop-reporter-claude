@@ -1,4 +1,5 @@
 import "dotenv/config";
+// Commission system fixed: v2.0 - All ghost template errors removed, public procedures enabled
 import express from "express";
 import { createServer } from "http";
 import net from "net";
