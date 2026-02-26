@@ -49,6 +49,9 @@ export default function BulkPlanAssignment({
   
   // Fetch assignments from database
   const { data: dbAssignments = [] } = trpc.commission.getAssignments.useQuery();
+  
+  // Create mutation for saving assignments
+  const saveAssignmentsMutation = trpc.commission.saveAssignments.useMutation();
 
   const handleSelectAgent = (agentName: string, checked: boolean) => {
     const newSelected = new Set(selectedAgents);
@@ -98,7 +101,7 @@ export default function BulkPlanAssignment({
       });
 
       // Save assignments to database using tRPC
-      await trpc.commission.saveAssignments.mutate(newAssignments);
+      await saveAssignmentsMutation.mutateAsync(newAssignments);
 
       console.log('[BulkPlanAssignment] Assignments saved successfully');
 
@@ -164,8 +167,8 @@ export default function BulkPlanAssignment({
                         <div className="flex-1">
                           <p className="font-medium text-foreground">{plan.name}</p>
                           <p className="text-sm text-foreground/70 mt-1">
-                            {plan.agentSplit}% / {plan.brokerageSplit}% 
-                            {plan.cap ? ` • Cap: $${plan.cap.toLocaleString()}` : ' • No Cap'}
+                            {plan.splitPercentage}% / {100 - plan.splitPercentage}% 
+                            {plan.capAmount ? ` • Cap: $${plan.capAmount.toLocaleString()}` : ' • No Cap'}
                           </p>
                         </div>
                         {selectedPlanId === plan.id.toString() && (

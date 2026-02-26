@@ -555,6 +555,64 @@ export const commissionRouter = router({
       }
     }),
 
+  /**
+   * Bulk save agent assignments to the database
+   */
+  saveAssignments: publicProcedure
+    .input(z.array(AgentAssignmentSchema))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const db = await getDb();
+        if (!db) {
+          throw new Error("Database connection not available");
+        }
+        
+        // Get tenantId from authenticated user, or use default for demo
+        const tenantId = ctx.user?.tenantId || 1; // Default to tenant 1 for demo/unauthenticated users
+        
+        const results: any[] = [];
+        const assignments = input;
+        
+        // Get all agent names from the assignments
+        const agentNames = assignments.map(a => a.agentName);
+        
+        // Delete existing assignments for these agents (due to unique constraint on tenantId + agentName)
+        if (agentNames.length > 0) {
+          await db
+            .delete(agentAssignments)
+            .where(
+              and(
+                eq(agentAssignments.tenantId, tenantId),
+                inArray(agentAssignments.agentName, agentNames)
+              )
+            );
+        }
+        
+        // Insert new assignments
+        for (const assignment of assignments) {
+          const assignmentId = assignment.id || `${assignment.agentName}-${assignment.planId}-${Date.now()}`;
+          
+          await db.insert(agentAssignments).values({
+            id: assignmentId,
+            tenantId: tenantId,
+            agentName: assignment.agentName,
+            planId: assignment.planId,
+            teamId: assignment.teamId,
+            anniversaryDate: assignment.anniversaryDate,
+          });
+          
+          results.push({ agentName: assignment.agentName, id: assignmentId, success: true });
+        }
+        
+        return { success: true, saved: results.length, results };
+      } catch (error) {
+        console.error("Bulk save assignments error:", error);
+        throw new Error(
+          `Failed to save agent assignments: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+      }
+    }),
+
   exportPDF: publicProcedure
     .input(
       z.object({

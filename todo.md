@@ -3927,3 +3927,10 @@
 - [x] Check if leaderboard is caching assignment data or not refetching from database
 - [x] Fix data refresh mechanism to show updated plan assignments (added localAssignments to memoized dependencies)
 - [x] Test: Assign plan to agent in Agents tab, verify leaderboard shows updated plan immediately
+
+## Phase 59: Fix Bulk Plan Assignment Feature
+- [ ] Fix saveAssignments procedure to handle duplicate key constraint (delete existing assignments first)
+- [ ] Fix BulkPlanAssignment to use correct plan field names from API (splitPercentage instead of agentSplit)
+- [ ] Test bulk assignment with multiple agents
+- [ ] Verify leaderboard updates after bulk assignment completes
+- [ ] Test that individual assignments still work after bulk assignment

@@ -1,0 +1,30 @@
+{
+  "query": "SELECT id, name, tenantId FROM commission_plans LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 24ruGQuiASWpGv5.root --database gtMbYvvduSqhsHRvj39YWw --execute SELECT id, name, tenantId FROM commission_plans LIMIT 10;",
+  "rows": [
+    {
+      "id": "6olo5tf3f",
+      "name": "Performance Tier Plan",
+      "tenantId": "1"
+    },
+    {
+      "id": "plan-j0GzLAb34V0g6D_ZqG8UO",
+      "name": "Conservative Plan",
+      "tenantId": "1"
+    },
+    {
+      "id": "plan-q15gkknJaGaPb5r6UmkP_",
+      "name": "Aggressive Growth Plan",
+      "tenantId": "1"
+    },
+    {
+      "id": "plan-q5U-OGlMqAMR5gL5G1tMG",
+      "name": "Standard Sliding Scale",
+      "tenantId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttenantId\n6olo5tf3f\tPerformance Tier Plan\t1\nplan-j0GzLAb34V0g6D_ZqG8UO\tConservative Plan\t1\nplan-q15gkknJaGaPb5r6UmkP_\tAggressive Growth Plan\t1\nplan-q5U-OGlMqAMR5gL5G1tMG\tStandard Sliding Scale\t1\n",
+  "stderr": "",
+  "execution_time_ms": 74
+}
