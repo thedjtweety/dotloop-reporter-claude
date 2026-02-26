@@ -50,12 +50,22 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
   const recalculateMutation = trpc.commissionRecalculation.recalculateForAgent.useMutation();
   
   // Fetch plans and teams from database
-  const { data: dbPlans } = trpc.commission.getPlans.useQuery(undefined, {
-    retry: false,
+  const { data: dbPlans, isLoading: plansLoading, error: plansError } = trpc.commission.getPlans.useQuery(undefined, {
+    retry: 1,
   });
-  const { data: dbTeams } = trpc.commission.getTeams.useQuery(undefined, {
-    retry: false,
+  const { data: dbTeams, isLoading: teamsLoading, error: teamsError } = trpc.commission.getTeams.useQuery(undefined, {
+    retry: 1,
   });
+  
+  // Log errors for debugging
+  useEffect(() => {
+    if (plansError) {
+      console.error('[AgentAssignment] Error fetching plans:', plansError);
+    }
+    if (teamsError) {
+      console.error('[AgentAssignment] Error fetching teams:', teamsError);
+    }
+  }, [plansError, teamsError]);
 
   useEffect(() => {
     // Use database plans if available, otherwise fall back to localStorage

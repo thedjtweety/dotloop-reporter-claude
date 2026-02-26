@@ -6,6 +6,7 @@
 import React, { useState, useMemo } from 'react';
 import { CommissionPlan, AgentPlanAssignment, getCommissionPlans, saveAgentAssignments, saveCommissionPlans, ASSIGNMENTS_KEY } from '@/lib/commission';
 import { getTemplates, getTemplateCategories, createPlanFromTemplate, getTemplateById } from '@/lib/commissionTemplates';
+import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -47,7 +48,17 @@ export default function BulkPlanAssignment({
   const [activeTab, setActiveTab] = useState<'plans' | 'templates'>('templates');
   const [isLoading, setIsLoading] = useState(false);
 
-  const plans = useMemo(() => getCommissionPlans(), []);
+  // Fetch plans from database using tRPC
+  const { data: dbPlans = [] } = trpc.commission.getPlans.useQuery();
+  
+  // Fall back to localStorage if database plans are not available
+  const plans = useMemo(() => {
+    if (dbPlans.length > 0) {
+      return dbPlans;
+    }
+    return getCommissionPlans();
+  }, [dbPlans]);
+  
   const templates = useMemo(() => getTemplates(), []);
   const categories = useMemo(() => getTemplateCategories(), []);
 

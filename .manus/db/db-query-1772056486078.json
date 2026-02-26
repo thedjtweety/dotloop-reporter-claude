@@ -1,0 +1,38 @@
+{
+  "query": "SELECT id, name, splitPercentage, capAmount, tenantId FROM commission_plans LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 24ruGQuiASWpGv5.root --database gtMbYvvduSqhsHRvj39YWw --execute SELECT id, name, splitPercentage, capAmount, tenantId FROM commission_plans LIMIT 10;",
+  "rows": [
+    {
+      "id": "6olo5tf3f",
+      "name": "Performance Tier Plan",
+      "splitPercentage": "75",
+      "capAmount": "25000",
+      "tenantId": "1"
+    },
+    {
+      "id": "plan-j0GzLAb34V0g6D_ZqG8UO",
+      "name": "Conservative Plan",
+      "splitPercentage": "70",
+      "capAmount": "300000",
+      "tenantId": "1"
+    },
+    {
+      "id": "plan-q15gkknJaGaPb5r6UmkP_",
+      "name": "Aggressive Growth Plan",
+      "splitPercentage": "55",
+      "capAmount": "750000",
+      "tenantId": "1"
+    },
+    {
+      "id": "plan-q5U-OGlMqAMR5gL5G1tMG",
+      "name": "Standard Sliding Scale",
+      "splitPercentage": "60",
+      "capAmount": "500000",
+      "tenantId": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tsplitPercentage\tcapAmount\ttenantId\n6olo5tf3f\tPerformance Tier Plan\t75\t25000\t1\nplan-j0GzLAb34V0g6D_ZqG8UO\tConservative Plan\t70\t300000\t1\nplan-q15gkknJaGaPb5r6UmkP_\tAggressive Growth Plan\t55\t750000\t1\nplan-q5U-OGlMqAMR5gL5G1tMG\tStandard Sliding Scale\t60\t500000\t1\n",
+  "stderr": "",
+  "execution_time_ms": 125
+}

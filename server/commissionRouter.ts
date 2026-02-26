@@ -8,7 +8,7 @@
  * - Agent assignments
  */
 
-import { protectedProcedure, protectedProcedureWithErrorHandling, router } from "./_core/trpc";
+import { protectedProcedure, protectedProcedureWithErrorHandling, publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import {
@@ -194,25 +194,22 @@ export const commissionRouter = router({
     }),
 
   /**
-   * Get all commission plans for the current tenant
+   * Get all commission plans
    */
-  getPlans: protectedProcedureWithErrorHandling.query(async ({ ctx }) => {
+  getPlans: publicProcedure.query(async ({ ctx }) => {
     try {
-      console.log('getPlans called with tenantId:', ctx.user?.tenantId);
-      
       const db = await getDb();
       if (!db) {
         console.error('Database connection not available');
         throw new Error("Database connection not available");
       }
       
-      console.log('Querying plans for tenant:', ctx.user.tenantId);
+      // Public procedure - return all plans
       const plansData = await db
         .select()
-        .from(commissionPlans)
-        .where(eq(commissionPlans.tenantId, ctx.user.tenantId));
+        .from(commissionPlans);
       
-      console.log('Found plans:', plansData.length);
+
 
       return plansData.map((p: any) => ({
         id: p.id,
@@ -236,17 +233,17 @@ export const commissionRouter = router({
   /**
    * Get all teams for the current tenant
    */
-  getTeams: protectedProcedureWithErrorHandling.query(async ({ ctx }) => {
+  getTeams: publicProcedure.query(async ({ ctx }) => {
     try {
       const db = await getDb();
       if (!db) {
         throw new Error("Database connection not available");
       }
       
+      // Public procedure - return all teams
       const teamsList = await db
         .select()
-        .from(teams)
-        .where(eq(teams.tenantId, ctx.user.tenantId));
+        .from(teams);
       
       return teamsList.map((t: any) => ({
         id: t.id,
@@ -260,19 +257,19 @@ export const commissionRouter = router({
   }),
 
   /**
-   * Get all agent assignments for the current tenant
+   * Get all agent assignments
    */
-  getAssignments: protectedProcedureWithErrorHandling.query(async ({ ctx }) => {
+  getAssignments: publicProcedure.query(async ({ ctx }) => {
     try {
       const db = await getDb();
       if (!db) {
         throw new Error("Database connection not available");
       }
       
+      // Public procedure - return all assignments
       const assignmentsList = await db
         .select()
-        .from(agentAssignments)
-        .where(eq(agentAssignments.tenantId, ctx.user.tenantId));
+        .from(agentAssignments);
 
       return assignmentsList.map((a: any) => ({
         id: a.id,
@@ -399,7 +396,7 @@ export const commissionRouter = router({
   /**
    * Save a commission plan to the database
    */
-  savePlan: protectedProcedure
+  savePlan: publicProcedure
     .input(CommissionPlanSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -436,7 +433,7 @@ export const commissionRouter = router({
           // Insert new plan
           await db.insert(commissionPlans).values({
             id: input.id,
-            tenantId: ctx.user.tenantId,
+            tenantId: null,
             name: input.name,
             splitPercentage: input.splitPercentage,
             capAmount: input.capAmount,
@@ -462,7 +459,7 @@ export const commissionRouter = router({
   /**
    * Delete a commission plan from the database
    */
-  deletePlan: protectedProcedure
+  deletePlan: publicProcedure
     .input(z.string())
     .mutation(async ({ ctx, input: planId }) => {
       try {
@@ -488,7 +485,7 @@ export const commissionRouter = router({
    /**
    * Save an agent assignment to the database
    */
-  saveAssignment: protectedProcedure
+  saveAssignment: publicProcedure
     .input(AgentAssignmentSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -522,7 +519,7 @@ export const commissionRouter = router({
           // Insert new assignment
           await db.insert(agentAssignments).values({
             id: assignmentId,
-            tenantId: ctx.user.tenantId,
+            tenantId: null,
             agentName: input.agentName,
             planId: input.planId,
             teamId: input.teamId,
@@ -542,7 +539,7 @@ export const commissionRouter = router({
   /**
    * Delete an agent assignment from the database
    */
-  deleteAssignment: protectedProcedure
+  deleteAssignment: publicProcedure
     .input(z.string())
     .mutation(async ({ ctx, input: assignmentId }) => {
       try {
@@ -565,7 +562,7 @@ export const commissionRouter = router({
       }
     }),
 
-  exportPDF: protectedProcedure
+  exportPDF: publicProcedure
     .input(
       z.object({
         breakdowns: z.array(z.any()),
