@@ -4,8 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { CommissionPlan, AgentPlanAssignment, getCommissionPlans, saveAgentAssignments, saveCommissionPlans, ASSIGNMENTS_KEY } from '@/lib/commission';
-import { getTemplates, getTemplateCategories, createPlanFromTemplate, getTemplateById } from '@/lib/commissionTemplates';
+import { AgentPlanAssignment } from '@/lib/commission';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -26,8 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Zap } from 'lucide-react';
+import { Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface BulkPlanAssignmentProps {
@@ -44,23 +42,13 @@ export default function BulkPlanAssignment({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [selectedPlanId, setSelectedPlanId] = useState<string>('');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'plans' | 'templates'>('templates');
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch plans from database using tRPC
-  const { data: dbPlans = [] } = trpc.commission.getPlans.useQuery();
+  const { data: plans = [] } = trpc.commission.getPlans.useQuery();
   
-  // Fall back to localStorage if database plans are not available
-  const plans = useMemo(() => {
-    if (dbPlans.length > 0) {
-      return dbPlans;
-    }
-    return getCommissionPlans();
-  }, [dbPlans]);
-  
-  const templates = useMemo(() => getTemplates(), []);
-  const categories = useMemo(() => getTemplateCategories(), []);
+  // Fetch assignments from database
+  const { data: dbAssignments = [] } = trpc.commission.getAssignments.useQuery();
 
   const handleSelectAgent = (agentName: string, checked: boolean) => {
     const newSelected = new Set(selectedAgents);
@@ -86,76 +74,31 @@ export default function BulkPlanAssignment({
       return;
     }
 
-    if (!selectedPlanId && !selectedTemplateId) {
-      toast.error('Please select a plan or template');
+    if (!selectedPlanId) {
+      toast.error('Please select a plan');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      let planId = selectedPlanId;
-      
-      // If a template was selected, convert it to a plan
-      if (selectedTemplateId) {
-        const template = getTemplateById(selectedTemplateId);
-        if (!template) {
-          throw new Error(`Template not found: ${selectedTemplateId}`);
-        }
-        
-        // Create a new plan from the template with a unique ID
-        const newPlanId = `plan-${template.id}-${Date.now()}`;
-        const newPlan = createPlanFromTemplate(template, template.name, newPlanId);
-        
-        // Save the new plan to localStorage
-        const allPlans = getCommissionPlans();
-        allPlans.push(newPlan);
-        saveCommissionPlans(allPlans);
-        
-        console.log('[BulkPlanAssignment] Created plan from template:', {
-          templateId: selectedTemplateId,
-          newPlanId,
-          planName: template.name,
-        });
-        
-        planId = newPlanId;
-      }
-      
-      // Create new assignments array - remove old assignments for selected agents
-      const newAssignments = assignments.filter(
+      // Create new assignments - remove old assignments for selected agents
+      const newAssignments = dbAssignments.filter(
         a => !selectedAgents.has(a.agentName)
       );
 
       // Add new assignments for selected agents
       selectedAgents.forEach(agentName => {
         newAssignments.push({
-          id: `${agentName}-${planId}-${Date.now()}`,
+          id: `${agentName}-${selectedPlanId}-${Date.now()}`,
           agentName,
-          planId,
+          planId: selectedPlanId,
           startDate: new Date().toISOString().split('T')[0],
         });
       });
 
-      console.log('[BulkPlanAssignment] Saving assignments:', {
-        count: newAssignments.length,
-        selectedCount: selectedAgents.size,
-        planId,
-      });
-
-      // Save to localStorage
-      saveAgentAssignments(newAssignments);
-
-      // Verify save was successful using correct key
-      const saved = localStorage.getItem(ASSIGNMENTS_KEY);
-      if (!saved) {
-        throw new Error('Failed to verify assignments were saved to localStorage');
-      }
-      
-      // Double-check by parsing the saved data
-      const savedAssignments = JSON.parse(saved);
-      if (!Array.isArray(savedAssignments) || savedAssignments.length === 0) {
-        throw new Error('Saved assignments data is invalid or empty');
-      }
+      // Save assignments to database using tRPC
+      await trpc.commission.saveAssignments.mutate(newAssignments);
 
       console.log('[BulkPlanAssignment] Assignments saved successfully');
 
@@ -168,7 +111,6 @@ export default function BulkPlanAssignment({
       setIsOpen(false);
       setSelectedAgents(new Set());
       setSelectedPlanId('');
-      setSelectedTemplateId('');
     } catch (error) {
       console.error('[BulkPlanAssignment] Error assigning plans:', error);
       toast.error('Failed to assign plans. Please try again.');
@@ -176,9 +118,6 @@ export default function BulkPlanAssignment({
       setIsLoading(false);
     }
   };
-
-  // Show all agents - allow editing/reassigning plans to any agent
-  const displayAgents = agents;
 
   return (
     <>
@@ -192,7 +131,7 @@ export default function BulkPlanAssignment({
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Bulk Assign Commission Plans</DialogTitle>
             <DialogDescription>
@@ -201,12 +140,50 @@ export default function BulkPlanAssignment({
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Plan Selection - Show First */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Select Commission Plan</h3>
+              
+              {plans.length === 0 ? (
+                <Card className="p-4 text-center text-foreground/70">
+                  No commission plans available. Create a plan in the Plans tab first.
+                </Card>
+              ) : (
+                <div className="grid gap-2">
+                  {plans.map((plan) => (
+                    <Card
+                      key={plan.id}
+                      className={`p-4 cursor-pointer transition-colors ${
+                        selectedPlanId === plan.id.toString()
+                          ? 'bg-primary/10 border-primary border-2'
+                          : 'hover:bg-accent/50 border border-border'
+                      }`}
+                      onClick={() => setSelectedPlanId(plan.id.toString())}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">{plan.name}</p>
+                          <p className="text-sm text-foreground/70 mt-1">
+                            {plan.agentSplit}% / {plan.brokerageSplit}% 
+                            {plan.cap ? ` • Cap: $${plan.cap.toLocaleString()}` : ' • No Cap'}
+                          </p>
+                        </div>
+                        {selectedPlanId === plan.id.toString() && (
+                          <Badge className="bg-primary">Selected</Badge>
+                        )}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Agent Selection */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-foreground">Select Agents</h3>
                 <Badge variant="secondary">
-                  {selectedAgents.size} / {displayAgents.length}
+                  {selectedAgents.size} / {agents.length}
                 </Badge>
               </div>
 
@@ -215,16 +192,16 @@ export default function BulkPlanAssignment({
                   {/* Select All checkbox */}
                   <div className="flex items-center gap-2 pb-2 border-b border-border">
                     <Checkbox
-                      checked={selectedAgents.size === displayAgents.length && displayAgents.length > 0}
+                      checked={selectedAgents.size === agents.length && agents.length > 0}
                       onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
                     />
                     <span className="text-sm font-medium text-foreground">Select All Agents</span>
                   </div>
 
                   {/* Agent list */}
-                  {displayAgents.map((agent) => {
-                    const assignment = assignments.find(a => a.agentName === agent);
-                    const currentPlan = assignment ? plans.find(p => p.id === assignment.planId) : null;
+                  {agents.map((agent) => {
+                    const assignment = dbAssignments.find(a => a.agentName === agent);
+                    const currentPlan = assignment ? plans.find(p => p.id === parseInt(assignment.planId)) : null;
                     
                     return (
                       <div key={agent} className="flex items-center gap-2">
@@ -244,107 +221,19 @@ export default function BulkPlanAssignment({
                 </div>
               </Card>
             </div>
-
-            {/* Plan Selection */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">Select Plan</h3>
-              
-              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'plans' | 'templates')}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="templates" className="gap-2">
-                    <Zap className="w-4 h-4" />
-                    Templates
-                  </TabsTrigger>
-                  <TabsTrigger value="plans">Custom Plans</TabsTrigger>
-                </TabsList>
-
-                {/* Templates Tab */}
-                <TabsContent value="templates" className="space-y-3">
-                  {categories.map((category) => {
-                    const categoryTemplates = templates.filter(t => t.category === category.id);
-                    if (categoryTemplates.length === 0) return null;
-
-                    return (
-                      <div key={category.id} className="space-y-2">
-                        <h4 className="text-sm font-medium text-foreground">{category.label}</h4>
-                        <div className="grid gap-2">
-                          {categoryTemplates.map((template) => (
-                            <Card
-                              key={template.id}
-                              className={`p-3 cursor-pointer transition-colors ${
-                                selectedTemplateId === template.id
-                                  ? 'bg-primary/10 border-primary'
-                                  : 'hover:bg-accent/50'
-                              }`}
-                              onClick={() => {
-                                setSelectedTemplateId(template.id);
-                                setSelectedPlanId('');
-                              }}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <p className="font-medium text-foreground">{template.name}</p>
-                                  <p className="text-xs text-foreground/70">{template.description}</p>
-                                </div>
-                                {selectedTemplateId === template.id && (
-                                  <Badge className="bg-primary">Selected</Badge>
-                                )}
-                              </div>
-                            </Card>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </TabsContent>
-
-                {/* Custom Plans Tab */}
-                <TabsContent value="plans" className="space-y-3">
-                  {plans.length === 0 ? (
-                    <p className="text-sm text-foreground/70">No custom plans yet. Create one from a template first.</p>
-                  ) : (
-                    <div className="grid gap-2">
-                      {plans.map((plan) => (
-                        <Card
-                          key={plan.id}
-                          className={`p-3 cursor-pointer transition-colors ${
-                            selectedPlanId === plan.id
-                              ? 'bg-primary/10 border-primary'
-                              : 'hover:bg-accent/50'
-                          }`}
-                          onClick={() => {
-                            setSelectedPlanId(plan.id);
-                            setSelectedTemplateId('');
-                          }}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-medium text-foreground">{plan.name}</p>
-                              <p className="text-xs text-foreground/70">
-                                {plan.splitPercentage}% split
-                                {plan.capAmount > 0 && `, ${plan.capAmount.toLocaleString()} cap`}
-                              </p>
-                            </div>
-                            {selectedPlanId === plan.id && (
-                              <Badge className="bg-primary">Selected</Badge>
-                            )}
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleAssignPlan}
-              disabled={isLoading || selectedAgents.size === 0 || (!selectedPlanId && !selectedTemplateId)}
+              disabled={isLoading || selectedAgents.size === 0 || !selectedPlanId}
             >
               {isLoading ? 'Assigning...' : `Assign to ${selectedAgents.size} Agent(s)`}
             </Button>

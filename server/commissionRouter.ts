@@ -200,16 +200,12 @@ export const commissionRouter = router({
     try {
       const db = await getDb();
       if (!db) {
-        console.error('Database connection not available');
         throw new Error("Database connection not available");
       }
       
-      // Public procedure - return all plans
       const plansData = await db
         .select()
         .from(commissionPlans);
-      
-
 
       return plansData.map((p: any) => ({
         id: p.id,
@@ -223,10 +219,7 @@ export const commissionRouter = router({
         useSliding: p.useSliding === 1,
       } as CommissionPlan));
     } catch (error) {
-      console.error("Error fetching commission plans:", error);
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error("Error details:", errorMsg);
-      throw new Error(`Failed to fetch commission plans: ${errorMsg}`);
+      throw new Error(`Failed to fetch commission plans: ${error instanceof Error ? error.message : String(error)}`);
     }
   }),
 

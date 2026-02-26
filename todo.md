@@ -3911,3 +3911,12 @@
 - [x] Test dropdown now shows correct plans: Performance Tier Plan, Conservative Plan, Aggressive Growth Plan, Standard Sliding Scale
 - [x] Test assignment workflow: Select plan for agent, verify it persists with correct details (split %, cap amount)
 - [x] Verified end-to-end: Dropdown shows database plans, assignment works, details display correctly
+
+
+## Phase 57: Fix Commission Plan System
+- [ ] Remove all template-based plan references from commission.ts
+- [ ] Remove template plan rendering from BulkPlanAssignment modal
+- [ ] Reformat bulk assignment modal for better usability
+- [ ] Fix console errors showing "No plan found for planId: template-standard-*"
+- [ ] Test plan assignment workflow end-to-end
+- [ ] Test bulk assignment functionality
