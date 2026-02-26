@@ -11,9 +11,10 @@ interface CommissionPlanWarningProps {
   agentName: string;
   compact?: boolean;
   onNavigateToAssignments?: () => void;
+  planName?: string; // Plan name when assigned
 }
 
-export default function CommissionPlanWarning({ agentName, compact = false, onNavigateToAssignments }: CommissionPlanWarningProps) {
+export default function CommissionPlanWarning({ agentName, compact = false, onNavigateToAssignments, planName }: CommissionPlanWarningProps) {
   const handleNavigateToAssignments = () => {
     if (onNavigateToAssignments) {
       onNavigateToAssignments();
@@ -21,6 +22,16 @@ export default function CommissionPlanWarning({ agentName, compact = false, onNa
   };
 
   if (compact) {
+    if (planName) {
+      // Show assigned plan in green
+      return (
+        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+          <span className="text-lg">✓</span>
+          <span className="font-medium">{planName}</span>
+        </div>
+      );
+    }
+    
     return (
       <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400">
         <AlertCircle className="w-4 h-4 flex-shrink-0" />

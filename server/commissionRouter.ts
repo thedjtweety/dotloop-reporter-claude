@@ -259,10 +259,19 @@ export const commissionRouter = router({
         throw new Error("Database connection not available");
       }
       
-      // Public procedure - return all assignments
+      // Public procedure - return all assignments with plan names
       const assignmentsList = await db
-        .select()
-        .from(agentAssignments);
+        .select({
+          id: agentAssignments.id,
+          agentName: agentAssignments.agentName,
+          planId: agentAssignments.planId,
+          teamId: agentAssignments.teamId,
+          startDate: agentAssignments.startDate,
+          anniversaryDate: agentAssignments.anniversaryDate,
+          planName: commissionPlans.name,
+        })
+        .from(agentAssignments)
+        .leftJoin(commissionPlans, eq(agentAssignments.planId, commissionPlans.id));
 
       return assignmentsList.map((a: any) => ({
         id: a.id,
@@ -271,7 +280,8 @@ export const commissionRouter = router({
         teamId: a.teamId,
         startDate: a.startDate,
         anniversaryDate: a.anniversaryDate,
-      } as AgentPlanAssignment));
+        planName: a.planName || undefined,
+      }));
     } catch (error) {
       console.error("Error fetching agent assignments:", error);
       throw new Error("Failed to fetch agent assignments");
@@ -610,6 +620,93 @@ export const commissionRouter = router({
         throw new Error(
           `Failed to save agent assignments: ${error instanceof Error ? error.message : "Unknown error"}`
         );
+      }
+    }),
+
+  // Get agent commission summaries with recalculation based on assigned plans
+  getAgentCommissionsSummary: publicProcedure
+    .input(z.object({
+      transactions: z.array(z.object({
+        id: z.string(),
+        loopName: z.string(),
+        closingDate: z.string(),
+        agents: z.string(),
+        salePrice: z.number(),
+        commissionRate: z.number(),
+        buySidePercent: z.number().optional().default(50),
+        sellSidePercent: z.number().optional().default(50),
+      })),
+    }))
+    .query(async ({ input }) => {
+      try {
+        const db = getDb();
+        
+        // Get all commission plans
+        const plans = await db.select().from(commissionPlans);
+        const plansMap = new Map(plans.map(p => [p.id, p]));
+        
+        // Get all agent assignments
+        const assignments = await db.select().from(agentAssignments);
+        const assignmentMap = new Map(
+          assignments.map(a => [a.agentName, { planId: a.planId, plan: plansMap.get(a.planId) }])
+        );
+        
+        // Calculate commissions for each agent
+        const agentCommissions = new Map<string, {
+          agentName: string;
+          totalGCI: number;
+          totalCompanyDollar: number;
+          totalAgentCommission: number;
+          planId?: string;
+          planName?: string;
+          transactionCount: number;
+        }>();
+        
+        for (const transaction of input.transactions) {
+          const agents = transaction.agents.split(',').map(a => a.trim());
+          const totalCommission = transaction.salePrice * (transaction.commissionRate / 100);
+          const gciPerAgent = totalCommission / agents.length;
+          
+          for (const agentName of agents) {
+            const assignment = assignmentMap.get(agentName);
+            const plan = assignment?.plan;
+            
+            let agentCommission = gciPerAgent;
+            let companyDollar = gciPerAgent * ((100 - (plan?.splitPercentage || 50)) / 100);
+            
+            // If plan has a cap, apply it
+            if (plan?.capAmount && plan.capAmount > 0) {
+              // For simplicity, we'll apply the cap proportionally
+              const cappedCompanyDollar = Math.min(companyDollar, plan.capAmount / agents.length);
+              agentCommission = gciPerAgent - cappedCompanyDollar;
+            } else {
+              agentCommission = gciPerAgent * ((plan?.splitPercentage || 50) / 100);
+            }
+            
+            if (!agentCommissions.has(agentName)) {
+              agentCommissions.set(agentName, {
+                agentName,
+                totalGCI: 0,
+                totalCompanyDollar: 0,
+                totalAgentCommission: 0,
+                planId: plan?.id,
+                planName: plan?.name,
+                transactionCount: 0,
+              });
+            }
+            
+            const summary = agentCommissions.get(agentName)!;
+            summary.totalGCI += gciPerAgent;
+            summary.totalCompanyDollar += companyDollar;
+            summary.totalAgentCommission += agentCommission;
+            summary.transactionCount += 1;
+          }
+        }
+        
+        return Array.from(agentCommissions.values());
+      } catch (error) {
+        console.error('Error calculating agent commissions:', error);
+        throw new Error(`Failed to calculate agent commissions: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }),
 

@@ -3929,8 +3929,24 @@
 - [x] Test: Assign plan to agent in Agents tab, verify leaderboard shows updated plan immediately
 
 ## Phase 59: Fix Bulk Plan Assignment Feature
-- [ ] Fix saveAssignments procedure to handle duplicate key constraint (delete existing assignments first)
-- [ ] Fix BulkPlanAssignment to use correct plan field names from API (splitPercentage instead of agentSplit)
-- [ ] Test bulk assignment with multiple agents
-- [ ] Verify leaderboard updates after bulk assignment completes
-- [ ] Test that individual assignments still work after bulk assignment
+- [x] Fix saveAssignments procedure to handle duplicate key constraint (delete existing assignments first)
+- [x] Fix BulkPlanAssignment to use correct plan field names from API (splitPercentage instead of agentSplit)
+- [x] Test bulk assignment with multiple agents
+- [x] Verify leaderboard updates after bulk assignment completes
+- [x] Test that individual assignments still work after bulk assignment
+
+## Phase 60: Fix Leaderboard to Display Plan Names from Database
+- [x] Replace localStorage calls with tRPC database queries
+- [x] Fetch assignments from commission.getAssignments procedure
+- [x] Display plan names in leaderboard when assigned
+- [x] Show "Assign Now" button only for agents without plans
+- [x] Test plan display after assignment
+
+
+## Phase 60: Fix Leaderboard Commission Display Bug
+- [ ] Remove all deprecated localStorage calls from leaderboard components
+- [ ] Replace getPlanForAgent() with tRPC commission.getPlan query
+- [ ] Replace getAgentAssignments() with tRPC commission.getAssignments query
+- [ ] Implement real commission recalculation based on assigned plan
+- [ ] Update CommissionPlanWarning to show assigned plan instead of "No plan assigned"
+- [ ] Test: Assign plan to agent, verify leaderboard shows plan name and recalculated commission
