@@ -3914,9 +3914,9 @@
 
 
 ## Phase 57: Fix Commission Plan System
-- [ ] Remove all template-based plan references from commission.ts
-- [ ] Remove template plan rendering from BulkPlanAssignment modal
-- [ ] Reformat bulk assignment modal for better usability
-- [ ] Fix console errors showing "No plan found for planId: template-standard-*"
-- [ ] Test plan assignment workflow end-to-end
-- [ ] Test bulk assignment functionality
+- [x] Remove all template-based plan references from commission.ts
+- [x] Remove template plan rendering from BulkPlanAssignment modal
+- [x] Reformat bulk assignment modal for better usability
+- [x] Fix console errors showing "No plan found for planId: template-standard-*"
+- [x] Test plan assignment workflow end-to-end
+- [x] Test bulk assignment functionality

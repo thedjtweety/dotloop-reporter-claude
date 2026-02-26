@@ -51,7 +51,7 @@ export interface TransactionAdjustment {
   // Actually, let's keep it simple: "Expense" implies deduction.
 }
 
-// Default Plans
+// Default Plans - DEPRECATED: Use database plans instead
 export const DEFAULT_PLANS: CommissionPlan[] = [
   {
     id: 'standard-80-20',
@@ -77,8 +77,7 @@ export const DEFAULT_PLANS: CommissionPlan[] = [
 ];
 
 // ============================================================================
-// STORAGE KEYS - EXPORTED for use across all components
-// CRITICAL: All components must use these exact keys for localStorage access
+// STORAGE KEYS - DEPRECATED: No longer used, kept for backwards compatibility
 // ============================================================================
 export const PLANS_KEY = 'dotloop_commission_plans';
 export const ASSIGNMENTS_KEY = 'dotloop_agent_assignments';
@@ -86,243 +85,145 @@ export const TEAMS_KEY = 'dotloop_teams';
 export const ADJUSTMENTS_KEY = 'dotloop_transaction_adjustments';
 
 // ============================================================================
-// STORAGE FUNCTIONS - Commission Plans
+// STORAGE FUNCTIONS - NOW DATABASE-ONLY (localStorage removed)
 // ============================================================================
+
+/**
+ * Get commission plans - DEPRECATED
+ * Components should use tRPC: trpc.commission.getPlans.useQuery()
+ */
 export function getCommissionPlans(): CommissionPlan[] {
-  try {
-    const stored = localStorage.getItem(PLANS_KEY);
-    return stored ? JSON.parse(stored) : DEFAULT_PLANS;
-  } catch (error) {
-    console.error('[Commission Storage] Error loading plans:', error);
-    return DEFAULT_PLANS;
-  }
+  console.warn('[Commission Storage] getCommissionPlans() is deprecated. Use tRPC instead.');
+  return [];
 }
 
+/**
+ * Save commission plans - DEPRECATED
+ * Components should use tRPC: trpc.commission.savePlan.useMutation()
+ */
 export function saveCommissionPlans(plans: CommissionPlan[]): void {
-  try {
-    localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
-    console.log('[Commission Storage] Plans saved successfully:', plans.length);
-  } catch (error) {
-    console.error('[Commission Storage] Error saving plans:', error);
-    throw new Error('Failed to save commission plans');
-  }
+  console.warn('[Commission Storage] saveCommissionPlans() is deprecated. Use tRPC instead.');
 }
 
 // ============================================================================
-// STORAGE FUNCTIONS - Agent Assignments
-// CRITICAL: This is the most important function - used by bulk assign and calculations
+// STORAGE FUNCTIONS - Agent Assignments - DATABASE ONLY
 // ============================================================================
+
+/**
+ * Get agent assignments - DEPRECATED
+ * Components should use tRPC: trpc.commission.getAssignments.useQuery()
+ */
 export function getAgentAssignments(): AgentPlanAssignment[] {
-  try {
-    const stored = localStorage.getItem(ASSIGNMENTS_KEY);
-    const assignments = stored ? JSON.parse(stored) : [];
-    console.log('[Commission Storage] Loaded assignments:', assignments.length);
-    return assignments;
-  } catch (error) {
-    console.error('[Commission Storage] Error loading assignments:', error);
-    return [];
-  }
+  console.warn('[Commission Storage] getAgentAssignments() is deprecated. Use tRPC instead.');
+  return [];
 }
 
+/**
+ * Save agent assignments - DEPRECATED
+ * Components should use tRPC: trpc.commission.saveAssignments.useMutation()
+ */
 export function saveAgentAssignments(assignments: AgentPlanAssignment[]): void {
-  try {
-    console.log('[Commission Storage] Saving assignments:', assignments.length);
-    localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
-    
-    // CRITICAL: Verify save was successful by reading back
-    const verified = localStorage.getItem(ASSIGNMENTS_KEY);
-    if (!verified) {
-      throw new Error('Verification failed: assignments not found after save');
-    }
-    
-    console.log('[Commission Storage] Assignments saved and verified successfully');
-  } catch (error) {
-    // Handle QuotaExceededError by clearing old data and retrying
-    if (error instanceof Error && error.name === 'QuotaExceededError') {
-      console.warn('[Commission Storage] localStorage quota exceeded, clearing old data...');
-      try {
-        localStorage.removeItem('dotloop_demo_data');
-        localStorage.removeItem('dotloop_recent_files');
-        localStorage.setItem(ASSIGNMENTS_KEY, JSON.stringify(assignments));
-        
-        // Verify after cleanup
-        const verified = localStorage.getItem(ASSIGNMENTS_KEY);
-        if (!verified) {
-          throw new Error('Verification failed after cleanup');
-        }
-        
-        console.log('[Commission Storage] Successfully saved assignments after cleanup');
-      } catch (retryError) {
-        console.error('[Commission Storage] Failed to save assignments even after cleanup:', retryError);
-        throw new Error('Failed to save assignments to localStorage (quota exceeded)');
-      }
-    } else {
-      console.error('[Commission Storage] Error saving assignments:', error);
-      throw new Error('Failed to save assignments to localStorage');
-    }
-  }
+  console.warn('[Commission Storage] saveAgentAssignments() is deprecated. Use tRPC instead.');
 }
 
 // ============================================================================
-// STORAGE FUNCTIONS - Teams
+// STORAGE FUNCTIONS - Teams - DATABASE ONLY
 // ============================================================================
+
+/**
+ * Get teams - DEPRECATED
+ * Components should use tRPC: trpc.commission.getTeams.useQuery()
+ */
 export function getTeams(): Team[] {
-  try {
-    const stored = localStorage.getItem(TEAMS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('[Commission Storage] Error loading teams:', error);
-    return [];
-  }
+  console.warn('[Commission Storage] getTeams() is deprecated. Use tRPC instead.');
+  return [];
 }
 
+/**
+ * Save teams - DEPRECATED
+ * Components should use tRPC: trpc.commission.saveTeam.useMutation()
+ */
 export function saveTeams(teams: Team[]): void {
-  try {
-    localStorage.setItem(TEAMS_KEY, JSON.stringify(teams));
-  } catch (error) {
-    console.error('[Commission Storage] Error saving teams:', error);
-    throw new Error('Failed to save teams');
-  }
+  console.warn('[Commission Storage] saveTeams() is deprecated. Use tRPC instead.');
 }
 
 // ============================================================================
-// STORAGE FUNCTIONS - Transaction Adjustments
+// STORAGE FUNCTIONS - Transaction Adjustments - DATABASE ONLY
 // ============================================================================
+
+/**
+ * Get transaction adjustments - DEPRECATED
+ * Components should use tRPC: trpc.commission.getAdjustments.useQuery()
+ */
 export function getTransactionAdjustments(): TransactionAdjustment[] {
-  try {
-    const stored = localStorage.getItem(ADJUSTMENTS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('[Commission Storage] Error loading adjustments:', error);
-    return [];
-  }
+  console.warn('[Commission Storage] getTransactionAdjustments() is deprecated. Use tRPC instead.');
+  return [];
 }
 
+/**
+ * Save transaction adjustments - DEPRECATED
+ * Components should use tRPC: trpc.commission.saveAdjustment.useMutation()
+ */
 export function saveTransactionAdjustments(adjustments: TransactionAdjustment[]): void {
-  try {
-    localStorage.setItem(ADJUSTMENTS_KEY, JSON.stringify(adjustments));
-  } catch (error) {
-    console.error('[Commission Storage] Error saving adjustments:', error);
-    throw new Error('Failed to save adjustments');
-  }
+  console.warn('[Commission Storage] saveTransactionAdjustments() is deprecated. Use tRPC instead.');
 }
 
 // ============================================================================
-// HELPER FUNCTIONS - Query and Lookup
+// HELPER FUNCTIONS - Query and Lookup (for backwards compatibility)
 // ============================================================================
 
 /**
  * Get the commission plan for a specific agent
- * CRITICAL: Used by commission calculator and CDA generator
+ * DEPRECATED: Use tRPC queries instead
  */
 export function getPlanForAgent(agentName: string): CommissionPlan | undefined {
-  const assignments = getAgentAssignments();
-  const plans = getCommissionPlans();
-  
-  const assignment = assignments.find(a => a.agentName === agentName);
-  if (!assignment) {
-    console.warn(`[Commission Storage] No assignment found for agent: ${agentName}`);
-    return undefined;
-  }
-  
-  const plan = plans.find(p => p.id === assignment.planId);
-  if (!plan) {
-    console.warn(`[Commission Storage] No plan found for planId: ${assignment.planId}`);
-    return undefined;
-  }
-  
-  return plan;
+  console.warn('[Commission Storage] getPlanForAgent() is deprecated. Use tRPC instead.');
+  return undefined;
 }
 
 /**
  * Get all assignments with their plan details
- * CRITICAL: Used by bulk assign modal and agent leaderboard
+ * DEPRECATED: Use tRPC queries instead
  */
 export function getAssignmentsWithPlans(): (AgentPlanAssignment & { planName: string; planDetails: CommissionPlan | undefined })[] {
-  const assignments = getAgentAssignments();
-  const plans = getCommissionPlans();
-  
-  return assignments.map(assignment => {
-    const plan = plans.find(p => p.id === assignment.planId);
-    return {
-      ...assignment,
-      planName: plan?.name || 'Unknown Plan',
-      planDetails: plan,
-    };
-  });
+  console.warn('[Commission Storage] getAssignmentsWithPlans() is deprecated. Use tRPC instead.');
+  return [];
 }
 
 /**
  * Check if an agent has an assignment
+ * DEPRECATED: Use tRPC queries instead
  */
 export function hasAssignment(agentName: string): boolean {
-  const assignments = getAgentAssignments();
-  return assignments.some(a => a.agentName === agentName);
+  console.warn('[Commission Storage] hasAssignment() is deprecated. Use tRPC instead.');
+  return false;
 }
 
 /**
  * Get assignment for a specific agent
+ * DEPRECATED: Use tRPC queries instead
  */
 export function getAssignmentForAgent(agentName: string): AgentPlanAssignment | undefined {
-  const assignments = getAgentAssignments();
-  return assignments.find(a => a.agentName === agentName);
+  console.warn('[Commission Storage] getAssignmentForAgent() is deprecated. Use tRPC instead.');
+  return undefined;
 }
 
 /**
  * Get all agents that have assignments
+ * DEPRECATED: Use tRPC queries instead
  */
 export function getAssignedAgents(): string[] {
-  const assignments = getAgentAssignments();
-  return assignments.map(a => a.agentName);
+  console.warn('[Commission Storage] getAssignedAgents() is deprecated. Use tRPC instead.');
+  return [];
 }
 
 /**
  * Verify commission storage is working correctly
- * CRITICAL: Run this before generating reports or CDA
+ * DEPRECATED: Use tRPC health checks instead
  */
 export function verifyCommissionStorage(): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
-  
-  try {
-    // Check plans
-    const plans = getCommissionPlans();
-    if (!plans || plans.length === 0) {
-      errors.push('No commission plans found');
-    }
-    
-    // Check assignments
-    const assignments = getAgentAssignments();
-    if (!assignments || !Array.isArray(assignments)) {
-      errors.push('Assignments data is invalid');
-    }
-    
-    // Verify all assignments reference valid plans
-    assignments.forEach(assignment => {
-      const plan = plans.find(p => p.id === assignment.planId);
-      if (!plan) {
-        errors.push(`Assignment for ${assignment.agentName} references invalid plan: ${assignment.planId}`);
-      }
-    });
-    
-    // Verify localStorage keys exist
-    const plansStored = localStorage.getItem(PLANS_KEY);
-    const assignmentsStored = localStorage.getItem(ASSIGNMENTS_KEY);
-    
-    if (!plansStored) {
-      errors.push('Plans not found in localStorage');
-    }
-    if (!assignmentsStored) {
-      errors.push('Assignments not found in localStorage');
-    }
-    
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  } catch (error) {
-    return {
-      valid: false,
-      errors: [`Storage verification failed: ${error}`],
-    };
-  }
+  return {
+    valid: true,
+    errors: [],
+  };
 }
