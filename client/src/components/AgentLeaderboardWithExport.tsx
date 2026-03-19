@@ -47,7 +47,7 @@ type FilterType = 'all' | 'top10' | 'bottom10';
 
 const ITEMS_PER_PAGE = 10;
 
-export default function AgentLeaderboardWithExport({ agents, records = [], agentAssignments = [], onNavigateToAssignAgent, onAgentDrillDown }: AgentLeaderboardProps) {
+export default function AgentLeaderboardWithExport({ agents = [], records = [], agentAssignments = [], onNavigateToAssignAgent, onAgentDrillDown }: AgentLeaderboardProps) {
   const [sortField, setSortField] = useState<SortField>('totalCommission');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [exportingAgent, setExportingAgent] = useState<string | null>(null);
@@ -139,6 +139,7 @@ export default function AgentLeaderboardWithExport({ agents, records = [], agent
 
   // Computed values with memoization
   const filteredAgents = useMemo(() => {
+    if (!agents || agents.length === 0) return [];
     return agents.filter(agent =>
       agent.agentName.toLowerCase().includes(searchQuery.toLowerCase())
     );
