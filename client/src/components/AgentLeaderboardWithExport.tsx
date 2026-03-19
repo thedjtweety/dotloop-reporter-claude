@@ -324,14 +324,19 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
                               >
                                 {agent.agentName}
                               </span>
-                              {agentHasCommissionPlan(agent.agentName) || true ? (
+                              {!agentHasCommissionPlan(agent.agentName) ? (
+                                <CommissionPlanWarning 
+                                  agentName={agent.agentName} 
+                                  compact={true}
+                                  onNavigateToAssignments={() => onNavigateToAssignAgent?.(agent.agentName)}
+                                />
+                              ) : (
                                 <CommissionPlanWarning 
                                   agentName={agent.agentName} 
                                   compact={true}
                                   planName={getAgentPlanName(agent.agentName)}
-                                  onNavigateToAssignments={() => onNavigateToAssignAgent?.(agent.agentName)}
                                 />
-                              ) : null}
+                              )}
                             </div>
                           </div>
                         </TableCell>
@@ -443,11 +448,17 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
 
       {/* Modals */}
       {selectedAgent && (
-        <AgentDetailsPanel
-          agent={selectedAgent}
-          onClose={() => setSelectedAgent(null)}
-          records={records}
-        />
+        <Sheet open={!!selectedAgent} onOpenChange={() => setSelectedAgent(null)}>
+          <SheetContent className="w-full sm:w-[700px] bg-background border-border">
+            <SheetHeader>
+              <SheetTitle className="text-foreground">{selectedAgent.agentName} - Agent Details</SheetTitle>
+            </SheetHeader>
+            <AgentDetailsPanel
+              agent={selectedAgent}
+              transactions={records}
+            />
+          </SheetContent>
+        </Sheet>
       )}
 
       {commissionBreakdownAgent && (
@@ -456,7 +467,7 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
             <SheetHeader>
               <SheetTitle className="text-foreground">{commissionBreakdownAgent.agentName} - Commission Breakdown</SheetTitle>
             </SheetHeader>
-            <AgentCommissionBreakdown agent={commissionBreakdownAgent} />
+            <AgentCommissionBreakdown agent={commissionBreakdownAgent} transactions={records} />
           </SheetContent>
         </Sheet>
       )}
