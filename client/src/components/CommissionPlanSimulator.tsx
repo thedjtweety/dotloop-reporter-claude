@@ -4,13 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import FullScreenModal from './FullScreenModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -220,14 +214,12 @@ export default function CommissionPlanSimulator({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Commission Plan Simulator</DialogTitle>
-          <DialogDescription>
-            Test different commission structures and see the impact on earnings
-          </DialogDescription>
-        </DialogHeader>
+    <FullScreenModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Commission Plan Simulator"
+      subtitle="Test different commission structures and see the impact on earnings"
+    >
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -585,7 +577,6 @@ export default function CommissionPlanSimulator({
             Close
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </FullScreenModal>
   );
 }

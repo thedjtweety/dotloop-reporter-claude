@@ -29,7 +29,7 @@ import CommissionPlanWarning from './CommissionPlanWarning';
 import { DotloopRecord } from '@/lib/csvParser';
 import WinnersPodium from './WinnersPodium';
 import { formatCurrency, formatPercentage } from '@/lib/formatUtils';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import FullScreenModal from './FullScreenModal';
 import AgentComparisonBars from './AgentComparisonBars';
 import { BarChart3 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
@@ -447,30 +447,30 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
       </Card>
 
       {/* Modals */}
-      {selectedAgent && (
-        <Sheet open={!!selectedAgent} onOpenChange={() => setSelectedAgent(null)}>
-          <SheetContent className="w-full sm:w-[700px] bg-background border-border">
-            <SheetHeader>
-              <SheetTitle className="text-foreground">{selectedAgent.agentName} - Agent Details</SheetTitle>
-            </SheetHeader>
-            <AgentDetailsPanel
-              agent={selectedAgent}
-              transactions={records}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
+      <FullScreenModal
+        isOpen={!!selectedAgent}
+        onClose={() => setSelectedAgent(null)}
+        title={selectedAgent?.agentName || ''}
+        subtitle="Agent Details"
+      >
+        {selectedAgent && (
+          <AgentDetailsPanel
+            agent={selectedAgent}
+            transactions={records}
+          />
+        )}
+      </FullScreenModal>
 
-      {commissionBreakdownAgent && (
-        <Sheet open={!!commissionBreakdownAgent} onOpenChange={() => setCommissionBreakdownAgent(null)}>
-          <SheetContent className="w-full sm:w-[600px] bg-background border-border">
-            <SheetHeader>
-              <SheetTitle className="text-foreground">{commissionBreakdownAgent.agentName} - Commission Breakdown</SheetTitle>
-            </SheetHeader>
-            <AgentCommissionBreakdown agent={commissionBreakdownAgent} transactions={records} />
-          </SheetContent>
-        </Sheet>
-      )}
+      <FullScreenModal
+        isOpen={!!commissionBreakdownAgent}
+        onClose={() => setCommissionBreakdownAgent(null)}
+        title={commissionBreakdownAgent?.agentName || ''}
+        subtitle="Commission Breakdown"
+      >
+        {commissionBreakdownAgent && (
+          <AgentCommissionBreakdown agent={commissionBreakdownAgent} transactions={records} />
+        )}
+      </FullScreenModal>
     </div>
   );
 }

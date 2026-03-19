@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import FullScreenModal from './FullScreenModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -171,14 +171,22 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Edit CDA Summary</DialogTitle>
-        </DialogHeader>
-
-        <ScrollArea className="h-[calc(90vh-120px)] pr-4">
-          <div className="space-y-6 pr-4">
+    <FullScreenModal
+      isOpen={open}
+      onClose={onClose}
+      title="Edit CDA Summary"
+      headerActions={
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            Save Changes
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-6 pr-4">
             {/* Validation Errors */}
             {validationErrors.length > 0 && (
               <div className="bg-red-50 dark:bg-red-950 p-4 rounded-lg border border-red-200 dark:border-red-800">
@@ -522,18 +530,7 @@ export default function CDAEditModal({ open, cdaData, onClose, onSave }: CDAEdit
                 <p className="text-foreground/70">All commission splits must total 100% on each side</p>
               </div>
             </div>
-          </div>
-        </ScrollArea>
-
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save Changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </FullScreenModal>
   );
 }

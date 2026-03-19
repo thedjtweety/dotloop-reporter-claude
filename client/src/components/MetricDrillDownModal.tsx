@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import FullScreenModal from './FullScreenModal';
 import { Card } from '@/components/ui/card';
 import { DotloopRecord } from '@/lib/csvParser';
 import { formatCurrency, formatNumber, formatPercentage } from '@/lib/formatUtils';
@@ -204,18 +204,14 @@ export default function MetricDrillDownModal({
   const { title, description, icon: Icon, content } = getMetricContent();
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className="w-5 h-5 text-primary" />
-            <DialogTitle>{title}</DialogTitle>
-          </div>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <div className="mt-6">
-          {content}
-        </div>
+    <FullScreenModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      subtitle={description}
+    >
+      <div className="mt-6 space-y-6">
+        {content}
         {metric === 'deals' && onViewDetails && (
           <div className="mt-6 pt-6 border-t border-border">
             <button
@@ -229,7 +225,7 @@ export default function MetricDrillDownModal({
             </button>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </FullScreenModal>
   );
 }
