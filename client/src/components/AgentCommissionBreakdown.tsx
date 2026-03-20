@@ -4,7 +4,7 @@
  * Shows buy-side vs sell-side, commission by property type, trends, etc.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AgentMetrics, DotloopRecord } from '@/lib/csvParser';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ import {
 } from 'recharts';
 import { formatCurrency, formatPercentage } from '@/lib/formatUtils';
 import { DollarSign, TrendingUp, Percent, Calendar } from 'lucide-react';
+import { ModalSearch } from './ModalSearch';
 
 interface AgentCommissionBreakdownProps {
   agent: AgentMetrics;
@@ -42,6 +43,7 @@ export default function AgentCommissionBreakdown({
   hasCommissionPlan = true,
   showRecalculated = false,
 }: AgentCommissionBreakdownProps) {
+  const [searchTerm, setSearchTerm] = useState('');
   // Filter transactions for this agent
   const agentTransactions = useMemo(() => {
     return transactions.filter(t => {
@@ -76,34 +78,50 @@ export default function AgentCommissionBreakdown({
     ];
   }, [agent.buySideCommission, agent.sellSideCommission]);
 
-  // Commission by property type
+  // Commission by property type (filtered by search)
   const commissionByPropertyType = useMemo(() => {
     const breakdown: Record<string, number> = {};
     agentTransactions.forEach(t => {
       const type = t.propertyType || 'Unknown';
       breakdown[type] = (breakdown[type] || 0) + (t.commissionTotal || 0);
     });
-    return Object.entries(breakdown)
+    let results = Object.entries(breakdown)
       .map(([type, commission]) => ({
         type,
         commission,
       }))
       .sort((a, b) => b.commission - a.commission)
       .slice(0, 6); // Top 6 property types
-  }, [agentTransactions]);
+    
+    // Filter by search term
+    if (searchTerm) {
+      results = results.filter(item => 
+        item.type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return results;
+  }, [agentTransactions, searchTerm]);
 
-  // Commission by transaction status
+  // Commission by transaction status (filtered by search)
   const commissionByStatus = useMemo(() => {
     const breakdown: Record<string, number> = {};
     agentTransactions.forEach(t => {
       const status = t.loopStatus || 'Unknown';
       breakdown[status] = (breakdown[status] || 0) + (t.commissionTotal || 0);
     });
-    return Object.entries(breakdown).map(([status, commission]) => ({
+    let results = Object.entries(breakdown).map(([status, commission]) => ({
       status,
       commission,
     }));
-  }, [agentTransactions]);
+    
+    // Filter by search term
+    if (searchTerm) {
+      results = results.filter(item => 
+        item.status.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    return results;
+  }, [agentTransactions, searchTerm]);
 
   // Commission timeline (by month)
   const commissionTimeline = useMemo(() => {
@@ -143,6 +161,16 @@ export default function AgentCommissionBreakdown({
 
   return (
     <div className="space-y-6">
+      {/* Search Bar */}
+      <div className="mb-4">
+        <ModalSearch
+          placeholder="Search by property type or status..."
+          onSearchChange={setSearchTerm}
+          resultCount={commissionByPropertyType.length + commissionByStatus.length}
+          totalCount={agentTransactions.length}
+        />
+      </div>
+
       {/* Commission Plan Warning */}
       {!hasCommissionPlan && (
         <CommissionPlanWarning agentName={agent.agentName} />

@@ -10,10 +10,10 @@ import { DotloopRecord } from '@/lib/csvParser';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, List, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { BarChart3, List } from 'lucide-react';
 import TransactionTable from './TransactionTable';
 import AgentOnePager from './AgentOnePager';
+import { ModalSearch } from './ModalSearch';
 
 interface AgentDetailsPanelProps {
   agent: AgentMetrics;
@@ -84,13 +84,12 @@ export default function AgentDetailsPanel({
 
           {/* Search Bar - Only visible in Transactions tab */}
           {activeTab === 'transactions' && (
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground w-4 h-4" />
-              <Input 
-                placeholder="Search transactions by address, status, or type..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
+            <div className="mb-4">
+              <ModalSearch
+                placeholder="Search transactions by address, status, or type..."
+                onSearchChange={setSearchTerm}
+                resultCount={filteredTransactions.length}
+                totalCount={agentTransactions.length}
               />
             </div>
           )}

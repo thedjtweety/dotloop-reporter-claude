@@ -3957,3 +3957,12 @@
 - [x] Fix undefined value in filter operation (added default agents = [] and null check)
 - [x] Test app loads without crashing
 - [x] Verify all features work after fix
+
+## Phase 28: Real-Time Search Across Modals (Current)
+- [ ] Create reusable ModalSearch component with full-text search and highlighting
+- [ ] Integrate search into AgentDetailsPanel (Overview and Transactions tabs)
+- [ ] Integrate search into AgentCommissionBreakdown modal
+- [ ] Integrate search into DrillDownModal and other data-heavy modals
+- [ ] Test search functionality across all modals
+- [ ] Write unit tests for ModalSearch component
+- [ ] Write integration tests for search in each modal

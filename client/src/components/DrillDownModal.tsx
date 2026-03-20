@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
-import { Download, Printer, Search, ExternalLink } from 'lucide-react';
+import { Download, Printer, ExternalLink } from 'lucide-react';
 import { DotloopRecord } from '@/lib/csvParser';
 import TransactionTable from './TransactionTable';
 import TransactionInfoModal from './TransactionInfoModal';
 import { exportAsCSV, exportAsExcel, openPrintDialog, exportFilteredToCSV, exportFilteredToExcel } from '@/lib/exportUtils';
 import { filterAndSortTransactions, DrillDownFilters, SortState, getUniqueValues } from '@/lib/filterUtils';
 import { openMultipleInDotloop } from '@/lib/dotloopUtils';
-import { Input } from '@/components/ui/input';
+import { ModalSearch } from '@/components/ModalSearch';
 import {
   Select,
   SelectContent,
@@ -198,14 +198,12 @@ export default function DrillDownModal({
           <div className="space-y-3 sticky top-0 z-10 bg-background pb-4">
             <div className="flex items-center gap-3 flex-wrap">
               <div className="flex-1 min-w-[200px]">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
+                <div className="flex-1 max-w-md">
+                  <ModalSearch
                     placeholder="Search by address, agent, property type..."
-                    value={filters.searchQuery}
-                    onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                    className="pl-10"
+                    onSearchChange={(value) => setFilters({ ...filters, searchQuery: value })}
+                    resultCount={filteredTransactions.length}
+                    totalCount={transactions.length}
                   />
                 </div>
               </div>
