@@ -8,16 +8,9 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { saveBookmark, getBookmarks, deleteBookmark, FilterBookmark } from '@/lib/bookmarkUtils';
+import FullScreenModal from '@/components/FullScreenModal';
 
 interface BookmarkManagerProps {
   type: 'transaction' | 'pipeline';
@@ -77,7 +70,6 @@ export default function BookmarkManager({ type, currentFilters, onLoadBookmark }
           <div className="px-2 py-1.5">
             <p className="text-xs font-semibold text-muted-foreground">Saved Bookmarks</p>
           </div>
-
           {bookmarks.length === 0 ? (
             <div className="px-2 py-2 text-xs text-muted-foreground text-center">
               No bookmarks yet
@@ -119,35 +111,41 @@ export default function BookmarkManager({ type, currentFilters, onLoadBookmark }
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Bookmark</DialogTitle>
-            <DialogDescription>
-              Give this filter configuration a name for quick access later
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="e.g., High-Value Deals, This Month's Closings"
-              value={bookmarkName}
-              onChange={e => setBookmarkName(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') handleSaveBookmark();
-              }}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+      <FullScreenModal
+        isOpen={showSaveDialog}
+        onClose={() => setShowSaveDialog(false)}
+        title="Save Bookmark"
+        subtitle="Give this filter configuration a name for quick access later"
+        headerActions={
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowSaveDialog(false)}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSaveBookmark} disabled={!bookmarkName.trim()}>
+            <Button 
+              onClick={handleSaveBookmark} 
+              disabled={!bookmarkName.trim()}
+            >
               Save Bookmark
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        }
+      >
+        <div className="max-w-md mx-auto py-12">
+          <Input
+            placeholder="e.g., High-Value Deals, This Month's Closings"
+            value={bookmarkName}
+            onChange={e => setBookmarkName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSaveBookmark();
+            }}
+            autoFocus
+            className="text-lg py-6"
+          />
+        </div>
+      </FullScreenModal>
     </>
   );
 }

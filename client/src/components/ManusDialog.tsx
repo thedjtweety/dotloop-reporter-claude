@@ -1,13 +1,6 @@
-import { useEffect, useState } from "react";
-
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import FullScreenModal from "@/components/FullScreenModal";
 
 interface ManusDialogProps {
   title?: string;
@@ -47,43 +40,50 @@ export function ManusDialog({
   };
 
   return (
-    <Dialog
-      open={onOpenChange ? open : internalOpen}
-      onOpenChange={handleOpenChange}
+    <FullScreenModal
+      isOpen={onOpenChange ? open : internalOpen}
+      onClose={() => handleOpenChange(false)}
+      title={title || "Login Required"}
+      subtitle="Please login with Manus to continue"
+      headerActions={
+        <Button
+          onClick={onLogin}
+          className="gap-2"
+        >
+          Login with Manus
+        </Button>
+      }
     >
-      <DialogContent className="py-5 bg-[#f8f8f7] rounded-[20px] w-[400px] shadow-[0px_4px_11px_0px_rgba(0,0,0,0.08)] border border-[rgba(0,0,0,0.08)] backdrop-blur-2xl p-0 gap-0 text-center">
-        <div className="flex flex-col items-center gap-2 p-5 pt-12">
-          {logo ? (
-            <div className="w-16 h-16 bg-white rounded-xl border border-[rgba(0,0,0,0.08)] flex items-center justify-center">
-              <img
-                src={logo}
-                alt="Dialog graphic"
-                className="w-10 h-10 rounded-md"
-              />
-            </div>
-          ) : null}
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] gap-6">
+        {logo ? (
+          <div className="w-20 h-20 bg-muted rounded-xl border border-border flex items-center justify-center">
+            <img
+              src={logo}
+              alt="Dialog graphic"
+              className="w-12 h-12 rounded-md"
+            />
+          </div>
+        ) : null}
 
-          {/* Title and subtitle */}
+        <div className="text-center space-y-2 max-w-md">
           {title ? (
-            <DialogTitle className="text-xl font-semibold text-[#34322d] leading-[26px] tracking-[-0.44px]">
+            <h2 className="text-2xl font-semibold text-foreground">
               {title}
-            </DialogTitle>
+            </h2>
           ) : null}
-          <DialogDescription className="text-sm text-[#858481] leading-5 tracking-[-0.154px]">
+          <p className="text-muted-foreground">
             Please login with Manus to continue
-          </DialogDescription>
+          </p>
         </div>
 
-        <DialogFooter className="px-5 py-5">
-          {/* Login button */}
-          <Button
-            onClick={onLogin}
-            className="w-full h-10 bg-[#1a1a19] hover:bg-[#1a1a19]/90 text-white rounded-[10px] text-sm font-medium leading-5 tracking-[-0.154px]"
-          >
-            Login with Manus
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <Button
+          onClick={onLogin}
+          size="lg"
+          className="mt-6"
+        >
+          Login with Manus
+        </Button>
+      </div>
+    </FullScreenModal>
   );
 }

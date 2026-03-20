@@ -5,15 +5,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Clock, Zap } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Clock, Zap } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import FullScreenModal from '@/components/FullScreenModal';
 
 export interface RateLimitModalProps {
   isOpen: boolean;
@@ -63,36 +57,31 @@ export const RateLimitModal: React.FC<RateLimitModalProps> = ({
       : `${displaySeconds}s`;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-white">
-            <Zap className="w-5 h-5 text-yellow-500" />
-            High Traffic Detected
-          </DialogTitle>
-          <DialogDescription className="text-slate-300">
-            We're experiencing high traffic. Your request is queued and will be processed shortly.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-6 py-4">
+    <FullScreenModal
+      isOpen={isOpen}
+      onClose={onClose || (() => {})}
+      title="High Traffic Detected"
+      subtitle="We're experiencing high traffic. Your request is queued and will be processed shortly."
+    >
+      <div className="max-w-2xl mx-auto py-12">
+        <div className="space-y-6">
           {/* Status Message */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 space-y-3">
-            <div className="flex items-start gap-3">
-              <Clock className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+          <div className="bg-muted border border-border rounded-lg p-6 space-y-4">
+            <div className="flex items-start gap-4">
+              <Clock className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-muted-foreground">
                   Estimated wait time
                 </p>
-                <p className="text-2xl font-bold text-blue-400 mt-1">
+                <p className="text-4xl font-bold text-primary mt-2">
                   {timeDisplay}
                 </p>
               </div>
             </div>
 
             {queuedRequests > 0 && (
-              <div className="flex items-center gap-2 text-sm text-slate-300 pt-2 border-t border-slate-700">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-4 border-t border-border">
+                <Zap className="w-4 h-4 flex-shrink-0" />
                 <span>
                   {queuedRequests} request{queuedRequests > 1 ? 's' : ''} queued
                 </span>
@@ -101,42 +90,42 @@ export const RateLimitModal: React.FC<RateLimitModalProps> = ({
           </div>
 
           {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-xs text-slate-400">
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <span>Processing queue</span>
               <span>{Math.round(progress)}%</span>
             </div>
             <Progress
               value={progress}
-              className="h-2 bg-slate-700"
+              className="h-3"
             />
           </div>
 
           {/* Info Box */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-            <p className="text-xs text-blue-200">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-6 space-y-3">
+            <p className="text-sm text-primary font-medium">
               ✓ Your request is safe and will be processed automatically
             </p>
-            <p className="text-xs text-blue-200 mt-1">
+            <p className="text-sm text-primary">
               ✓ No need to refresh or resubmit
             </p>
-            <p className="text-xs text-blue-200 mt-1">
+            <p className="text-sm text-primary">
               ✓ You'll be notified when processing is complete
             </p>
           </div>
 
           {/* Helpful Tips */}
-          <div className="bg-slate-800/50 rounded-lg p-3 space-y-2">
-            <p className="text-xs font-medium text-slate-300">💡 While you wait:</p>
-            <ul className="text-xs text-slate-400 space-y-1 ml-4">
+          <div className="bg-muted rounded-lg p-6 space-y-4">
+            <p className="text-sm font-medium text-foreground">💡 While you wait:</p>
+            <ul className="text-sm text-muted-foreground space-y-2 ml-4">
               <li>• Review your CSV file for data quality</li>
               <li>• Check the Data Quality Tips section</li>
               <li>• Prepare your commission plan settings</li>
             </ul>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </FullScreenModal>
   );
 };
 

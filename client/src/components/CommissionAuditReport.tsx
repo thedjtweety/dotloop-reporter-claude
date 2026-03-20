@@ -17,14 +17,7 @@ import { AlertCircle, CheckCircle2, XCircle, FileText, PlusCircle } from 'lucide
 import { TransactionAdjustment, getTransactionAdjustments, saveTransactionAdjustments } from '@/lib/commission';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import FullScreenModal from '@/components/FullScreenModal';
 import { Button } from '@/components/ui/button';
 import CommissionStatement from './CommissionStatement';
 import ExpenseSummaryReport from './ExpenseSummaryReport';
@@ -212,15 +205,20 @@ export default function CommissionAuditReport({ records }: CommissionAuditReport
         />
       )}
 
-      <Dialog open={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Transaction Adjustment</DialogTitle>
-            <DialogDescription>
-              Add a one-off expense or credit for {adjustmentTarget?.agentName}.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
+      <FullScreenModal
+        isOpen={isAdjustmentOpen}
+        onClose={() => setIsAdjustmentOpen(false)}
+        title="Add Transaction Adjustment"
+        subtitle={`Add a one-off expense or credit for ${adjustmentTarget?.agentName}`}
+        headerActions={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsAdjustmentOpen(false)}>Cancel</Button>
+            <Button onClick={saveAdjustment}>Save Adjustment</Button>
+          </div>
+        }
+      >
+        <div className="max-w-2xl mx-auto py-12">
+          <div className="grid gap-6">
             <div className="grid gap-2">
               <Label htmlFor="desc">Description</Label>
               <Input
@@ -239,15 +237,11 @@ export default function CommissionAuditReport({ records }: CommissionAuditReport
                 value={newAdjustment.amount}
                 onChange={(e) => setNewAdjustment({ ...newAdjustment, amount: Number(e.target.value) })}
               />
-              <p className="text-xs text-foreground">Positive value = Deduction (Cost to Agent). Negative value = Credit (Payment to Agent).</p>
+              <p className="text-xs text-muted-foreground">Positive value = Deduction (Cost to Agent). Negative value = Credit (Payment to Agent).</p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAdjustmentOpen(false)}>Cancel</Button>
-            <Button onClick={saveAdjustment}>Save Adjustment</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FullScreenModal>
     </div>
   );
 }

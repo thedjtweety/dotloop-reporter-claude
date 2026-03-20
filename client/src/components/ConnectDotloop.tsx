@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import FullScreenModal from '@/components/FullScreenModal';
 import { Link2, CheckCircle2, Shield, Zap } from 'lucide-react';
 
 interface ConnectDotloopProps {
@@ -19,6 +19,39 @@ export default function ConnectDotloop({ variant = 'button', onConnect }: Connec
   const handleClose = () => {
     setShowDialog(false);
   };
+
+  const modalContent = (
+    <div className="max-w-2xl mx-auto py-12">
+      <div className="space-y-6">
+        <p className="text-lg text-muted-foreground">
+          This feature is coming soon! In the final version, you'll be able to securely connect your Dotloop account to automatically sync your transaction data.
+        </p>
+        <div className="bg-muted p-6 rounded-lg space-y-4">
+          <div className="flex items-start gap-4">
+            <CheckCircle2 className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
+            <div>
+              <p className="font-medium text-foreground">Automatic Sync</p>
+              <p className="text-sm text-muted-foreground">Your data updates every night automatically</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <Shield className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
+            <div>
+              <p className="font-medium text-foreground">Secure Connection</p>
+              <p className="text-sm text-muted-foreground">Read-only access to your Dotloop data</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-4">
+            <Zap className="w-6 h-6 text-accent flex-shrink-0 mt-1" />
+            <div>
+              <p className="font-medium text-foreground">Real-time Updates</p>
+              <p className="text-sm text-muted-foreground">Reports reflect your latest transactions</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   if (variant === 'card') {
     return (
@@ -59,44 +92,16 @@ export default function ConnectDotloop({ variant = 'button', onConnect }: Connec
           </div>
         </Card>
 
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Dotloop Integration</DialogTitle>
-              <DialogDescription>
-                This feature is coming soon! In the final version, you'll be able to securely connect your Dotloop account to automatically sync your transaction data.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg space-y-3">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm text-foreground">Automatic Sync</p>
-                    <p className="text-xs text-muted-foreground">Your data updates every night automatically</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Shield className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm text-foreground">Secure Connection</p>
-                    <p className="text-xs text-muted-foreground">Read-only access to your Dotloop data</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Zap className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm text-foreground">Real-time Updates</p>
-                    <p className="text-xs text-muted-foreground">Reports reflect your latest transactions</p>
-                  </div>
-                </div>
-              </div>
-              <Button onClick={handleClose} className="w-full">
-                Got it
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <FullScreenModal
+          isOpen={showDialog}
+          onClose={handleClose}
+          title="Dotloop Integration"
+          headerActions={
+            <Button onClick={handleClose}>Got it</Button>
+          }
+        >
+          {modalContent}
+        </FullScreenModal>
       </>
     );
   }
@@ -110,44 +115,16 @@ export default function ConnectDotloop({ variant = 'button', onConnect }: Connec
         </>
       </Button>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Dotloop Integration</DialogTitle>
-            <DialogDescription>
-              This feature is coming soon! In the final version, you'll be able to securely connect your Dotloop account to automatically sync your transaction data.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-muted p-4 rounded-lg space-y-3">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-foreground">Automatic Sync</p>
-                  <p className="text-xs text-muted-foreground">Your data updates every night automatically</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-foreground">Secure Connection</p>
-                  <p className="text-xs text-muted-foreground">Read-only access to your Dotloop data</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Zap className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-foreground">Real-time Updates</p>
-                  <p className="text-xs text-muted-foreground">Reports reflect your latest transactions</p>
-                </div>
-              </div>
-            </div>
-            <Button onClick={handleClose} className="w-full">
-              Got it
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <FullScreenModal
+        isOpen={showDialog}
+        onClose={handleClose}
+        title="Dotloop Integration"
+        headerActions={
+          <Button onClick={handleClose}>Got it</Button>
+        }
+      >
+        {modalContent}
+      </FullScreenModal>
     </>
   );
 }

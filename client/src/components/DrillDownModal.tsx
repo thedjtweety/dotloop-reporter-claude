@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState } from 'react';
-import { X, Download, Printer, Search, ChevronDown, ExternalLink } from 'lucide-react';
+import { useRef, useState, useEffect } from 'react';
+import { Download, Printer, Search, ExternalLink } from 'lucide-react';
 import { DotloopRecord } from '@/lib/csvParser';
 import TransactionTable from './TransactionTable';
 import TransactionInfoModal from './TransactionInfoModal';
@@ -18,7 +18,8 @@ import BulkActionsToolbar from './BulkActionsToolbar';
 import FavoritesSelector from './FavoritesSelector';
 import BookmarkManager from './BookmarkManager';
 import { saveBookmark, getBookmarks, FilterBookmark } from '@/lib/bookmarkUtils';
-
+import FullScreenModal from '@/components/FullScreenModal';
+import { Button } from '@/components/ui/button';
 
 interface DrillDownModalProps {
   isOpen: boolean;
@@ -105,42 +106,34 @@ export default function DrillDownModal({
 
     if (!container || !scrollbar || !thumb) return;
 
-    const handleScroll = () => {
-      const scrollLeft = container.scrollLeft;
-      const scrollWidth = container.scrollWidth - container.clientWidth;
-      const scrollbarWidth = scrollbar.clientWidth - thumb.clientWidth;
-      const thumbPosition = (scrollLeft / scrollWidth) * scrollbarWidth;
-      thumb.style.transform = `translateX(${thumbPosition}px)`;
+    const updateScrollbar = () => {
+      const scrollPercentage = container.scrollLeft / (container.scrollWidth - container.clientWidth);
+      const thumbWidth = (container.clientWidth / container.scrollWidth) * scrollbar.clientWidth;
+      thumb.style.width = `${thumbWidth}px`;
+      thumb.style.left = `${scrollPercentage * (scrollbar.clientWidth - thumbWidth)}px`;
     };
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
+    container.addEventListener('scroll', updateScrollbar);
+    updateScrollbar();
 
-  // Handle scrollbar thumb dragging
+    return () => container.removeEventListener('scroll', updateScrollbar);
+  }, [filteredTransactions]);
+
+  // Handle scrollbar thumb drag
   useEffect(() => {
     if (!isDragging) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      const container = scrollContainerRef.current;
       const scrollbar = scrollbarRef.current;
-      const thumb = scrollbarThumbRef.current;
-
-      if (!container || !scrollbar || !thumb) return;
+      const container = scrollContainerRef.current;
+      if (!scrollbar || !container) return;
 
       const scrollbarRect = scrollbar.getBoundingClientRect();
-      const thumbWidth = thumb.clientWidth;
-      const maxThumbPosition = scrollbar.clientWidth - thumbWidth;
-      const thumbPosition = Math.max(
-        0,
-        Math.min(maxThumbPosition, e.clientX - scrollbarRect.left - thumbWidth / 2)
-      );
-
-      const scrollWidth = container.scrollWidth - container.clientWidth;
-      const scrollbarWidth = scrollbar.clientWidth - thumbWidth;
-      const scrollLeft = (thumbPosition / scrollbarWidth) * scrollWidth;
-
-      container.scrollLeft = scrollLeft;
+      const thumbWidth = scrollbarThumbRef.current?.clientWidth || 0;
+      const maxLeft = scrollbar.clientWidth - thumbWidth;
+      const newLeft = Math.max(0, Math.min(maxLeft, e.clientX - scrollbarRect.left));
+      const scrollPercentage = newLeft / maxLeft;
+      container.scrollLeft = scrollPercentage * (container.scrollWidth - container.clientWidth);
     };
 
     const handleMouseUp = () => setIsDragging(false);
@@ -154,154 +147,150 @@ export default function DrillDownModal({
     };
   }, [isDragging]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-0">
-      {/* Modal Container - Full screen width */}
-      <div className="w-screen h-screen max-w-none bg-slate-900 rounded-none flex flex-col">
-        {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-700">
-          <div>
-            <h2 className="text-xl font-display font-semibold text-white">{title}</h2>
-            <p className="text-sm text-slate-400 mt-1">
-              Showing {filteredTransactions.length} of {transactions.length} transaction{transactions.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
+    <>
+      <FullScreenModal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={title}
+        subtitle={`Showing ${filteredTransactions.length} of ${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}`}
+        headerActions={
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => exportFilteredToCSV(filteredTransactions, title, bookmarkName || undefined)}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white flex items-center gap-2 text-sm"
-              aria-label="Export filtered as CSV"
-              title="Export visible filtered results to CSV"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4 mr-2" />
               CSV
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => exportFilteredToExcel(filteredTransactions, title, bookmarkName || undefined)}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white flex items-center gap-2 text-sm"
-              aria-label="Export filtered as Excel"
-              title="Export visible filtered results to Excel"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4 mr-2" />
               Excel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => openPrintDialog({ title, records: filteredTransactions })}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white flex items-center gap-2 text-sm"
-              aria-label="Print"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-4 h-4 mr-2" />
               Print
-            </button>
+            </Button>
             {filteredTransactions.length > 0 && (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => openMultipleInDotloop(filteredTransactions)}
-                className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white flex items-center gap-2 text-sm"
-                aria-label="View in Dotloop"
               >
-                <ExternalLink className="w-4 h-4" />
+                <ExternalLink className="w-4 h-4 mr-2" />
                 View in Dotloop
-              </button>
+              </Button>
             )}
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
-              aria-label="Close modal"
-            >
-              <X className="w-5 h-5 text-slate-400" />
-            </button>
           </div>
-        </div>
-
-        {/* Filter Controls */}
-        <div className="flex-shrink-0 px-6 py-4 border-b border-slate-700 bg-slate-800 space-y-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <Input
-                  type="text"
-                  placeholder="Search by address, agent, property type..."
-                  value={filters.searchQuery}
-                  onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
-                  className="pl-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400"
-                />
+        }
+      >
+        <div className="space-y-4 py-6">
+          {/* Filter Controls */}
+          <div className="space-y-3 sticky top-0 z-10 bg-background pb-4">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by address, agent, property type..."
+                    value={filters.searchQuery}
+                    onChange={(e) => setFilters({ ...filters, searchQuery: e.target.value })}
+                    className="pl-10"
+                  />
+                </div>
               </div>
+              <Select value={filters.status || 'All'} onValueChange={(value) => setFilters({ ...filters, status: value })}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueStatuses.map(status => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filters.agent || 'All'} onValueChange={(value) => setFilters({ ...filters, agent: value })}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="Agent" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueAgents.map(agent => (
+                    <SelectItem key={agent} value={agent}>
+                      {agent}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={filters.status || 'All'} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-              <SelectTrigger className="w-[150px] bg-slate-700 border-slate-600 text-white">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                {uniqueStatuses.map(status => (
-                  <SelectItem key={status} value={status} className="text-white hover:bg-slate-600">
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filters.agent || 'All'} onValueChange={(value) => setFilters({ ...filters, agent: value })}>
-              <SelectTrigger className="w-[150px] bg-slate-700 border-slate-600 text-white">
-                <SelectValue placeholder="Agent" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-700 border-slate-600">
-                {uniqueAgents.map(agent => (
-                  <SelectItem key={agent} value={agent} className="text-white hover:bg-slate-600">
-                    {agent}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2 ml-auto">
+
+            {/* Favorites and Bookmarks */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <FavoritesSelector
+                transactions={filteredTransactions}
+                onApply={(bookmark) => {
+                  setFilters(bookmark.filters);
+                  setSortState(bookmark.sortState);
+                }}
+              />
               <BookmarkManager
-                type="transaction"
-                currentFilters={filters}
-                onLoadBookmark={(bookmark) => {
-                  setFilters(bookmark.filters as DrillDownFilters);
+                isOpen={showBookmarkDialog}
+                onOpenChange={setShowBookmarkDialog}
+                onSaveBookmark={(name) => {
+                  const bookmark: FilterBookmark = {
+                    id: Date.now().toString(),
+                    name,
+                    filters,
+                    sortState,
+                    timestamp: new Date().toISOString(),
+                  };
+                  const existing = getBookmarks();
+                  saveBookmark([...existing, bookmark]);
+                  setBookmarkName(name);
+                  setShowBookmarkDialog(false);
                 }}
               />
             </div>
           </div>
-        </div>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Scrollable Table Container */}
-          <div
-            ref={scrollContainerRef}
-            className="flex-1 overflow-x-auto overflow-y-auto"
-          >
-            <TransactionTable 
-              transactions={filteredTransactions} 
-              onTransactionClick={handleTransactionClick}
+          {/* Transaction Table */}
+          <div ref={scrollContainerRef} className="overflow-x-auto">
+            <TransactionTable
+              transactions={filteredTransactions}
               selectedRecords={selectedRecords}
-              onSelectionChange={setSelectedRecords}
               selectAll={selectAll}
+              onSelectChange={setSelectedRecords}
               onSelectAllChange={setSelectAll}
+              onTransactionClick={handleTransactionClick}
+              sortState={sortState}
+              onSortChange={(newSort) => {
+                setSortState(newSort);
+                onSortChange?.(newSort);
+              }}
             />
           </div>
 
-          {/* Floating Scrollbar */}
-          <div className="flex-shrink-0 h-3 bg-slate-800 border-t border-slate-700">
+          {/* Custom Scrollbar */}
+          <div ref={scrollbarRef} className="h-2 bg-muted rounded-full relative">
             <div
-              ref={scrollbarRef}
-              className="relative w-full h-full bg-slate-800"
-            >
-              <div
-                ref={scrollbarThumbRef}
-                onMouseDown={() => setIsDragging(true)}
-                className="absolute h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded cursor-grab active:cursor-grabbing hover:from-blue-400 hover:to-blue-500 transition-colors"
-                style={{
-                  width: '60px',
-                  minWidth: '60px',
-                }}
-              />
-            </div>
+              ref={scrollbarThumbRef}
+              className="h-full bg-primary rounded-full cursor-grab active:cursor-grabbing"
+              onMouseDown={() => setIsDragging(true)}
+            />
           </div>
         </div>
-      </div>
+      </FullScreenModal>
 
       {/* Bulk Actions Toolbar */}
       <BulkActionsToolbar
@@ -317,6 +306,6 @@ export default function DrillDownModal({
         onClose={() => setShowTransactionInfo(false)}
         transaction={selectedTransaction}
       />
-    </div>
+    </>
   );
 }

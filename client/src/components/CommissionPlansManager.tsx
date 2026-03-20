@@ -9,15 +9,7 @@ import { Deduction } from '@/lib/commission';
 import { SlidingScaleTierManager } from '@/components/SlidingScaleTierManager';
 import { trpc } from '@/lib/trpc';
 import toast from 'react-hot-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import FullScreenModal from '@/components/FullScreenModal';
 
 export default function CommissionPlansManager() {
   const [plans, setPlans] = useState<CommissionPlan[]>([]);
@@ -155,160 +147,173 @@ export default function CommissionPlansManager() {
           <h3 className="text-lg font-medium">Commission Plans</h3>
           <p className="text-sm text-foreground">Define your brokerage's split structures and caps.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNewDialog} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 font-bold px-6 py-2 border-2 border-primary-foreground/20">
-              <Settings className="h-4 w-4" /> Commission Plan Settings
+        <Button 
+          onClick={openNewDialog} 
+          className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 font-bold px-6 py-2 border-2 border-primary-foreground/20"
+        >
+          <Settings className="h-4 w-4" /> Commission Plan Settings
+        </Button>
+      </div>
+
+      <FullScreenModal
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        title={isEditing ? 'Edit Plan' : 'Create New Plan'}
+        subtitle="Configure the split percentage, cap amount, and post-cap rules."
+        headerActions={
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDialogOpen(false)} 
+              disabled={isSaving}
+            >
+              Cancel
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] flex flex-col">
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Plan' : 'Create New Plan'}</DialogTitle>
-              <DialogDescription>
-                Configure the split percentage, cap amount, and post-cap rules.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4 overflow-y-auto flex-1 pr-4">
+            <Button 
+              onClick={handleSavePlan} 
+              disabled={isSaving} 
+              className="gap-2"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? 'Saving...' : 'Save Plan'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="max-w-2xl mx-auto py-8">
+          <div className="grid gap-6 overflow-y-auto max-h-[calc(100vh-200px)] pr-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Plan Name</Label>
+              <Input
+                id="name"
+                value={currentPlan.name || ''}
+                onChange={(e) => setCurrentPlan({ ...currentPlan, name: e.target.value })}
+                placeholder="e.g. Standard 80/20"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Plan Name</Label>
+                <Label htmlFor="split">Agent Split %</Label>
                 <Input
-                  id="name"
-                  value={currentPlan.name || ''}
-                  onChange={(e) => setCurrentPlan({ ...currentPlan, name: e.target.value })}
-                  placeholder="e.g. Standard 80/20"
+                  id="split"
+                  type="number"
+                  value={currentPlan.splitPercentage}
+                  onChange={(e) => setCurrentPlan({ ...currentPlan, splitPercentage: Number(e.target.value) })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="split">Agent Split %</Label>
-                  <Input
-                    id="split"
-                    type="number"
-                    value={currentPlan.splitPercentage}
-                    onChange={(e) => setCurrentPlan({ ...currentPlan, splitPercentage: Number(e.target.value) })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="cap">Cap Amount ($)</Label>
-                  <Input
-                    id="cap"
-                    type="number"
-                    value={currentPlan.capAmount}
-                    onChange={(e) => setCurrentPlan({ ...currentPlan, capAmount: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="postCap">Post-Cap Split %</Label>
-                  <Input
-                    id="postCap"
-                    type="number"
-                    value={currentPlan.postCapSplit}
-                    onChange={(e) => setCurrentPlan({ ...currentPlan, postCapSplit: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="border-t pt-4 mt-2">
-                <h4 className="text-sm font-medium mb-3">Franchise Fees / Royalty (Optional)</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="royalty">Royalty %</Label>
-                    <Input
-                      id="royalty"
-                      type="number"
-                      value={currentPlan.royaltyPercentage}
-                      onChange={(e) => setCurrentPlan({ ...currentPlan, royaltyPercentage: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="royaltyCap">Royalty Cap ($)</Label>
-                    <Input
-                      id="royaltyCap"
-                      type="number"
-                      value={currentPlan.royaltyCap}
-                      onChange={(e) => setCurrentPlan({ ...currentPlan, royaltyCap: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t pt-4 mt-2">
-                <SlidingScaleTierManager
-                  tiers={currentPlan.tiers || []}
-                  onTiersChange={(tiers) => setCurrentPlan({ ...currentPlan, tiers })}
-                  useSliding={currentPlan.useSliding || false}
-                  onUseSlidingChange={(useSliding) => setCurrentPlan({ ...currentPlan, useSliding })}
+              <div className="grid gap-2">
+                <Label htmlFor="cap">Cap Amount ($)</Label>
+                <Input
+                  id="cap"
+                  type="number"
+                  value={currentPlan.capAmount}
+                  onChange={(e) => setCurrentPlan({ ...currentPlan, capAmount: Number(e.target.value) })}
                 />
               </div>
-
-              <div className="border-t pt-4 mt-2">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-medium">Standard Deductions</h4>
-                  <Button type="button" variant="outline" size="sm" onClick={addDeduction} className="h-7 text-xs">
-                    <Plus className="h-3 w-3 mr-1" /> Add Fee
-                  </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="postCap">Post-Cap Split %</Label>
+                <Input
+                  id="postCap"
+                  type="number"
+                  value={currentPlan.postCapSplit}
+                  onChange={(e) => setCurrentPlan({ ...currentPlan, postCapSplit: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-medium mb-3">Franchise Fees / Royalty (Optional)</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="royalty">Royalty %</Label>
+                  <Input
+                    id="royalty"
+                    type="number"
+                    value={currentPlan.royaltyPercentage}
+                    onChange={(e) => setCurrentPlan({ ...currentPlan, royaltyPercentage: Number(e.target.value) })}
+                  />
                 </div>
-                
-                <div className="space-y-3">
-                  {(currentPlan.deductions || []).map((deduction) => (
-                    <div key={deduction.id} className="flex gap-2 items-start">
-                      <div className="grid gap-1 flex-1">
-                        <Input 
-                          placeholder="Fee Name (e.g. Tech Fee)" 
-                          className="h-8 text-sm"
-                          value={deduction.name}
-                          onChange={(e) => updateDeduction(deduction.id, 'name', e.target.value)}
-                        />
-                      </div>
-                      <div className="grid gap-1 w-24">
-                        <Input 
-                          type="number" 
-                          placeholder="Amount" 
-                          className="h-8 text-sm"
-                          value={deduction.amount}
-                          onChange={(e) => updateDeduction(deduction.id, 'amount', Number(e.target.value))}
-                        />
-                      </div>
-                      <div className="grid gap-1 w-24">
-                         <select 
-                            className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                            value={deduction.type}
-                            onChange={(e) => updateDeduction(deduction.id, 'type', e.target.value)}
-                         >
-                           <option value="fixed">$ Fixed</option>
-                           <option value="percentage">% GCI</option>
-                         </select>
-                      </div>
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-foreground hover:text-destructive"
-                        onClick={() => removeDeduction(deduction.id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  {(currentPlan.deductions || []).length === 0 && (
-                    <p className="text-xs text-foreground italic text-center py-2">
-                      No deductions configured.
-                    </p>
-                  )}
+                <div className="grid gap-2">
+                  <Label htmlFor="royaltyCap">Royalty Cap ($)</Label>
+                  <Input
+                    id="royaltyCap"
+                    type="number"
+                    value={currentPlan.royaltyCap}
+                    onChange={(e) => setCurrentPlan({ ...currentPlan, royaltyCap: Number(e.target.value) })}
+                  />
                 </div>
               </div>
             </div>
-            <DialogFooter className="mt-4 border-t pt-4">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>Cancel</Button>
-              <Button onClick={handleSavePlan} disabled={isSaving} className="gap-2">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                {isSaving ? 'Saving...' : 'Save Plan'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+
+            <div className="border-t pt-4">
+              <SlidingScaleTierManager
+                tiers={currentPlan.tiers || []}
+                onTiersChange={(tiers) => setCurrentPlan({ ...currentPlan, tiers })}
+                useSliding={currentPlan.useSliding || false}
+                onUseSlidingChange={(useSliding) => setCurrentPlan({ ...currentPlan, useSliding })}
+              />
+            </div>
+
+            <div className="border-t pt-4">
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="text-sm font-medium">Standard Deductions</h4>
+                <Button type="button" variant="outline" size="sm" onClick={addDeduction} className="h-7 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Add Fee
+                </Button>
+              </div>
+              
+              <div className="space-y-3">
+                {(currentPlan.deductions || []).map((deduction) => (
+                  <div key={deduction.id} className="flex gap-2 items-start">
+                    <div className="grid gap-1 flex-1">
+                      <Input 
+                        placeholder="Fee Name (e.g. Tech Fee)" 
+                        className="h-8 text-sm"
+                        value={deduction.name}
+                        onChange={(e) => updateDeduction(deduction.id, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div className="grid gap-1 w-24">
+                      <Input 
+                        type="number" 
+                        placeholder="Amount" 
+                        className="h-8 text-sm"
+                        value={deduction.amount}
+                        onChange={(e) => updateDeduction(deduction.id, 'amount', Number(e.target.value))}
+                      />
+                    </div>
+                    <div className="grid gap-1 w-24">
+                       <select 
+                          className="flex h-8 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm ring-offset-background placeholder:text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          value={deduction.type}
+                          onChange={(e) => updateDeduction(deduction.id, 'type', e.target.value)}
+                       >
+                         <option value="fixed">$ Fixed</option>
+                         <option value="percentage">% GCI</option>
+                       </select>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-foreground hover:text-destructive"
+                      onClick={() => removeDeduction(deduction.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                {(currentPlan.deductions || []).length === 0 && (
+                  <p className="text-xs text-foreground italic text-center py-2">
+                    No deductions configured.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </FullScreenModal>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {plans.map((plan) => (

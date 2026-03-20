@@ -9,14 +9,6 @@ import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -25,8 +17,9 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import FullScreenModal from '@/components/FullScreenModal';
 
 interface BulkPlanAssignmentProps {
   agents: string[];
@@ -133,26 +126,43 @@ export default function BulkPlanAssignment({
         Bulk Assign Plans ({selectedAgents.size} selected)
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Bulk Assign Commission Plans</DialogTitle>
-            <DialogDescription>
-              Select agents and assign them to a commission plan
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6">
+      <FullScreenModal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="Bulk Assign Commission Plans"
+        subtitle="Select agents and assign them to a commission plan"
+        headerActions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignPlan}
+              disabled={isLoading || selectedAgents.size === 0 || !selectedPlanId}
+              className="gap-2"
+            >
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isLoading ? 'Assigning...' : `Assign to ${selectedAgents.size} Agent(s)`}
+            </Button>
+          </div>
+        }
+      >
+        <div className="max-w-4xl mx-auto py-8">
+          <div className="space-y-8">
             {/* Plan Selection - Show First */}
-            <div className="space-y-3">
-              <h3 className="font-semibold text-foreground">Select Commission Plan</h3>
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">Select Commission Plan</h3>
               
               {plans.length === 0 ? (
-                <Card className="p-4 text-center text-foreground/70">
+                <Card className="p-6 text-center text-foreground/70">
                   No commission plans available. Create a plan in the Plans tab first.
                 </Card>
               ) : (
-                <div className="grid gap-2">
+                <div className="grid gap-3">
                   {plans.map((plan) => (
                     <Card
                       key={plan.id}
@@ -182,18 +192,18 @@ export default function BulkPlanAssignment({
             </div>
 
             {/* Agent Selection */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-foreground">Select Agents</h3>
+                <h3 className="text-lg font-semibold text-foreground">Select Agents</h3>
                 <Badge variant="secondary">
                   {selectedAgents.size} / {agents.length}
                 </Badge>
               </div>
 
-              <Card className="p-4 max-h-64 overflow-y-auto">
-                <div className="space-y-2">
+              <Card className="p-4 max-h-96 overflow-y-auto">
+                <div className="space-y-3">
                   {/* Select All checkbox */}
-                  <div className="flex items-center gap-2 pb-2 border-b border-border">
+                  <div className="flex items-center gap-2 pb-3 border-b border-border">
                     <Checkbox
                       checked={selectedAgents.size === agents.length && agents.length > 0}
                       onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
@@ -207,7 +217,7 @@ export default function BulkPlanAssignment({
                     const currentPlan = assignment ? plans.find(p => p.id === parseInt(assignment.planId)) : null;
                     
                     return (
-                      <div key={agent} className="flex items-center gap-2">
+                      <div key={agent} className="flex items-center gap-3">
                         <Checkbox
                           checked={selectedAgents.has(agent)}
                           onCheckedChange={(checked) => handleSelectAgent(agent, checked as boolean)}
@@ -225,24 +235,8 @@ export default function BulkPlanAssignment({
               </Card>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssignPlan}
-              disabled={isLoading || selectedAgents.size === 0 || !selectedPlanId}
-            >
-              {isLoading ? 'Assigning...' : `Assign to ${selectedAgents.size} Agent(s)`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FullScreenModal>
     </>
   );
 }

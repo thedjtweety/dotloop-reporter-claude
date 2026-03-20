@@ -5,15 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, Edit2, Users } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import FullScreenModal from '@/components/FullScreenModal';
 
 export default function TeamManager() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -77,59 +69,70 @@ export default function TeamManager() {
           <h3 className="text-lg font-medium">Team Management</h3>
           <p className="text-sm text-foreground">Create teams and define internal split structures.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNewDialog} className="gap-2" variant="outline">
-              <Plus className="h-4 w-4" /> Add Team
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{isEditing ? 'Edit Team' : 'Create New Team'}</DialogTitle>
-              <DialogDescription>
-                Define the team name and the percentage taken by the team leader/entity.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Team Name</Label>
-                <Input
-                  id="name"
-                  value={currentTeam.name || ''}
-                  onChange={(e) => setCurrentTeam({ ...currentTeam, name: e.target.value })}
-                  placeholder="e.g. The Wolf Pack"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="lead">Lead Agent Name (Optional)</Label>
-                <Input
-                  id="lead"
-                  value={currentTeam.leadAgent || ''}
-                  onChange={(e) => setCurrentTeam({ ...currentTeam, leadAgent: e.target.value })}
-                  placeholder="e.g. Jordan Belfort"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="split">Team Split % (Taken from Member)</Label>
-                <Input
-                  id="split"
-                  type="number"
-                  value={currentTeam.teamSplitPercentage}
-                  onChange={(e) => setCurrentTeam({ ...currentTeam, teamSplitPercentage: Number(e.target.value) })}
-                  placeholder="50"
-                />
-                <p className="text-xs text-foreground">
-                  This percentage is deducted from the agent's GCI *before* the brokerage split.
-                </p>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSaveTeam}>Save Team</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={openNewDialog} 
+          className="gap-2" 
+          variant="outline"
+        >
+          <Plus className="h-4 w-4" /> Add Team
+        </Button>
       </div>
+
+      <FullScreenModal
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        title={isEditing ? 'Edit Team' : 'Create New Team'}
+        subtitle="Define the team name and the percentage taken by the team leader/entity."
+        headerActions={
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTeam}>
+              Save Team
+            </Button>
+          </div>
+        }
+      >
+        <div className="max-w-2xl mx-auto py-12">
+          <div className="grid gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Team Name</Label>
+              <Input
+                id="name"
+                value={currentTeam.name || ''}
+                onChange={(e) => setCurrentTeam({ ...currentTeam, name: e.target.value })}
+                placeholder="e.g. The Wolf Pack"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="lead">Lead Agent Name (Optional)</Label>
+              <Input
+                id="lead"
+                value={currentTeam.leadAgent || ''}
+                onChange={(e) => setCurrentTeam({ ...currentTeam, leadAgent: e.target.value })}
+                placeholder="e.g. Jordan Belfort"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="split">Team Split % (Taken from Member)</Label>
+              <Input
+                id="split"
+                type="number"
+                value={currentTeam.teamSplitPercentage}
+                onChange={(e) => setCurrentTeam({ ...currentTeam, teamSplitPercentage: Number(e.target.value) })}
+                placeholder="50"
+              />
+              <p className="text-sm text-muted-foreground">
+                This percentage is deducted from the agent's GCI *before* the brokerage split.
+              </p>
+            </div>
+          </div>
+        </div>
+      </FullScreenModal>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {teams.map((team) => (
