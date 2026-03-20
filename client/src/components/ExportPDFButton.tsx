@@ -7,7 +7,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -15,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileDown, Loader2, AlertCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { downloadHTMLAsPDF, previewHTMLInNewTab } from '@/lib/pdf-utils';
+import FullScreenModal from '@/components/FullScreenModal';
 
 interface ExportPDFButtonProps {
   breakdowns: any[];
@@ -72,30 +72,26 @@ export default function ExportPDFButton({
     }
   };
 
-
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={disabled || breakdowns.length === 0}
-          className="gap-2"
-        >
-          <FileDown className="h-4 w-4" />
-          Export PDF
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Export Commission Report</DialogTitle>
-          <DialogDescription>
-            Customize your report and download as PDF
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={disabled || breakdowns.length === 0}
+        className="gap-2"
+        onClick={() => setOpen(true)}
+      >
+        <FileDown className="h-4 w-4" />
+        Export PDF
+      </Button>
 
-        <div className="space-y-4">
+      <FullScreenModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        title="Export Commission Report"
+        subtitle="Customize your report and download as PDF"
+      >
+        <div className="max-w-2xl mx-auto space-y-6 py-8 pb-24">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -159,20 +155,22 @@ export default function ExportPDFButton({
               {breakdowns.length} transactions from {new Set(breakdowns.map((b: any) => b.agentName)).size} agents
             </p>
           </div>
+        </div>
 
-          <div className="flex gap-2 pt-4">
+        {/* Fixed Footer with Action Buttons */}
+        <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-card/50 backdrop-blur-sm">
+          <div className="container flex gap-3 justify-end py-4">
             <Button
               variant="outline"
               onClick={() => setOpen(false)}
               disabled={loading}
-              className="flex-1"
             >
               Cancel
             </Button>
             <Button
               onClick={handleExport}
               disabled={loading}
-              className="flex-1 gap-2"
+              className="gap-2"
             >
               {loading ? (
                 <>
@@ -188,7 +186,7 @@ export default function ExportPDFButton({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </FullScreenModal>
+    </>
   );
 }

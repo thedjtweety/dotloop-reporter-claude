@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -21,16 +21,31 @@ export default function FullScreenModal({
   showHeader = true,
   headerActions,
 }: FullScreenModalProps) {
+  // Handle ESC key to close modal
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background">
+    <div className="fixed inset-0 z-50 bg-background" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       {/* Header */}
       {showHeader && (
         <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
           <div className="container flex h-16 items-center justify-between">
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">{title}</h2>
+              <h2 id="modal-title" className="text-xl font-bold text-foreground">{title}</h2>
               {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
             </div>
             
@@ -55,15 +70,7 @@ export default function FullScreenModal({
         {children}
       </div>
 
-      {/* Keyboard shortcut: ESC to close */}
-      <div
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            onClose();
-          }
-        }}
-        tabIndex={-1}
-      />
+
     </div>
   );
 }

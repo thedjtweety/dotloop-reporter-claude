@@ -1,6 +1,6 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
 import { AlertCircle, TrendingUp, Zap } from 'lucide-react';
+import FullScreenModal from '@/components/FullScreenModal';
 
 interface ConfidenceMetrics {
   confidence: number;
@@ -48,65 +48,31 @@ export default function LogicExplainerModal({
                 <h3 className="font-semibold mb-4 text-foreground">Factors That Increase Confidence</h3>
                 <ul className="space-y-3 text-sm">
                   <li className="flex gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span className="text-primary font-bold">1.</span>
                     <div>
-                      <strong className="text-foreground">Consistent Close Rates:</strong>
-                      <p className="text-muted-foreground">When your close rate stays stable month-to-month</p>
+                      <strong className="text-foreground">Historical Data:</strong>
+                      <p className="text-muted-foreground">More past transactions = more reliable patterns</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span className="text-primary font-bold">2.</span>
                     <div>
-                      <strong className="text-foreground">Stable Pipeline:</strong>
-                      <p className="text-muted-foreground">When deal velocity and pipeline size remain predictable</p>
+                      <strong className="text-foreground">Consistency:</strong>
+                      <p className="text-muted-foreground">Stable close rates and deal timelines</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span className="text-primary font-bold">3.</span>
                     <div>
-                      <strong className="text-foreground">More Historical Data:</strong>
-                      <p className="text-muted-foreground">Longer track records provide more reliable patterns</p>
+                      <strong className="text-foreground">Pipeline Stability:</strong>
+                      <p className="text-muted-foreground">Predictable deal flow and status transitions</p>
                     </div>
                   </li>
                   <li className="flex gap-3">
-                    <span className="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span className="text-primary font-bold">4.</span>
                     <div>
-                      <strong className="text-foreground">Experienced Team:</strong>
-                      <p className="text-muted-foreground">Agents with longer tenure have more predictable performance</p>
-                    </div>
-                  </li>
-                </ul>
-              </Card>
-
-              <Card className="p-6 bg-muted/50">
-                <h3 className="font-semibold mb-4 text-foreground">Factors That Decrease Confidence</h3>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex gap-3">
-                    <span className="text-red-600 dark:text-red-400 font-bold">✗</span>
-                    <div>
-                      <strong className="text-foreground">Volatile Close Rates:</strong>
-                      <p className="text-muted-foreground">Significant month-to-month fluctuations</p>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-red-600 dark:text-red-400 font-bold">✗</span>
-                    <div>
-                      <strong className="text-foreground">Unpredictable Pipeline:</strong>
-                      <p className="text-muted-foreground">Inconsistent deal flow or velocity</p>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-red-600 dark:text-red-400 font-bold">✗</span>
-                    <div>
-                      <strong className="text-foreground">Limited Data:</strong>
-                      <p className="text-muted-foreground">Insufficient historical transactions</p>
-                    </div>
-                  </li>
-                  <li className="flex gap-3">
-                    <span className="text-red-600 dark:text-red-400 font-bold">✗</span>
-                    <div>
-                      <strong className="text-foreground">Market Changes:</strong>
-                      <p className="text-muted-foreground">Significant shifts in interest rates or market conditions</p>
+                      <strong className="text-foreground">Agent Experience:</strong>
+                      <p className="text-muted-foreground">Experienced agents have more predictable outcomes</p>
                     </div>
                   </li>
                 </ul>
@@ -114,7 +80,7 @@ export default function LogicExplainerModal({
 
               <Card className="p-4 bg-blue-500/10 border-blue-500/30">
                 <p className="text-sm text-muted-foreground">
-                  💡 <strong className="text-foreground">Interpretation:</strong> {metrics.confidence}% confidence means there's a {metrics.confidence}% probability our projection will be within ±10% of actual results.
+                  💡 <strong className="text-foreground">Tip:</strong> Track your confidence level over time. As you build more data, your confidence should increase.
                 </p>
               </Card>
             </div>
@@ -123,18 +89,21 @@ export default function LogicExplainerModal({
 
       case 'risk':
         return {
-          title: 'Risk Level Assessment',
-          description: 'Understanding what makes your pipeline risky or stable',
+          title: 'Risk Calculation',
+          description: 'Understanding deal fall-through probability',
           icon: AlertCircle,
           content: (
             <div className="space-y-6">
               <Card className="p-6 bg-muted/50">
-                <h3 className="font-semibold mb-4 text-foreground">Current Risk Level</h3>
-                <div className="text-center py-4">
-                  <p className={`text-3xl font-display font-bold mb-2 ${metrics.riskColor}`}>
+                <h3 className="font-semibold mb-4 text-foreground">What is Risk?</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Risk measures the probability that deals in your pipeline won't close. Lower risk means more deals are likely to complete successfully.
+                </p>
+                <div className="text-center py-4 bg-red-500/10 rounded-lg">
+                  <p className="text-4xl font-display font-bold text-red-600 dark:text-red-400 mb-2">
                     {metrics.riskLevel}
                   </p>
-                  <p className="text-sm text-muted-foreground">Based on pipeline analysis</p>
+                  <p className="text-sm text-muted-foreground">Current Risk Level</p>
                 </div>
               </Card>
 
@@ -312,19 +281,16 @@ export default function LogicExplainerModal({
   const { title, description, icon: Icon, content } = getContent();
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center gap-2 mb-2">
-            <Icon className="w-5 h-5 text-primary" />
-            <DialogTitle>{title}</DialogTitle>
-          </div>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        <div className="mt-6">
-          {content}
-        </div>
-      </DialogContent>
-    </Dialog>
+    <FullScreenModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title}
+      subtitle={description}
+      headerActions={<Icon className="w-5 h-5 text-primary" />}
+    >
+      <div className="mt-6 pb-8">
+        {content}
+      </div>
+    </FullScreenModal>
   );
 }
