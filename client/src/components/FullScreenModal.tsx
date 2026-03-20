@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { X, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useModalContext } from '@/contexts/ModalContext';
 
 interface FullScreenModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface FullScreenModalProps {
   onBack?: () => void;
   showBackButton?: boolean;
   breadcrumbs?: Array<{ label: string; onClick: () => void }>;
+  useModalHistory?: boolean;
+  modalId?: string;
 }
 
 export default function FullScreenModal({
@@ -26,7 +29,11 @@ export default function FullScreenModal({
   onBack,
   showBackButton = false,
   breadcrumbs,
+  useModalHistory = false,
+  modalId,
 }: FullScreenModalProps) {
+  const modalContext = useModalHistory ? useModalContext() : null;
+
   // Handle ESC key to close modal
   useEffect(() => {
     if (!isOpen) return;
@@ -42,6 +49,30 @@ export default function FullScreenModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Track modal in history when opened
+  useEffect(() => {
+    if (useModalHistory && isOpen && modalId && modalContext) {
+      modalContext.pushModal({
+        id: modalId,
+        title,
+        subtitle,
+        onNavigate: () => {},
+      });
+    }
+  }, [useModalHistory, isOpen, modalId, title, subtitle, modalContext]);
+
+  // Handle back button from modal context
+  const handleBack = () => {
+    if (useModalHistory && modalContext && modalContext.canGoBack) {
+      modalContext.goBack();
+    } else if (onBack) {
+      onBack();
+    }
+  };
+
+  // Determine if back button should show
+  const shouldShowBackButton = showBackButton || (useModalHistory && modalContext?.canGoBack);
+
   if (!isOpen) return null;
 
   return (
@@ -51,17 +82,17 @@ export default function FullScreenModal({
         <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
           <div className="container px-4 sm:px-6 lg:px-8 flex flex-col gap-3 py-3">
             {/* Breadcrumbs */}
-            {breadcrumbs && breadcrumbs.length > 0 && (
+            {(breadcrumbs || (useModalHistory && modalContext?.breadcrumbs)) && (
               <div className="flex items-center gap-2 text-sm">
-                {breadcrumbs.map((crumb, idx) => (
+                {(breadcrumbs || modalContext?.breadcrumbs || []).map((crumb, idx) => (
                   <div key={idx} className="flex items-center gap-2">
                     <button
                       onClick={crumb.onClick}
                       className="text-muted-foreground hover:text-foreground transition-colors"
                     >
-                      {crumb.label}
+                      {crumb.label || crumb.title}
                     </button>
-                    {idx < breadcrumbs.length - 1 && (
+                    {idx < (breadcrumbs || modalContext?.breadcrumbs || []).length - 1 && (
                       <span className="text-muted-foreground">/</span>
                     )}
                   </div>
@@ -72,11 +103,11 @@ export default function FullScreenModal({
             {/* Main Header Row */}
             <div className="flex h-14 items-center justify-between gap-4">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                {showBackButton && onBack && (
+                {shouldShowBackButton && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={onBack}
+                    onClick={handleBack}
                     className="h-10 w-10 rounded-full flex-shrink-0"
                     aria-label="Go back"
                   >

@@ -33,6 +33,7 @@ import FullScreenModal from './FullScreenModal';
 import AgentComparisonBars from './AgentComparisonBars';
 import { BarChart3 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { useModalContext } from '@/contexts/ModalContext';
 
 interface AgentLeaderboardProps {
   agents: AgentMetrics[];
@@ -452,6 +453,8 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
         onClose={() => setSelectedAgent(null)}
         title={selectedAgent?.agentName || ''}
         subtitle="Agent Details"
+        useModalHistory={true}
+        modalId={selectedAgent ? `agent-details-${selectedAgent.agentName}` : undefined}
       >
         {selectedAgent && (
           <AgentDetailsPanel
@@ -466,6 +469,8 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
         onClose={() => setCommissionBreakdownAgent(null)}
         title={commissionBreakdownAgent?.agentName || ''}
         subtitle="Commission Breakdown"
+        useModalHistory={true}
+        modalId={commissionBreakdownAgent ? `commission-breakdown-${commissionBreakdownAgent.agentName}` : undefined}
       >
         {commissionBreakdownAgent && (
           <AgentCommissionBreakdown agent={commissionBreakdownAgent} transactions={records} />

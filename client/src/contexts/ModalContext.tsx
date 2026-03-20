@@ -9,8 +9,11 @@ export interface ModalBreadcrumb {
 
 interface ModalContextType {
   breadcrumbs: ModalBreadcrumb[];
+  currentModal: ModalBreadcrumb | null;
+  canGoBack: boolean;
   pushModal: (breadcrumb: ModalBreadcrumb) => void;
   popModal: () => void;
+  goBack: () => void;
   clearModals: () => void;
   navigateToModal: (id: string) => void;
 }
@@ -20,6 +23,9 @@ const ModalContext = createContext<ModalContextType | undefined>(undefined);
 export function ModalProvider({ children }: { children: React.ReactNode }) {
   const [breadcrumbs, setBreadcrumbs] = useState<ModalBreadcrumb[]>([]);
 
+  const currentModal = breadcrumbs.length > 0 ? breadcrumbs[breadcrumbs.length - 1] : null;
+  const canGoBack = breadcrumbs.length > 1;
+
   const pushModal = useCallback((breadcrumb: ModalBreadcrumb) => {
     setBreadcrumbs(prev => [...prev, breadcrumb]);
   }, []);
@@ -27,6 +33,12 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   const popModal = useCallback(() => {
     setBreadcrumbs(prev => prev.slice(0, -1));
   }, []);
+
+  const goBack = useCallback(() => {
+    if (canGoBack) {
+      setBreadcrumbs(prev => prev.slice(0, -1));
+    }
+  }, [canGoBack]);
 
   const clearModals = useCallback(() => {
     setBreadcrumbs([]);
@@ -41,7 +53,7 @@ export function ModalProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ModalContext.Provider value={{ breadcrumbs, pushModal, popModal, clearModals, navigateToModal }}>
+    <ModalContext.Provider value={{ breadcrumbs, currentModal, canGoBack, pushModal, popModal, goBack, clearModals, navigateToModal }}>
       {children}
     </ModalContext.Provider>
   );
