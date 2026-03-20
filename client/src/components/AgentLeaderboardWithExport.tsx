@@ -199,7 +199,7 @@ export default function AgentLeaderboardWithExport({ agents = [], records = [], 
               Hide podium
             </Button>
           </div>
-          <WinnersPodium agents={topThreeAgents} />
+          <WinnersPodium agents={topThreeAgents} transactions={records} />
         </div>
       )}
 
