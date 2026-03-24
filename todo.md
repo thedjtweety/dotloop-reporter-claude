@@ -3966,3 +3966,12 @@
 - [ ] Test search functionality across all modals
 - [ ] Write unit tests for ModalSearch component
 - [ ] Write integration tests for search in each modal
+
+
+## Phase 29: Fix Agent Name Rendering Issue (Current)
+- [ ] Investigate agent name rendering across all modals and components
+- [ ] Identify root cause of garbled/repeated text in agent name display
+- [ ] Fix rendering bug in AgentCommissionBreakdown modal
+- [ ] Fix rendering bug in AgentDetailsPanel
+- [ ] Fix rendering bug in DrillDownModal
+- [ ] Test agent name display across all components

@@ -13,7 +13,9 @@ interface HighlightedTextProps {
 export function HighlightedText({ text, searchTerm }: HighlightedTextProps) {
   if (!searchTerm || !text) return <span>{text}</span>;
 
-  const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
+  // Escape special regex characters to prevent regex injection
+  const escapedSearchTerm = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escapedSearchTerm})`, 'gi'));
   
   return (
     <span>

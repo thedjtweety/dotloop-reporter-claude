@@ -52,7 +52,9 @@ export function filterTransactions(
 
     // Agent filter
     if (filters.agent && filters.agent !== 'All') {
-      if (record.agentName !== filters.agent) return false;
+      // Handle comma-separated agent names
+      const agents = record.agents ? record.agents.split(',').map(a => a.trim()) : [];
+      if (!agents.includes(filters.agent)) return false;
     }
 
     // Date range filter
@@ -167,9 +169,16 @@ export function filterAndSortTransactions(
 export function getUniqueValues(records: DotloopRecord[], field: 'status' | 'agentName'): string[] {
   const values = new Set<string>();
   records.forEach(record => {
-    const value = field === 'status' ? record.status : record.agentName;
-    if (value) {
-      values.add(value);
+    if (field === 'status') {
+      if (record.status) {
+        values.add(record.status);
+      }
+    } else if (field === 'agentName') {
+      // Handle comma-separated agent names
+      if (record.agents) {
+        const agents = record.agents.split(',').map(a => a.trim()).filter(a => a);
+        agents.forEach(agent => values.add(agent));
+      }
     }
   });
   return Array.from(values).sort();
