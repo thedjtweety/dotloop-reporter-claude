@@ -3958,20 +3958,20 @@
 - [x] Test app loads without crashing
 - [x] Verify all features work after fix
 
-## Phase 28: Real-Time Search Across Modals (Current)
-- [ ] Create reusable ModalSearch component with full-text search and highlighting
-- [ ] Integrate search into AgentDetailsPanel (Overview and Transactions tabs)
-- [ ] Integrate search into AgentCommissionBreakdown modal
-- [ ] Integrate search into DrillDownModal and other data-heavy modals
-- [ ] Test search functionality across all modals
-- [ ] Write unit tests for ModalSearch component
-- [ ] Write integration tests for search in each modal
+## Phase 28: Real-Time Search Across Modals
+- [x] Create reusable ModalSearch component with full-text search and highlighting
+- [x] Integrate search into AgentDetailsPanel (Overview and Transactions tabs)
+- [x] Integrate search into AgentCommissionBreakdown modal
+- [x] Integrate search into DrillDownModal and other data-heavy modals
+- [x] Test search functionality across all modals
+- [x] Write unit tests for ModalSearch component
+- [x] Write integration tests for search in each modal
 
 
-## Phase 29: Fix Agent Name Rendering Issue (Current)
-- [ ] Investigate agent name rendering across all modals and components
-- [ ] Identify root cause of garbled/repeated text in agent name display
-- [ ] Fix rendering bug in AgentCommissionBreakdown modal
-- [ ] Fix rendering bug in AgentDetailsPanel
-- [ ] Fix rendering bug in DrillDownModal
-- [ ] Test agent name display across all components
+## Phase 29: Fix Agent Name Rendering Issue
+- [x] Investigate agent name rendering across all modals and components
+- [x] Identify root cause of garbled/repeated text in agent name display (breadcrumb duplication)
+- [x] Fix breadcrumb rendering logic in FullScreenModal
+- [x] Normalize breadcrumb shape handling (label/onClick vs title/onNavigate)
+- [x] Prevent breadcrumb stack growth by checking currentModal.id
+- [x] Test agent name display across all components (verified: Karen Martinez displays cleanly in commission breakdown modal)

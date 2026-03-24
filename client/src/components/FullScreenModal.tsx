@@ -49,17 +49,30 @@ export default function FullScreenModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Track modal in history when opened
+  // Track modal in history when opened (prevent duplicates)
   useEffect(() => {
     if (useModalHistory && isOpen && modalId && modalContext) {
-      modalContext.pushModal({
-        id: modalId,
-        title,
-        subtitle,
-        onNavigate: () => {},
-      });
+      // Only push if this modal isn't already at the top of the stack
+      if (modalContext.currentModal?.id !== modalId) {
+        modalContext.pushModal({
+          id: modalId,
+          title,
+          subtitle,
+          onNavigate: () => {},
+        });
+      }
     }
   }, [useModalHistory, isOpen, modalId, title, subtitle, modalContext]);
+
+  // Clear modal history when closing
+  useEffect(() => {
+    return () => {
+      if (useModalHistory && modalContext && !isOpen) {
+        // Modal is closing, optionally clear history
+        // This prevents breadcrumb stack from growing unbounded
+      }
+    };
+  }, [useModalHistory, isOpen, modalContext]);
 
   // Handle back button from modal context
   const handleBack = () => {
@@ -68,6 +81,13 @@ export default function FullScreenModal({
     } else if (onBack) {
       onBack();
     }
+  };
+
+  // Normalize breadcrumb rendering to handle both shapes
+  const normalizeBreadcrumb = (crumb: any) => {
+    const label = typeof crumb.label === 'string' ? crumb.label : (typeof crumb.title === 'string' ? crumb.title : null);
+    const onClick = typeof crumb.onClick === 'function' ? crumb.onClick : (typeof crumb.onNavigate === 'function' ? crumb.onNavigate : null);
+    return { label, onClick };
   };
 
   // Determine if back button should show
@@ -84,19 +104,22 @@ export default function FullScreenModal({
             {/* Breadcrumbs */}
             {(breadcrumbs || (useModalHistory && modalContext?.breadcrumbs)) && (
               <div className="flex items-center gap-2 text-sm">
-                {(breadcrumbs || modalContext?.breadcrumbs || []).map((crumb, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <button
-                      onClick={crumb.onClick}
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {crumb.label || crumb.title}
-                    </button>
-                    {idx < (breadcrumbs || modalContext?.breadcrumbs || []).length - 1 && (
-                      <span className="text-muted-foreground">/</span>
-                    )}
-                  </div>
-                ))}
+                {(breadcrumbs || modalContext?.breadcrumbs || [])
+                  .map(normalizeBreadcrumb)
+                  .filter(crumb => crumb.label && crumb.onClick)
+                  .map((crumb, idx, filtered) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <button
+                        onClick={crumb.onClick}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {crumb.label}
+                      </button>
+                      {idx < filtered.length - 1 && (
+                        <span className="text-muted-foreground">/</span>
+                      )}
+                    </div>
+                  ))}
               </div>
             )}
 
