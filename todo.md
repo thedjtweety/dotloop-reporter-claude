@@ -3991,3 +3991,14 @@
 - [ ] Write unit tests for commission calculations
 - [ ] Test print and email functionality in production
 - [ ] Optimize report generation performance for large datasets
+
+
+## Phase 31: Integrate Net Commission Report with Live Data
+- [x] Analyze Home.tsx state management and transaction data flow
+- [x] Create TransactionDataContext for sharing data across pages
+- [x] Update NetCommissionReportPage to consume live uploaded CSV data
+- [x] Add navigation link from Home page to Net Commission Report (Quick Actions Bar)
+- [x] Sync transaction data when CSV is uploaded or demo is loaded
+- [x] Implement commission calculation in NetCommissionReportPage
+- [x] Add date range filtering to Net Commission Report
+- [x] Test data flow with sample CSV upload

@@ -5,6 +5,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ModalProvider } from "./contexts/ModalContext";
+import { TransactionDataProvider } from "./contexts/TransactionDataContext";
 import Home from "./pages/Home";
 
 import AdminDashboard from "./pages/AdminDashboard";
@@ -71,17 +72,19 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ModalProvider>
-        <ThemeProvider
-          defaultTheme="dark"
-          switchable={true}
-        >
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </ThemeProvider>
-      </ModalProvider>
+      <TransactionDataProvider>
+        <ModalProvider>
+          <ThemeProvider
+            defaultTheme="dark"
+            switchable={true}
+          >
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </ThemeProvider>
+        </ModalProvider>
+      </TransactionDataProvider>
     </ErrorBoundary>
   );
 }

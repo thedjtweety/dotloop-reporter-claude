@@ -110,6 +110,7 @@ import MobileNav from '@/components/MobileNav';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import OnboardingTour from '@/components/OnboardingTour';
 import { useOnboardingTour, uploadTourSteps, dashboardTourSteps } from '@/hooks/useOnboardingTour';
+import { useTransactionData } from '@/contexts/TransactionDataContext';
 
 import { FilterProvider, useFilters } from '@/contexts/FilterContext';
 import FilterBadge from '@/components/FilterBadge';
@@ -130,6 +131,7 @@ function HomeContent() {
   // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
   let { user, loading, error, isAuthenticated, logout } = useAuth();
   const { filters, addFilter } = useFilters();
+  const { setTransactionData } = useTransactionData();
 
   const [location, setLocation] = useLocation();
   const { metricsOrder, isEditMode, isLoaded, reorderMetrics, resetToDefault, toggleEditMode } = useMetricsOrder();
@@ -373,9 +375,17 @@ function HomeContent() {
   const handleRecentSelect = (file: RecentFile) => {
     setAllRecords(file.data);
     setFilteredRecords(file.data);
-    setMetrics(calculateMetrics(file.data));
+    const calculatedMetrics = calculateMetrics(file.data);
+    setMetrics(calculatedMetrics);
     const metrics1 = calculateAgentMetrics(file.data);
-    setAgentMetrics(applyPlansToAllAgents(metrics1, file.data));
+    const agentMetricsWithPlans = applyPlansToAllAgents(metrics1, file.data);
+    setAgentMetrics(agentMetricsWithPlans);
+    setTransactionData({
+      allRecords: file.data,
+      filteredRecords: file.data,
+      metrics: calculatedMetrics,
+      agentMetrics: agentMetricsWithPlans,
+    });
   };
 
   const handleRecentDelete = async (id: string, e: React.MouseEvent) => {
@@ -403,9 +413,17 @@ function HomeContent() {
       console.log(`🎯 Demo Generated [${stats.complexity}]:\n  📊 ${stats.agentCount} agents | ${stats.transactionCount} transactions\n  💰 $${stats.totalGCI.toLocaleString()} GCI | $${stats.totalVolume.toLocaleString()} volume\n  🌎 ${stats.stateCount} states | ${stats.propertyTypeCount} property types\n  📅 ${stats.dateRange.earliest} to ${stats.dateRange.latest}`);
       setAllRecords(sampleData);
       setFilteredRecords(sampleData);
-      setMetrics(calculateMetrics(sampleData));
+      const calculatedMetrics = calculateMetrics(sampleData);
+      setMetrics(calculatedMetrics);
       const metrics2 = calculateAgentMetrics(sampleData);
-      setAgentMetrics(applyPlansToAllAgents(metrics2, sampleData));
+      const agentMetricsWithPlans = applyPlansToAllAgents(metrics2, sampleData);
+      setAgentMetrics(agentMetricsWithPlans);
+      setTransactionData({
+        allRecords: sampleData,
+        filteredRecords: sampleData,
+        metrics: calculatedMetrics,
+        agentMetrics: agentMetricsWithPlans,
+      });
       setIsLoading(false);
     }, 1500);
   };
@@ -1048,6 +1066,20 @@ function HomeContent() {
         </AlertDialog>
 
 
+
+        {/* Quick Actions Bar */}
+        {metrics && (
+          <div className="flex gap-2 mb-8 flex-wrap">
+            <Button
+              onClick={() => setLocation('/net-commission-report')}
+              className="gap-2"
+              variant="outline"
+            >
+              <DollarSign className="h-4 w-4" />
+              Net Commission Report
+            </Button>
+          </div>
+        )}
 
         {/* Status Overview Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 landscape:grid-cols-4 gap-3 landscape:gap-4 mb-12 mt-12">
