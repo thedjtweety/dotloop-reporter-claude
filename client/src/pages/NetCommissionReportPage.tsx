@@ -10,6 +10,13 @@ import { useLocation } from 'wouter';
 import { Download, Mail, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import NetCommissionReport from '@/components/NetCommissionReport';
 import { DateRange } from 'react-day-picker';
 import { useAuth } from '@/_core/hooks/useAuth';
@@ -34,6 +41,8 @@ export default function NetCommissionReportPage() {
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [agents, setAgents] = useState<AgentCommissionSummary[]>([]);
+  const [filteredAgents, setFilteredAgents] = useState<AgentCommissionSummary[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
 
   // Generate report when data is available
@@ -139,13 +148,25 @@ export default function NetCommissionReportPage() {
         .sort((a, b) => b.totalNetCommission - a.totalNetCommission);
 
       setAgents(reportAgents);
+      setFilteredAgents(reportAgents);
+      setSelectedAgent('all');
     } catch (error) {
       console.error('Error generating net commission report:', error);
       setAgents([]);
+      setFilteredAgents([]);
     } finally {
       setIsLoading(false);
     }
   }, [isAuthenticated, setLocation, hasData, allRecords, agentAssignments, commissionPlans, dateRange]);
+
+  const handleAgentFilterChange = (agentName: string) => {
+    setSelectedAgent(agentName);
+    if (agentName === 'all') {
+      setFilteredAgents(agents);
+    } else {
+      setFilteredAgents(agents.filter(a => a.agentName === agentName));
+    }
+  };
 
   const handleDateRangeChange = (range: DateRange | undefined) => {
     setDateRange(range);
@@ -163,7 +184,7 @@ export default function NetCommissionReportPage() {
   const handleExport = () => {
     // Generate CSV
     const headers = ['Agent Name', 'Plan Name', 'Total Transactions', 'Gross Commission', 'Deductions', 'Net Commission', 'Avg per Deal'];
-    const rows = agents.map(agent => [
+    const rows = filteredAgents.map(agent => [
       agent.agentName,
       agent.planName,
       agent.totalTransactions,
@@ -205,16 +226,36 @@ export default function NetCommissionReportPage() {
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-1">
             <div>
               <h1 className="text-xl font-bold text-foreground">
                 Net Commission Report
               </h1>
               <p className="text-xs text-foreground hidden sm:block">
-                {hasData ? `${agents.length} agents • ${allRecords.length} transactions` : 'No data available'}
+                {hasData ? `${filteredAgents.length} of ${agents.length} agents • ${allRecords.length} transactions` : 'No data available'}
               </p>
             </div>
           </div>
+
+          {/* Agent Filter Dropdown */}
+          {hasData && agents.length > 0 && (
+            <div className="flex items-center gap-2 mr-4">
+              <label className="text-sm font-medium text-foreground hidden sm:block">Filter:</label>
+              <Select value={selectedAgent} onValueChange={handleAgentFilterChange}>
+                <SelectTrigger className="w-40 hidden sm:flex">
+                  <SelectValue placeholder="Select agent..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Agents ({agents.length})</SelectItem>
+                  {agents.map(agent => (
+                    <SelectItem key={agent.agentName} value={agent.agentName}>
+                      {agent.agentName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2">

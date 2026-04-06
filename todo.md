@@ -4002,3 +4002,12 @@
 - [x] Implement commission calculation in NetCommissionReportPage
 - [x] Add date range filtering to Net Commission Report
 - [x] Test data flow with sample CSV upload
+
+
+## Phase 32: Agent Filter Dropdown for Net Commission Report
+- [x] Add agent filter dropdown component to report header
+- [x] Implement filtering logic in NetCommissionReportPage
+- [x] Add "All Agents" option to show complete report (default selection)
+- [x] Test agent filtering with sample data
+- [x] Verify filtered data displays correctly in report table
+- [x] Test print and export with filtered data (export uses filtered agents)
