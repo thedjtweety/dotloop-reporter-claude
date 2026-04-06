@@ -1067,17 +1067,32 @@ function HomeContent() {
 
 
 
-        {/* Quick Actions Bar */}
+        {/* Net Commission Report Featured Card */}
         {metrics && (
-          <div className="flex gap-2 mb-8 flex-wrap">
-            <Button
+          <div className="mb-12 mt-6">
+            <Card 
+              className="p-8 cursor-pointer hover:shadow-lg transition-all duration-300 hover:border-primary/50 active:scale-[0.99] bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30"
               onClick={() => setLocation('/net-commission-report')}
-              className="gap-2"
-              variant="outline"
             >
-              <DollarSign className="h-4 w-4" />
-              Net Commission Report
-            </Button>
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-14 h-14 rounded-lg bg-primary/20 flex items-center justify-center">
+                      <DollarSign className="w-8 h-8 text-primary" />
+                    </div>
+                    <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                      Net Commission Report
+                    </h3>
+                  </div>
+                  <p className="text-foreground/70 text-base md:text-lg ml-17">
+                    View detailed commission breakdown for all agents with transaction-level analysis
+                  </p>
+                </div>
+                <div className="hidden md:flex items-center justify-center ml-6">
+                  <TrendingUp className="w-12 h-12 text-primary/40" />
+                </div>
+              </div>
+            </Card>
           </div>
         )}
 
