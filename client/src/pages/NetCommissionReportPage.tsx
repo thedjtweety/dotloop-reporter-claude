@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Download, Mail, Printer, X } from 'lucide-react';
+import { Download, Mail, Printer, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/select';
 import NetCommissionReport from '@/components/NetCommissionReport';
 import { DateRange } from 'react-day-picker';
-import { useAuth } from '@/_core/hooks/useAuth';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { calculateAgentMetrics } from '@/lib/csvParser';
 
@@ -36,7 +35,6 @@ interface AgentCommissionSummary {
 
 export default function NetCommissionReportPage() {
   const [, setLocation] = useLocation();
-  const { isAuthenticated } = useAuth();
   const { allRecords, agentMetrics, commissionPlans, agentAssignments, hasData } = useTransactionData();
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -47,13 +45,9 @@ export default function NetCommissionReportPage() {
 
   // Generate report when data is available
   useEffect(() => {
-    if (!isAuthenticated) {
-      setLocation('/');
-      return;
-    }
-
     if (!hasData) {
       setAgents([]);
+      setFilteredAgents([]);
       return;
     }
 
@@ -78,40 +72,31 @@ export default function NetCommissionReportPage() {
       for (const transaction of filteredTransactions) {
         const agents = transaction.agents.split(',').map(a => a.trim());
         const totalGCI = (transaction.salePrice || 0) * ((transaction.commissionRate || 0) / 100);
-        const gciPerAgent = totalGCI / agents.length;
 
         for (const agentName of agents) {
-          // Find agent assignment
+          if (!agentName) continue;
+
+          // Get agent's commission plan
           const assignment = agentAssignments.find(a => a.agentName === agentName);
-          const planName = assignment?.planName || 'No Plan Assigned';
+          const planName = assignment?.planName || 'Default Plan';
 
-          // Calculate agent commission
-          let agentCommission = gciPerAgent;
-          let deductions = 0;
+          // Get commission plan details
+          const plan = commissionPlans.find(p => p.name === planName);
+          const splitPercentage = plan?.splitPercentage || 50;
 
-          if (assignment) {
-            // Find the plan details
-            const plan = commissionPlans.find(p => p.id === assignment.planId);
-            if (plan) {
-              // Apply split percentage
-              agentCommission = gciPerAgent * (plan.splitPercentage / 100);
+          // Calculate agent's commission
+          const agentCommission = totalGCI * (splitPercentage / 100);
+          const deductions = plan?.deductions?.reduce((sum, d) => {
+            if (d.type === 'fixed') return sum + d.amount;
+            return sum + (agentCommission * (d.amount / 100));
+          }, 0) || 0;
 
-              // Apply deductions
-              if (plan.deductions && plan.deductions.length > 0) {
-                for (const deduction of plan.deductions) {
-                  if (deduction.type === 'fixed') {
-                    deductions += deduction.amount;
-                  } else if (deduction.type === 'percentage') {
-                    deductions += gciPerAgent * (deduction.amount / 100);
-                  }
-                }
-              }
-            }
-          }
+          const netCommission = agentCommission - deductions;
 
-          // Add or update agent summary
-          if (!agentSummaries.has(agentName)) {
-            agentSummaries.set(agentName, {
+          // Create or update agent summary
+          const key = `${agentName}-${planName}`;
+          if (!agentSummaries.has(key)) {
+            agentSummaries.set(key, {
               agentName,
               planName,
               totalTransactions: 0,
@@ -123,27 +108,31 @@ export default function NetCommissionReportPage() {
             });
           }
 
-          const summary = agentSummaries.get(agentName)!;
+          const summary = agentSummaries.get(key)!;
           summary.totalTransactions += 1;
-          summary.totalGrossCommission += gciPerAgent;
+          summary.totalGrossCommission += agentCommission;
           summary.totalDeductions += deductions;
-          summary.totalNetCommission += agentCommission - deductions;
+          summary.totalNetCommission += netCommission;
           summary.transactions.push({
-            ...transaction,
-            agentCommission,
+            loopName: transaction.loopName,
+            salePrice: transaction.salePrice,
+            commission: agentCommission,
             deductions,
-            netCommission: agentCommission - deductions,
+            net: netCommission,
+            closingDate: transaction.closingDate,
+            status: transaction.loopStatus,
           });
         }
       }
 
-      // Convert map to sorted array
+      // Calculate averages
       const reportAgents = Array.from(agentSummaries.values())
-        .map(summary => ({
-          ...summary,
-          averageCommissionPerDeal: summary.totalTransactions > 0 
-            ? summary.totalNetCommission / summary.totalTransactions 
-            : 0,
+        .map(agent => ({
+          ...agent,
+          averageCommissionPerDeal:
+            agent.totalTransactions > 0
+              ? agent.totalNetCommission / agent.totalTransactions
+              : 0,
         }))
         .sort((a, b) => b.totalNetCommission - a.totalNetCommission);
 
@@ -157,7 +146,7 @@ export default function NetCommissionReportPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, setLocation, hasData, allRecords, agentAssignments, commissionPlans, dateRange]);
+  }, [hasData, allRecords, agentAssignments, commissionPlans, dateRange]);
 
   const handleAgentFilterChange = (agentName: string) => {
     setSelectedAgent(agentName);
@@ -208,19 +197,6 @@ export default function NetCommissionReportPage() {
     setLocation('/');
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8 text-center max-w-md">
-          <p className="text-foreground mb-4">Please log in to view the Net Commission Report</p>
-          <Button onClick={() => setLocation('/')}>
-            Back to Home
-          </Button>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -265,60 +241,104 @@ export default function NetCommissionReportPage() {
                   variant="outline"
                   size="sm"
                   onClick={handlePrint}
-                  className="hidden sm:flex gap-2"
+                  className="hidden sm:flex"
+                  title="Print report"
                 >
-                  <Printer className="h-4 w-4" />
-                  Print
+                  <Printer className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleEmail}
-                  className="hidden sm:flex gap-2"
+                  className="hidden sm:flex"
+                  title="Email report"
                 >
-                  <Mail className="h-4 w-4" />
-                  Email
+                  <Mail className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleExport}
-                  className="hidden sm:flex gap-2"
+                  className="hidden sm:flex"
+                  title="Export as CSV"
                 >
-                  <Download className="h-4 w-4" />
-                  Export
+                  <Download className="w-4 h-4" />
                 </Button>
               </>
             )}
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={handleClose}
-              className="ml-2"
-              title="Close"
+              className="text-muted-foreground hover:text-foreground"
             >
-              <X className="h-5 w-5" />
+              <X className="w-5 h-5" />
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Content */}
+      {/* Main Content */}
       <main className="container py-8">
         {!hasData ? (
-          <Card className="p-8 text-center">
-            <p className="text-foreground mb-4">No data available. Please upload a CSV file first.</p>
-            <Button onClick={() => setLocation('/')}>
-              Go to Dashboard
+          <Card className="p-12 text-center border-dashed">
+            <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              No Data Available
+            </h2>
+            <p className="text-muted-foreground mb-6">
+              Please upload a CSV file or load demo data to view the net commission report.
+            </p>
+            <Button onClick={handleClose}>
+              Go Back to Dashboard
             </Button>
           </Card>
+        ) : isLoading ? (
+          <Card className="p-12 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-muted-foreground mt-4">Generating report...</p>
+          </Card>
+        ) : filteredAgents.length === 0 ? (
+          <Card className="p-12 text-center border-dashed">
+            <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              No Agents Found
+            </h2>
+            <p className="text-muted-foreground">
+              No agents match the selected filter. Try adjusting your filters.
+            </p>
+          </Card>
         ) : (
-          <NetCommissionReport
-            agents={agents}
-            dateRange={dateRange}
-            onDateRangeChange={handleDateRangeChange}
-            isLoading={isLoading}
-          />
+          <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Total Agents</p>
+                <p className="text-2xl font-bold text-foreground mt-2">{filteredAgents.length}</p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Total Transactions</p>
+                <p className="text-2xl font-bold text-foreground mt-2">
+                  {filteredAgents.reduce((sum, a) => sum + a.totalTransactions, 0)}
+                </p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Total Gross Commission</p>
+                <p className="text-2xl font-bold text-foreground mt-2">
+                  ${filteredAgents.reduce((sum, a) => sum + a.totalGrossCommission, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Total Net Commission</p>
+                <p className="text-2xl font-bold text-primary mt-2">
+                  ${filteredAgents.reduce((sum, a) => sum + a.totalNetCommission, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                </p>
+              </Card>
+            </div>
+
+            {/* Report Table */}
+            <NetCommissionReport agents={filteredAgents} />
+          </div>
         )}
       </main>
     </div>
