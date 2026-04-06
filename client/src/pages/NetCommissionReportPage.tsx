@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { ArrowLeft, Download, Mail, Printer } from 'lucide-react';
+import { Download, Mail, Printer, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import NetCommissionReport from '@/components/NetCommissionReport';
@@ -100,9 +100,7 @@ export default function NetCommissionReportPage() {
             }
           }
 
-          const netCommission = agentCommission - deductions;
-
-          // Initialize agent summary if not exists
+          // Add or update agent summary
           if (!agentSummaries.has(agentName)) {
             agentSummaries.set(agentName, {
               agentName,
@@ -120,23 +118,17 @@ export default function NetCommissionReportPage() {
           summary.totalTransactions += 1;
           summary.totalGrossCommission += gciPerAgent;
           summary.totalDeductions += deductions;
-          summary.totalNetCommission += netCommission;
+          summary.totalNetCommission += agentCommission - deductions;
           summary.transactions.push({
-            loopName: transaction.loopName,
-            closingDate: transaction.closingDate,
-            agents: transaction.agents,
-            salePrice: transaction.salePrice,
-            grossCommission: gciPerAgent,
+            ...transaction,
             agentCommission,
             deductions,
-            netCommission,
-            commissionRate: transaction.commissionRate,
-            status: transaction.loopStatus || 'Closed',
+            netCommission: agentCommission - deductions,
           });
         }
       }
 
-      // Calculate averages and sort by net commission (descending)
+      // Convert map to sorted array
       const reportAgents = Array.from(agentSummaries.values())
         .map(summary => ({
           ...summary,
@@ -191,6 +183,10 @@ export default function NetCommissionReportPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleClose = () => {
+    setLocation('/');
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -210,14 +206,6 @@ export default function NetCommissionReportPage() {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation('/')}
-              className="mr-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
             <div>
               <h1 className="text-xl font-bold text-foreground">
                 Net Commission Report
@@ -229,68 +217,58 @@ export default function NetCommissionReportPage() {
           </div>
           
           {/* Action Buttons */}
-          {hasData && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePrint}
-                className="hidden sm:flex gap-2"
-              >
-                <Printer className="h-4 w-4" />
-                Print
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEmail}
-                className="hidden sm:flex gap-2"
-              >
-                <Mail className="h-4 w-4" />
-                Email
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                className="hidden sm:flex gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {hasData && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="hidden sm:flex gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  Print
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEmail}
+                  className="hidden sm:flex gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExport}
+                  className="hidden sm:flex gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              className="ml-2"
+              title="Close"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* Content */}
       <main className="container py-8">
-        {isLoading ? (
+        {!hasData ? (
           <Card className="p-8 text-center">
-            <p className="text-foreground">Generating report...</p>
-          </Card>
-        ) : !hasData ? (
-          <Card className="p-8 text-center space-y-4">
-            <p className="text-foreground text-lg font-semibold">
-              No Data Available
-            </p>
-            <p className="text-foreground">
-              Upload a CSV file on the home page to generate a net commission report for all agents.
-            </p>
+            <p className="text-foreground mb-4">No data available. Please upload a CSV file first.</p>
             <Button onClick={() => setLocation('/')}>
-              Upload Data
-            </Button>
-          </Card>
-        ) : agents.length === 0 ? (
-          <Card className="p-8 text-center space-y-4">
-            <p className="text-foreground text-lg font-semibold">
-              No Agents Found
-            </p>
-            <p className="text-foreground">
-              No agent commission data available for the selected date range.
-            </p>
-            <Button onClick={() => setLocation('/')}>
-              Back to Home
+              Go to Dashboard
             </Button>
           </Card>
         ) : (
@@ -298,9 +276,7 @@ export default function NetCommissionReportPage() {
             agents={agents}
             dateRange={dateRange}
             onDateRangeChange={handleDateRangeChange}
-            onPrint={handlePrint}
-            onEmail={handleEmail}
-            onExport={handleExport}
+            isLoading={isLoading}
           />
         )}
       </main>
