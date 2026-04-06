@@ -4011,3 +4011,13 @@
 - [x] Test agent filtering with sample data
 - [x] Verify filtered data displays correctly in report table
 - [x] Test print and export with filtered data (export uses filtered agents)
+
+
+## Phase 33: Transaction-Level Drill-Down for Net Commission Report
+- [x] Create TransactionDetailModal component with full transaction details
+- [x] Display property info, closing date, and commission breakdown in modal
+- [x] Update NetCommissionReport to show transactions as clickable rows with eye icon
+- [x] Make transaction rows clickable to open detail modal
+- [x] Add close button (X) functionality in transaction detail view
+- [x] Implement drill-down with sample data
+- [x] Optimize modal rendering with sticky header and scrollable content

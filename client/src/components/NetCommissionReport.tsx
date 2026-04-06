@@ -11,7 +11,7 @@
  */
 
 import { useState, useRef } from 'react';
-import { Download, Mail, Printer, Filter, X, ChevronDown } from 'lucide-react';
+import { Download, Mail, Printer, Filter, X, ChevronDown, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -60,6 +60,7 @@ export default function NetCommissionReport({
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState<{ agent: string; transaction: CommissionTransaction } | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
   // Filter agents based on search and selection
@@ -415,10 +416,14 @@ export default function NetCommissionReport({
                         {agent.transactions.map((transaction, idx) => (
                           <tr
                             key={idx}
-                            className="border-b border-border hover:bg-slate-50 dark:hover:bg-slate-900/30"
+                            className="border-b border-border hover:bg-slate-50 dark:hover:bg-slate-900/30 cursor-pointer transition-colors"
+                            onClick={() => setSelectedTransaction({ agent: agent.agentName, transaction })}
                           >
                             <td className="px-4 py-3 text-foreground">
-                              {transaction.loopName}
+                              <div className="flex items-center gap-2">
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                {transaction.loopName}
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-foreground">
                               {new Date(transaction.closingDate).toLocaleDateString()}
@@ -446,6 +451,119 @@ export default function NetCommissionReport({
           ))
         )}
       </div>
+
+      {/* Transaction Detail Modal */}
+      {selectedTransaction && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 flex items-center justify-between p-6 border-b border-border bg-card/50 backdrop-blur-sm">
+              <div>
+                <h2 className="text-xl font-bold text-foreground">{selectedTransaction.transaction.loopName}</h2>
+                <p className="text-sm text-foreground/70">Transaction Details</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedTransaction(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6 space-y-6">
+              {/* Agent & Plan Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Card className="p-4 bg-background/50">
+                  <p className="text-xs font-medium text-foreground/70 uppercase mb-1">Agent</p>
+                  <p className="text-lg font-semibold text-foreground">{selectedTransaction.agent}</p>
+                </Card>
+                <Card className="p-4 bg-background/50">
+                  <p className="text-xs font-medium text-foreground/70 uppercase mb-1">Status</p>
+                  <p className="text-lg font-semibold text-foreground capitalize">{selectedTransaction.transaction.status}</p>
+                </Card>
+              </div>
+
+              {/* Dates */}
+              <Card className="p-4 bg-background/50">
+                <p className="text-xs font-medium text-foreground/70 uppercase mb-1">Closing Date</p>
+                <p className="text-lg font-semibold text-foreground">
+                  {new Date(selectedTransaction.transaction.closingDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </p>
+              </Card>
+
+              {/* Sale Price */}
+              <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+                <p className="text-xs font-medium text-foreground/70 uppercase mb-1">Sale Price</p>
+                <p className="text-3xl font-bold text-foreground">
+                  {formatCurrency(selectedTransaction.transaction.salePrice)}
+                </p>
+              </Card>
+
+              {/* Commission Breakdown */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-foreground">Commission Breakdown</h3>
+
+                {/* Gross Commission */}
+                <Card className="p-4 bg-background/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-foreground">Gross Commission</p>
+                    <p className="text-xs text-foreground/70">
+                      {selectedTransaction.transaction.salePrice > 0
+                        ? ((selectedTransaction.transaction.grossCommission / selectedTransaction.transaction.salePrice) * 100).toFixed(2)
+                        : '0.00'}%
+                    </p>
+                  </div>
+                  <p className="text-2xl font-bold text-amber-500">
+                    {formatCurrency(selectedTransaction.transaction.grossCommission)}
+                  </p>
+                </Card>
+
+                {/* Deductions */}
+                {selectedTransaction.transaction.deductions > 0 && (
+                  <Card className="p-4 bg-background/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-foreground">Deductions</p>
+                      <p className="text-xs text-foreground/70">
+                        {((selectedTransaction.transaction.deductions / selectedTransaction.transaction.grossCommission) * 100).toFixed(1)}% of gross
+                      </p>
+                    </div>
+                    <p className="text-2xl font-bold text-red-500">
+                      -{formatCurrency(selectedTransaction.transaction.deductions)}
+                    </p>
+                  </Card>
+                )}
+
+                {/* Net Commission */}
+                <Card className="p-4 bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-foreground">Net Commission</p>
+                    <p className="text-xs text-foreground/70">
+                      {selectedTransaction.transaction.salePrice > 0
+                        ? ((selectedTransaction.transaction.netCommission / selectedTransaction.transaction.salePrice) * 100).toFixed(2)
+                        : '0.00'}%
+                    </p>
+                  </div>
+                  <p className="text-3xl font-bold text-green-500">
+                    {formatCurrency(selectedTransaction.transaction.netCommission)}
+                  </p>
+                </Card>
+              </div>
+
+              {/* Close Button */}
+              <Button onClick={() => setSelectedTransaction(null)} className="w-full">
+                Close
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Email Modal */}
       {showEmailModal && (
