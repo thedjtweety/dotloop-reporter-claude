@@ -163,11 +163,11 @@ export default function NetCommissionReport({
       item.agent,
       item.transaction.loopName,
       new Date(item.transaction.closingDate).toISOString().split('T')[0],
-      item.transaction.salePrice.toFixed(2),
-      item.transaction.grossCommission.toFixed(2),
-      item.transaction.deductions.toFixed(2),
-      item.transaction.netCommission.toFixed(2),
-      (item.transaction.commissionRate * 100).toFixed(2) + '%',
+      (item.transaction.salePrice ?? 0).toFixed(2),
+      (item.transaction.grossCommission ?? 0).toFixed(2),
+      (item.transaction.deductions ?? 0).toFixed(2),
+      (item.transaction.netCommission ?? 0).toFixed(2),
+      ((item.transaction.commissionRate ?? 0) * 100).toFixed(2) + '%',
     ]);
 
     const csvContent = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
@@ -233,20 +233,20 @@ export default function NetCommissionReport({
       agent.agentName,
       agent.planName,
       agent.totalTransactions,
-      agent.totalGrossCommission.toFixed(2),
-      agent.totalDeductions.toFixed(2),
-      agent.totalNetCommission.toFixed(2),
-      agent.averageCommissionPerDeal.toFixed(2),
+      (agent.totalGrossCommission ?? 0).toFixed(2),
+      (agent.totalDeductions ?? 0).toFixed(2),
+      (agent.totalNetCommission ?? 0).toFixed(2),
+      (agent.averageCommissionPerDeal ?? 0).toFixed(2),
     ]);
 
     const totalsRow = [
       'TOTAL',
       '',
       totals.transactions,
-      totals.grossCommission.toFixed(2),
-      totals.deductions.toFixed(2),
-      totals.netCommission.toFixed(2),
-      (totals.netCommission / totals.transactions).toFixed(2),
+      (totals.grossCommission ?? 0).toFixed(2),
+      (totals.deductions ?? 0).toFixed(2),
+      (totals.netCommission ?? 0).toFixed(2),
+      totals.transactions > 0 ? ((totals.netCommission ?? 0) / totals.transactions).toFixed(2) : '0.00',
     ];
 
     const csvContent = [
