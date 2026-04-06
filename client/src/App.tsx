@@ -26,6 +26,7 @@ import TermsOfService from "./pages/TermsOfService";
 import SimpleCDABuilder from "./pages/SimpleCDABuilder";
 import CDAHistory from "./pages/CDAHistory";
 import UploadHistory from "./pages/UploadHistory";
+import NetCommissionReportPage from "./pages/NetCommissionReportPage";
 
 
 function Router() {
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/cda-builder" component={SimpleCDABuilder} />
       <Route path="/cda-history" component={CDAHistory} />
       <Route path="/uploads" component={UploadHistory} />
+      <Route path="/net-commission-report" component={NetCommissionReportPage} />
 
       <Route path="{/404}" component={NotFound} />
       {/* Final fallback route */}

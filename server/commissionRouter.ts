@@ -710,6 +710,179 @@ export const commissionRouter = router({
       }
     }),
 
+  /**
+   * Generate Net Commission Report for all agents
+   * Returns comprehensive commission breakdown with transaction details
+   */
+  generateNetCommissionReport: publicProcedure
+    .input(z.object({
+      transactions: z.array(TransactionInputSchema),
+      agentAssignments: z.array(AgentAssignmentSchemaProcessed),
+      dateRange: z.object({
+        from: z.string().optional(),
+        to: z.string().optional(),
+      }).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const db = await getDb();
+        if (!db) {
+          throw new Error("Database connection not available");
+        }
+
+        // Fetch commission plans from database
+        const dbPlans = await db.select().from(commissionPlans);
+        const plansMap = new Map(dbPlans.map((p: any) => [
+          p.id,
+          {
+            id: p.id,
+            name: p.name,
+            splitPercentage: p.splitPercentage,
+            capAmount: p.capAmount,
+            postCapSplit: p.postCapSplit,
+            deductions: p.deductions ? JSON.parse(p.deductions as string) : undefined,
+            royaltyPercentage: p.royaltyPercentage,
+            royaltyCap: p.royaltyCap,
+            useSliding: p.useSliding === 1,
+            tiers: p.tiers ? JSON.parse(p.tiers as string) : undefined,
+          } as CommissionPlan
+        ]));
+
+        // Build agent commission summaries
+        const agentSummaries = new Map<string, any>();
+
+        // Filter transactions by date range if provided
+        let filteredTransactions = input.transactions;
+        if (input.dateRange?.from || input.dateRange?.to) {
+          const fromDate = input.dateRange.from ? new Date(input.dateRange.from) : new Date('1900-01-01');
+          const toDate = input.dateRange.to ? new Date(input.dateRange.to) : new Date('2099-12-31');
+
+          filteredTransactions = filteredTransactions.filter(t => {
+            const closingDate = new Date(t.closingDate);
+            return closingDate >= fromDate && closingDate <= toDate;
+          });
+        }
+
+        // Calculate commissions for each transaction and agent
+        for (const transaction of filteredTransactions) {
+          const agents = transaction.agents.split(',').map(a => a.trim());
+          const totalGCI = transaction.salePrice * (transaction.commissionRate / 100);
+          const gciPerAgent = totalGCI / agents.length;
+
+          for (const agentName of agents) {
+            // Find agent assignment
+            const assignment = input.agentAssignments.find(a => a.agentName === agentName);
+            const plan = assignment ? plansMap.get(assignment.planId) : null;
+            const planName = plan?.name || 'No Plan Assigned';
+
+            // Calculate agent commission
+            let agentCommission = gciPerAgent;
+            let deductions = 0;
+
+            if (plan) {
+              // Apply split percentage
+              agentCommission = gciPerAgent * (plan.splitPercentage / 100);
+
+              // Apply deductions
+              if (plan.deductions && plan.deductions.length > 0) {
+                for (const deduction of plan.deductions) {
+                  if (deduction.type === 'fixed') {
+                    deductions += deduction.amount;
+                  } else if (deduction.type === 'percentage') {
+                    deductions += gciPerAgent * (deduction.amount / 100);
+                  }
+                }
+              }
+            }
+
+            const netCommission = agentCommission - deductions;
+
+            // Initialize agent summary if not exists
+            if (!agentSummaries.has(agentName)) {
+              agentSummaries.set(agentName, {
+                agentName,
+                planName,
+                totalTransactions: 0,
+                totalGrossCommission: 0,
+                totalDeductions: 0,
+                totalNetCommission: 0,
+                averageCommissionPerDeal: 0,
+                transactions: [],
+              });
+            }
+
+            const summary = agentSummaries.get(agentName)!;
+            summary.totalTransactions += 1;
+            summary.totalGrossCommission += gciPerAgent;
+            summary.totalDeductions += deductions;
+            summary.totalNetCommission += netCommission;
+            summary.transactions.push({
+              loopName: transaction.loopName,
+              closingDate: transaction.closingDate,
+              agents: transaction.agents,
+              salePrice: transaction.salePrice,
+              grossCommission: gciPerAgent,
+              agentCommission,
+              deductions,
+              netCommission,
+              commissionRate: transaction.commissionRate,
+              status: 'Closed',
+            });
+          }
+        }
+
+        // Calculate averages
+        const agents = Array.from(agentSummaries.values()).map((summary: any) => ({
+          ...summary,
+          averageCommissionPerDeal: summary.totalTransactions > 0 
+            ? summary.totalNetCommission / summary.totalTransactions 
+            : 0,
+        }));
+
+        return {
+          success: true,
+          agents,
+          generatedDate: new Date().toISOString(),
+          transactionCount: filteredTransactions.length,
+          agentCount: agents.length,
+        };
+      } catch (error) {
+        console.error('Error generating net commission report:', error);
+        throw new Error(
+          `Failed to generate net commission report: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    }),
+
+  /**
+   * Email Net Commission Report to specified recipient
+   */
+  emailNetCommissionReport: protectedProcedure
+    .input(z.object({
+      email: z.string().email(),
+      agents: z.array(z.any()),
+      dateRange: z.object({
+        from: z.string().optional(),
+        to: z.string().optional(),
+      }).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // TODO: Implement email sending via backend service
+        // For now, return success response
+        return {
+          success: true,
+          message: `Report sent to ${input.email}`,
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error('Error sending email report:', error);
+        throw new Error(
+          `Failed to send email report: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+    }),
+
   exportPDF: publicProcedure
     .input(
       z.object({

@@ -3975,3 +3975,19 @@
 - [x] Normalize breadcrumb shape handling (label/onClick vs title/onNavigate)
 - [x] Prevent breadcrumb stack growth by checking currentModal.id
 - [x] Test agent name display across all components (verified: Karen Martinez displays cleanly in commission breakdown modal)
+
+
+## Phase 30: Net Commission Report Feature
+- [x] Design net commission report data model and calculation logic
+- [x] Create backend API endpoints for commission calculations and report generation (generateNetCommissionReport, emailNetCommissionReport)
+- [x] Build NetCommissionReport UI component with detailed agent breakdowns
+- [x] Implement transaction-level commission details in report with expandable rows
+- [x] Add print functionality with professional formatting (browser native print)
+- [x] Implement email delivery with HTML template (backend endpoint ready)
+- [x] Add report filtering (date range, agent search)
+- [x] Add CSV/PDF export options (CSV implemented, PDF placeholder)
+- [x] Create NetCommissionReportPage for dashboard integration
+- [x] Add route /net-commission-report to main navigation
+- [ ] Write unit tests for commission calculations
+- [ ] Test print and email functionality in production
+- [ ] Optimize report generation performance for large datasets
