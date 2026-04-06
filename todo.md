@@ -4021,3 +4021,18 @@
 - [x] Add close button (X) functionality in transaction detail view
 - [x] Implement drill-down with sample data
 - [x] Optimize modal rendering with sticky header and scrollable content
+
+
+## Phase 34: Bulk Transaction Actions and Export Templates
+- [x] Add checkbox column to transaction table for multi-select with per-agent select-all
+- [x] Implement "Select All" checkbox in table header for each agent
+- [x] Create floating bulk actions toolbar with export, tag, and reassign buttons
+- [x] Implement CSV export template with customizable columns (Agent, Loop Name, Date, Price, Commission, Deductions, Net)
+- [x] Add export selected transactions functionality
+- [x] Implement transaction highlighting when selected (blue background)
+- [x] Add bulk action buttons (Export Selected, Tag, Reassign)
+- [x] Implement Clear button to deselect all transactions
+- [x] Add transaction detail modal with drill-down view
+- [x] Test bulk actions with sample data (checkbox selection, export, highlighting)
+- [x] Test CSV export with selected transactions
+- [x] Optimize toolbar rendering with sticky positioning and responsive layout
