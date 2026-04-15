@@ -33,6 +33,7 @@ import RecruitingPage from "./pages/RecruitingPage";
 import MarketPage from "./pages/MarketPage";
 import TimelinePage from "./pages/TimelinePage";
 import SettingsPage from "./pages/SettingsPage";
+import { CDAProvider } from "./contexts/CDAContext";
 
 // Pages that use sidebar layout
 const SIDEBAR_ROUTES = [
@@ -84,6 +85,7 @@ function App() {
   return (
     <ErrorBoundary>
       <TransactionDataProvider>
+        <CDAProvider>
         <ModalProvider>
           <ThemeProvider
             defaultTheme="dark"
@@ -95,6 +97,7 @@ function App() {
             </TooltipProvider>
           </ThemeProvider>
         </ModalProvider>
+        </CDAProvider>
       </TransactionDataProvider>
     </ErrorBoundary>
   );

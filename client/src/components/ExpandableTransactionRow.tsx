@@ -8,13 +8,10 @@ import { DotloopRecord } from '@/lib/csvParser';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, ExternalLink, FileText, Loader2 } from 'lucide-react';
-import { useLocation } from 'wouter';
-import { mapTransactionToCDA, encodeCDAData, getCommissionPlanForAgent } from '@/lib/cdaHelpers';
+import { ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatUtils';
 import DotloopLogo from './DotloopLogo';
-import { trpc } from '@/lib/trpc';
-import toast from 'react-hot-toast';
+import { useCDAPanel } from '@/contexts/CDAContext';
 
 interface ExpandableTransactionRowProps {
   transaction: DotloopRecord;
@@ -60,47 +57,12 @@ export default function ExpandableTransactionRow({
   showCheckbox = false,
 }: ExpandableTransactionRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [, setLocation] = useLocation();
-  
-  // Fixed CDA generation mutation with commission plan support
-  const generateCDAMutation = trpc.cdaFixed.generateFromTransaction.useMutation({
-    onSuccess: (result) => {
-      if (result.success && result.calculation && result.cdaData) {
-        toast.success(`✅ CDA Generated! Commission: ${formatCurrency(result.calculation.grossCommission)}`);
-        const encoded = encodeCDAData(result.cdaData);
-        setLocation(`/cda-builder?data=${encoded}`);
-      } else if (result.requiresPlanAssignment) {
-        toast.error(`⚠️ ${result.error}`);
-      } else {
-        toast.error(`❌ CDA Generation Failed: ${result.error || 'Unknown error'}`);
-      }
-    },
-    onError: (error) => {
-      toast.error(`❌ CDA Generation Failed: ${error.message}`);
-    },
-  });
+  const { openCDA } = useCDAPanel();
   
   const handleGenerateCDA = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    // Get agent name (handle comma-separated multiple agents)
-    const agentName = transaction.agents ? transaction.agents.split(',')[0].trim() : transaction.createdBy || '';
-    
-    // Determine transaction type
-    const transactionType = transaction.transactionType?.toLowerCase().includes('listing') ? 'listing' as const :
-                           transaction.transactionType?.toLowerCase().includes('selling') ? 'selling' as const :
-                           'both' as const;
-    
-    // Generate CDA with simplified endpoint
-    generateCDAMutation.mutate({
-      propertyAddress: transaction.address || 'Unknown Property',
-      salePrice: transaction.salePrice || transaction.price || 0,
-      agentName,
-
-      closingDate: transaction.closingDate,
-      mlsNumber: transaction.mlsNumber,
-      transactionType,
-    });
+    const label = transaction.address || transaction.loopName || 'Transaction';
+    openCDA(transaction, label);
   };
 
   const renderCellContent = (column: string) => {
@@ -135,16 +97,11 @@ export default function ExpandableTransactionRow({
               variant="ghost"
               size="sm"
               onClick={handleGenerateCDA}
-              disabled={generateCDAMutation.isPending}
               className="gap-1 text-primary hover:text-primary/80"
-              title="Generate CDA"
+              title="Open CDA Builder"
             >
-              {generateCDAMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <FileText className="w-4 h-4" />
-              )}
-              <span className="hidden sm:inline">{generateCDAMutation.isPending ? 'Generating...' : 'CDA'}</span>
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">CDA</span>
             </Button>
             <Button
               variant="ghost"

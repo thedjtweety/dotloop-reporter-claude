@@ -6,9 +6,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import {
-  Trophy, Download, FileText, Eye, Search, X, ChevronUp, ChevronDown, Users,
+  Trophy, Download, FileText, Eye, Search, X, ChevronUp, ChevronDown, Users, ClipboardList,
 } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { useCDAPanel } from '@/contexts/CDAContext';
 import { AgentMetrics } from '@/lib/csvParser';
 import { formatCurrency } from '@/lib/formatUtils';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ function EmptyState({ onDemo }: { onDemo: () => void }) {
 type EnrichedAgent = AgentMetrics & { color: string; initials: string };
 
 function AgentDrillDown({ agent, onClose, records }: { agent: EnrichedAgent; onClose: () => void; records: any[] }) {
+  const { openCDA } = useCDAPanel();
   const agentRecords = records.filter(r =>
     (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
   );
@@ -80,12 +82,13 @@ function AgentDrillDown({ agent, onClose, records }: { agent: EnrichedAgent; onC
         <div className="flex-1 overflow-auto p-6">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-gray-400 text-xs border-b border-[#1e2d3d]">
+              <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs">
                 <th className="text-left pb-2">Loop Name</th>
                 <th className="text-left pb-2">Status</th>
                 <th className="text-right pb-2">Price</th>
                 <th className="text-right pb-2">Closing Date</th>
                 <th className="text-right pb-2">Commission</th>
+                <th className="text-right pb-2">CDA</th>
               </tr>
             </thead>
             <tbody>
@@ -96,6 +99,15 @@ function AgentDrillDown({ agent, onClose, records }: { agent: EnrichedAgent; onC
                   <td className="py-2 text-right text-gray-300">{formatCurrency(r.salePrice || r.price || 0)}</td>
                   <td className="py-2 text-right text-gray-400">{r.closingDate || '—'}</td>
                   <td className="py-2 text-right text-emerald-400">{formatCurrency(r.commissionTotal || 0)}</td>
+                  <td className="py-2 text-right">
+                    <button
+                      onClick={() => openCDA(r, r.address || r.loopName || 'Transaction')}
+                      className="text-blue-400 hover:text-blue-300 transition-colors p-1 rounded hover:bg-blue-400/10"
+                      title="Open CDA Builder"
+                    >
+                      <ClipboardList className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -108,6 +120,7 @@ function AgentDrillDown({ agent, onClose, records }: { agent: EnrichedAgent; onC
 
 export default function AgentsPage() {
   const { agentMetrics, filteredRecords, hasData, activateDemoMode } = useTransactionData();
+  const { openCDA, openCDAWithData } = useCDAPanel();
   const [sortField, setSortField] = useState<SortField>('totalCommission');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [search, setSearch] = useState('');
@@ -314,7 +327,46 @@ export default function AgentsPage() {
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-2 text-gray-400">
                       <button onClick={() => setDrillDown(agent)} className="hover:text-white transition-colors" title="View Details"><Eye className="w-4 h-4" /></button>
-                      <button className="hover:text-white transition-colors" title="Report"><FileText className="w-4 h-4" /></button>
+                      <button
+                        className="hover:text-blue-400 transition-colors"
+                        title="Open CDA Builder"
+                        onClick={() => {
+                          const agentRecords = filteredRecords.filter(r =>
+                            (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
+                          );
+                          const closed = agentRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
+                          const record = (closed.length > 0 ? closed : agentRecords).sort((a, b) => new Date(b.closingDate || '').getTime() - new Date(a.closingDate || '').getTime())[0];
+                          if (record) {
+                            openCDA(record, `Agent: ${agent.agentName}`);
+                          } else {
+                            openCDAWithData({
+                              propertyAddress: '',
+                              salePrice: agent.averageSalesPrice,
+                              sellerName: '',
+                              totalCommissionRate: 3,
+                              totalGrossCommission: agent.averageSalesPrice * 0.03,
+                              sellingSplitPercent: 50,
+                              listingSplitPercent: 50,
+                              sellingGrossCommission: agent.averageSalesPrice * 0.015,
+                              listingGrossCommission: agent.averageSalesPrice * 0.015,
+                              sellingAgent1Name: agent.agentName,
+                              sellingAgent1SplitPercent: 80,
+                              sellingAgent1Commission: agent.averageSalesPrice * 0.015 * 0.8,
+                              sellingBrokerSplitPercent: 20,
+                              sellingBrokerageCommission: agent.averageSalesPrice * 0.015 * 0.2,
+                              sellingCommissionAfterFees: agent.averageSalesPrice * 0.015 * 0.8,
+                              listingAgent1Name: agent.agentName,
+                              listingAgent1SplitPercent: 80,
+                              listingAgent1Commission: agent.averageSalesPrice * 0.015 * 0.8,
+                              listingBrokerSplitPercent: 20,
+                              listingBrokerageCommission: agent.averageSalesPrice * 0.015 * 0.2,
+                              listingCommissionAfterFees: agent.averageSalesPrice * 0.015 * 0.8,
+                            }, `Agent: ${agent.agentName}`);
+                          }
+                        }}
+                      >
+                        <ClipboardList className="w-4 h-4" />
+                      </button>
                       <button className="hover:text-white transition-colors" title="Download"><Download className="w-4 h-4" /></button>
                     </div>
                   </td>

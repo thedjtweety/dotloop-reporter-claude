@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { useCDAPanel } from '@/contexts/CDAContext';
 import { formatCurrency } from '@/lib/formatUtils';
-import { Target, Plus, Search, ChevronDown, ChevronUp, TrendingDown, TrendingUp } from 'lucide-react';
+import { Target, Plus, Search, ChevronDown, ChevronUp, TrendingDown, TrendingUp, ClipboardList } from 'lucide-react';
 
 interface AgentGoal {
   agentName: string;
@@ -26,6 +27,8 @@ const YEAR_PROGRESS = (() => {
 export default function GoalsPage() {
   const ctx = useTransactionData();
   const agentMetrics = ctx.agentMetrics || [];
+  const filteredRecords = ctx.filteredRecords || [];
+  const { openCDA } = useCDAPanel();
   const [search, setSearch] = useState('');
   const [year, setYear] = useState(YEAR);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -208,6 +211,21 @@ export default function GoalsPage() {
                         )}
                         <div className="text-gray-400 text-xs">{formatCurrency(goal.projectedGCI)} proj.</div>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const agentRecords = filteredRecords.filter(r =>
+                            (r.agents || '').toLowerCase().includes(goal.agentName.toLowerCase())
+                          );
+                          const closed = agentRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
+                          const record = (closed.length > 0 ? closed : agentRecords).sort((a, b) => new Date(b.closingDate || '').getTime() - new Date(a.closingDate || '').getTime())[0];
+                          if (record) openCDA(record, `Goals: ${goal.agentName}`);
+                        }}
+                        className="p-1 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition-colors"
+                        title="Open CDA Builder"
+                      >
+                        <ClipboardList className="w-4 h-4" />
+                      </button>
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                     </div>
                   </div>
