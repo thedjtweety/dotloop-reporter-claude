@@ -1,15 +1,14 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
 import { BarChart3, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ReferenceLine } from 'recharts';
+import { Button } from '@/components/ui/button';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function ForecastingPage() {
-  const ctx = useTransactionData();
-  const allRecords = ctx.allRecords || [];
-  const metrics = ctx.metrics;
+  const { allRecords, metrics, agentMetrics, hasData, activateDemoMode } = useTransactionData();
   const [scenario, setScenario] = useState<'conservative' | 'moderate' | 'optimistic'>('moderate');
   const [period, setPeriod] = useState('Q4');
   const [activeTab, setActiveTab] = useState<'pipeline' | 'revenue' | 'agent' | 'market'>('pipeline');
@@ -59,6 +58,23 @@ export default function ForecastingPage() {
     }).length, color: '#f59e0b' },
     { stage: 'Closed', count: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold')).length, color: '#8b5cf6' },
   ];
+
+  if (!hasData) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen bg-[#0d1117]">
+        <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
+          <BarChart3 className="w-8 h-8 text-gray-500" />
+        </div>
+        <h3 className="text-white text-lg font-semibold mb-2">No Data for Forecasting</h3>
+        <p className="text-gray-400 text-sm max-w-sm text-center mb-6">
+          Upload a CSV file from the Dashboard to generate revenue forecasts, or try the demo mode.
+        </p>
+        <Button onClick={activateDemoMode} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+          Load Demo Data
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white p-6">
@@ -137,6 +153,53 @@ export default function ForecastingPage() {
           </div>
         ))}
       </div>
+
+      {/* Agent Projections Tab */}
+      {activeTab === 'agent' && (
+        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-[#1e2d3d]">
+            <h2 className="text-white font-semibold">Agent GCI Projections ({scenario})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs bg-[#0a0f16]">
+                  <th className="px-4 py-3 text-left">Agent</th>
+                  <th className="px-4 py-3 text-right">YTD GCI</th>
+                  <th className="px-4 py-3 text-right">Projected Annual</th>
+                  <th className="px-4 py-3 text-right">Deals YTD</th>
+                  <th className="px-4 py-3 text-right">Proj. Deals</th>
+                  <th className="px-4 py-3 text-right">Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agentMetrics.slice(0, 20).map(a => {
+                  const projGCI = a.totalCommission * (12 / Math.max(1, new Date().getMonth() + 1)) * multipliers[scenario];
+                  const projDeals = Math.round(a.closedDeals * (12 / Math.max(1, new Date().getMonth() + 1)) * multipliers[scenario]);
+                  return (
+                    <tr key={a.agentName} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
+                      <td className="px-4 py-3 text-gray-200">{a.agentName}</td>
+                      <td className="px-4 py-3 text-right text-emerald-400">{formatCurrency(a.totalCommission)}</td>
+                      <td className="px-4 py-3 text-right text-white font-medium">{formatCurrency(projGCI)}</td>
+                      <td className="px-4 py-3 text-right text-gray-300">{a.closedDeals}</td>
+                      <td className="px-4 py-3 text-right text-blue-400">{projDeals}</td>
+                      <td className="px-4 py-3 text-right">
+                        {scenario === 'optimistic' ? (
+                          <TrendingUp className="w-4 h-4 text-emerald-400 ml-auto" />
+                        ) : scenario === 'conservative' ? (
+                          <TrendingDown className="w-4 h-4 text-red-400 ml-auto" />
+                        ) : (
+                          <span className="text-gray-400 text-xs">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Forecast chart */}
       <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">

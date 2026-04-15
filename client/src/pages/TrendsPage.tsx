@@ -16,8 +16,7 @@ interface YearData {
 }
 
 export default function TrendsPage() {
-  const ctx = useTransactionData();
-  const allRecords = ctx.allRecords || [];
+  const { allRecords, agentMetrics, hasData, activateDemoMode } = useTransactionData();
   const [selectedYears, setSelectedYears] = useState<Set<number>>(new Set([2024, 2025, 2026]));
   const [activeTab, setActiveTab] = useState<'year' | 'monthly' | 'quarterly' | 'agent' | 'compare'>('year');
   const [metric, setMetric] = useState<'volume' | 'gci' | 'deals' | 'avgPrice' | 'companyDollar'>('volume');
@@ -87,6 +86,23 @@ export default function TrendsPage() {
   });
 
   const YEAR_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+  if (!hasData) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen bg-[#0d1117]">
+        <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
+          <TrendingUp className="w-8 h-8 text-gray-500" />
+        </div>
+        <h3 className="text-white text-lg font-semibold mb-2">No Trend Data</h3>
+        <p className="text-gray-400 text-sm max-w-sm text-center mb-6">
+          Upload a Dotloop CSV export to analyze multi-year performance trends, or try demo mode.
+        </p>
+        <button onClick={activateDemoMode} className="px-4 py-2 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600">
+          Load Demo Data
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white p-6">
@@ -229,10 +245,102 @@ export default function TrendsPage() {
             </LineChart>
           </ResponsiveContainer>
         )}
-        {(activeTab === 'quarterly' || activeTab === 'agent' || activeTab === 'compare') && (
-          <div className="text-center py-16 text-gray-500">
-            <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>Upload CSV data to see {activeTab} analysis</p>
+        {activeTab === 'quarterly' && (
+          <ResponsiveContainer width="100%" height={320}>
+            <BarChart
+              data={[1, 2, 3, 4].map(q => {
+                const entry: any = { quarter: `Q${q}` };
+                Array.from(selectedYears).forEach(y => {
+                  const recs = allRecords.filter(r => {
+                    const d = r.closingDate ? new Date(r.closingDate) : null;
+                    if (!d || d.getFullYear() !== y) return false;
+                    const m = d.getMonth();
+                    return Math.floor(m / 3) + 1 === q;
+                  });
+                  entry[`${y}`] = metric === 'deals' ? recs.length :
+                    recs.reduce((s, r) => s + ((metric === 'gci' ? r.commissionTotal : r.salePrice || r.price) || 0), 0);
+                });
+                return entry;
+              })}
+              margin={{ top: 10, right: 20, left: 20, bottom: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e2d3d" />
+              <XAxis dataKey="quarter" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => metric === 'deals' ? v : `$${(v/1000).toFixed(0)}K`} />
+              <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} />
+              {Array.from(selectedYears).map((y, i) => (
+                <Bar key={y} dataKey={`${y}`} fill={YEAR_COLORS[i % YEAR_COLORS.length]} radius={[4, 4, 0, 0]} name={`${y}`} />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+        {activeTab === 'agent' && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs">
+                  <th className="py-3 text-left">Agent</th>
+                  {Array.from(selectedYears).sort().map(y => (
+                    <th key={y} className="py-3 text-right">{y} GCI</th>
+                  ))}
+                  <th className="py-3 text-right">YoY Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agentMetrics.slice(0, 20).map(a => {
+                  const gciByYear: Record<number, number> = {};
+                  Array.from(selectedYears).forEach(y => {
+                    const recs = allRecords.filter(r => {
+                      const d = r.closingDate ? new Date(r.closingDate) : null;
+                      return d && d.getFullYear() === y && (r.agentName === a.agentName || r.listingAgent === a.agentName || r.buyerAgent === a.agentName);
+                    });
+                    gciByYear[y] = recs.reduce((s, r) => s + (r.commissionTotal || 0), 0);
+                  });
+                  const years = Array.from(selectedYears).sort();
+                  const last = gciByYear[years[years.length - 1]] || 0;
+                  const prev = gciByYear[years[years.length - 2]] || 0;
+                  const pct = prev > 0 ? ((last - prev) / prev * 100).toFixed(1) : null;
+                  return (
+                    <tr key={a.agentName} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
+                      <td className="py-3 text-gray-200">{a.agentName}</td>
+                      {years.map(y => (
+                        <td key={y} className="py-3 text-right text-gray-300">{formatCurrency(gciByYear[y] || 0)}</td>
+                      ))}
+                      <td className="py-3 text-right">
+                        {pct ? (
+                          <span className={`text-xs font-medium ${parseFloat(pct) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {parseFloat(pct) >= 0 ? '+' : ''}{pct}%
+                          </span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {activeTab === 'compare' && (
+          <div className="grid grid-cols-2 gap-6">
+            {Array.from(selectedYears).sort().slice(-2).map((y, i, arr) => {
+              const data = yearDataMap[y] || { year: y, volume: 0, gci: 0, deals: 0, avgPrice: 0 };
+              const prevData = i > 0 ? (yearDataMap[arr[i-1]] || { volume: 0, gci: 0, deals: 0, avgPrice: 0 }) : null;
+              return (
+                <div key={y} className="space-y-3">
+                  <h3 className="text-white font-semibold text-lg">{y}</h3>
+                  {[['Volume', data.volume, prevData?.volume], ['GCI', data.gci, prevData?.gci], ['Deals', data.deals, prevData?.deals], ['Avg Price', data.avgPrice, prevData?.avgPrice]].map(([label, val, pval]) => {
+                    const pct = pval && (pval as number) > 0 ? (((val as number) - (pval as number)) / (pval as number) * 100).toFixed(1) : null;
+                    return (
+                      <div key={label as string} className="bg-[#1a2332] rounded-lg p-3">
+                        <div className="text-gray-400 text-xs mb-1">{label as string}</div>
+                        <div className="text-white font-bold">{label === 'Deals' ? val : formatCurrency(val as number)}</div>
+                        {pct && <div className={`text-xs mt-1 ${parseFloat(pct) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{parseFloat(pct) >= 0 ? '+' : ''}{pct}% vs {arr[i-1]}</div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -1,171 +1,361 @@
-import { useState } from 'react';
+/**
+ * ComparePage - Side-by-side agent comparison with bar charts and radar chart
+ */
+import { useState, useMemo } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend,
+} from 'recharts';
+import { GitCompare, Plus, X, Users } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
-import { GitCompare, Search, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-const COLORS = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+const COMPARE_COLORS = ['#10b981', '#3b82f6', '#f59e0b'];
 
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-export default function ComparePage() {
-  const ctx = useTransactionData();
-  const agentMetrics = ctx.agentMetrics || [];
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+function EmptyState({ onDemo }: { onDemo: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
+        <GitCompare className="w-8 h-8 text-gray-500" />
+      </div>
+      <h3 className="text-white text-lg font-semibold mb-2">No Data to Compare</h3>
+      <p className="text-gray-400 text-sm max-w-sm mb-6">
+        Upload a CSV file from the Dashboard to compare agent performance, or try the demo mode.
+      </p>
+      <Button onClick={onDemo} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+        Load Demo Data
+      </Button>
+    </div>
+  );
+}
 
-  const filtered = agentMetrics.filter(a =>
-    a.agentName.toLowerCase().includes(search.toLowerCase())
+export default function ComparePage() {
+  const { agentMetrics, hasData, activateDemoMode } = useTransactionData();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const agentNames = useMemo(() => agentMetrics.map(a => a.agentName), [agentMetrics]);
+
+  const filteredNames = useMemo(() =>
+    agentNames.filter(n =>
+      !selected.includes(n) &&
+      n.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [agentNames, selected, searchTerm]
   );
 
-  const toggleAgent = (name: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else if (next.size < 4) {
-        next.add(name);
-      }
-      return next;
-    });
+  const selectedAgents = useMemo(() =>
+    selected
+      .map((name, i) => {
+        const metrics = agentMetrics.find(a => a.agentName === name);
+        return { name, metrics, color: COMPARE_COLORS[i % COMPARE_COLORS.length], initials: getInitials(name) };
+      })
+      .filter(a => a.metrics != null),
+    [selected, agentMetrics]
+  );
+
+  const addAgent = (name: string) => {
+    if (selected.length < 3) {
+      setSelected(prev => [...prev, name]);
+      setShowDropdown(false);
+      setSearchTerm('');
+    }
   };
 
-  const selectedAgents = agentMetrics.filter(a => selected.has(a.agentName));
+  const removeAgent = (name: string) => setSelected(prev => prev.filter(n => n !== name));
 
-  const metrics = [
-    { label: 'Total Deals', key: 'totalDeals', format: (v: number) => v.toString() },
-    { label: 'Total GCI', key: 'totalCommission', format: formatCurrency },
-    { label: 'Net Commission', key: 'netCommission', format: formatCurrency },
-    { label: 'Avg Sale Price', key: 'avgSalePrice', format: formatCurrency },
-    { label: 'Close Rate', key: 'closingRate', format: (v: number) => `${v.toFixed(1)}%` },
+  if (!hasData) return <div className="p-6"><EmptyState onDemo={activateDemoMode} /></div>;
+
+  const comparisonMetrics = [
+    { key: 'totalCommission', label: 'Total GCI', format: formatCurrency },
+    { key: 'closedDeals', label: 'Closed Deals', format: (v: number) => String(v) },
+    { key: 'averageSalesPrice', label: 'Avg Sale Price', format: formatCurrency },
+    { key: 'totalSalesVolume', label: 'Sales Volume', format: formatCurrency },
+    { key: 'closingRate', label: 'Close Rate', format: (v: number) => `${v.toFixed(1)}%` },
+    { key: 'companyDollar', label: 'Company Dollar', format: formatCurrency },
+  ];
+
+  // Radar chart normalization
+  const radarKeys = ['closedDeals', 'totalCommission', 'averageSalesPrice', 'closingRate', 'totalSalesVolume'];
+  const radarLabels: Record<string, string> = {
+    closedDeals: 'Deals', totalCommission: 'GCI', averageSalesPrice: 'Avg Price',
+    closingRate: 'Close %', totalSalesVolume: 'Volume',
+  };
+  const maxValues: Record<string, number> = {};
+  radarKeys.forEach(k => {
+    maxValues[k] = Math.max(...agentMetrics.map(a => (a as any)[k] ?? 0), 1);
+  });
+  const radarData = radarKeys.map(k => {
+    const entry: any = { subject: radarLabels[k] };
+    selectedAgents.forEach(a => {
+      entry[a.name] = Math.round(((a.metrics as any)[k] / maxValues[k]) * 100);
+    });
+    return entry;
+  });
+
+  const barCharts = [
+    {
+      key: 'totalCommission', label: 'GCI Comparison',
+      fmt: (v: number) => `$${(v / 1000).toFixed(0)}k`,
+      tooltip: formatCurrency,
+    },
+    {
+      key: 'closedDeals', label: 'Closed Deals',
+      fmt: (v: number) => String(v),
+      tooltip: (v: number) => String(v),
+    },
+    {
+      key: 'averageSalesPrice', label: 'Average Sale Price',
+      fmt: (v: number) => `$${(v / 1000).toFixed(0)}k`,
+      tooltip: formatCurrency,
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6">
-      <div className="flex items-start justify-between mb-6">
+    <div className="p-6 space-y-6 min-h-screen bg-[#0d1117] text-white">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <GitCompare className="w-6 h-6 text-emerald-400" />
-            Agent Comparison
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">Select 2-4 agents for comprehensive side-by-side analysis</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332]">
-            90 Days <ChevronDown className="w-3 h-3" />
-          </button>
+          <h1 className="text-2xl font-bold text-white">Agent Comparison</h1>
+          <p className="text-gray-400 text-sm mt-1">Compare up to 3 agents side by side</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Agent selector */}
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <span className="text-emerald-400 text-xs">👤</span>
+      {/* Agent Selector */}
+      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-6">
+        <h2 className="text-white font-semibold mb-4">Select Agents to Compare</h2>
+        <div className="flex items-center gap-3 flex-wrap">
+          {selectedAgents.map(a => (
+            <div
+              key={a.name}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border"
+              style={{ borderColor: a.color + '66', background: a.color + '11' }}
+            >
+              <div
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: a.color + '33', color: a.color }}
+              >
+                {a.initials}
+              </div>
+              <span className="text-white text-sm font-medium">{a.name}</span>
+              <button onClick={() => removeAgent(a.name)} className="text-gray-400 hover:text-red-400 ml-1">
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
-            <span className="text-white font-medium">Select Agents to Compare (2-4)</span>
-          </div>
-          <div className="relative mb-3">
-            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search agents..."
-              className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-          <div className="space-y-1 max-h-96 overflow-y-auto">
-            {filtered.map((agent, i) => {
-              const isSelected = selected.has(agent.agentName);
-              const color = COLORS[i % COLORS.length];
-              return (
-                <button
-                  key={agent.agentName}
-                  onClick={() => toggleAgent(agent.agentName)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    isSelected ? 'bg-emerald-500/20 border border-emerald-500/40' : 'hover:bg-[#1a2332] border border-transparent'
-                  }`}
-                >
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: color + '33', color }}>
-                    {getInitials(agent.agentName)}
-                  </div>
-                  <div className="text-left">
-                    <div className="text-white text-sm font-medium">{agent.agentName}</div>
-                    <div className="text-gray-400 text-xs">{agent.totalDeals} deals · {formatCurrency(agent.totalCommission)} GCI</div>
-                  </div>
-                  {isSelected && <div className="ml-auto w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
-                    <span className="text-white text-[10px]">✓</span>
-                  </div>}
-                </button>
-              );
-            })}
-            {filtered.length === 0 && (
-              <div className="text-center py-8 text-gray-500 text-sm">No agents found</div>
-            )}
-          </div>
-        </div>
+          ))}
 
-        {/* Comparison panel */}
-        <div className="lg:col-span-2">
-          {selectedAgents.length < 2 ? (
-            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-12 flex flex-col items-center justify-center h-full min-h-64">
-              <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
-                <GitCompare className="w-8 h-8 text-gray-500" />
-              </div>
-              <p className="text-white font-medium mb-1">Select at least 2 agents</p>
-              <p className="text-gray-400 text-sm">Pick agents above to see a detailed comparison</p>
+          {selected.length < 3 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowDropdown(v => !v)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-[#1e2d3d] text-gray-400 hover:border-emerald-500/50 hover:text-emerald-400 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="text-sm">Add Agent</span>
+              </button>
+              {showDropdown && (
+                <div className="absolute left-0 top-full mt-1 z-20 bg-[#0d1117] border border-[#1e2d3d] rounded-lg shadow-2xl w-64">
+                  <div className="p-2 border-b border-[#1e2d3d]">
+                    <input
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      placeholder="Search agents..."
+                      className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded px-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredNames.length === 0 && (
+                      <div className="px-3 py-3 text-gray-500 text-sm">No agents found</div>
+                    )}
+                    {filteredNames.map(name => (
+                      <button
+                        key={name}
+                        onClick={() => addAgent(name)}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#1a2332] hover:text-white transition-colors flex items-center gap-2"
+                      >
+                        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px] font-bold text-emerald-400">
+                          {getInitials(name)}
+                        </div>
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-[#1e2d3d]">
-                <h2 className="text-white font-semibold">Side-by-Side Comparison</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#1e2d3d]">
-                      <th className="px-4 py-3 text-left text-gray-400">Metric</th>
-                      {selectedAgents.map((agent, i) => (
-                        <th key={agent.agentName} className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: COLORS[i % COLORS.length] + '33', color: COLORS[i % COLORS.length] }}>
-                              {getInitials(agent.agentName)}
-                            </div>
-                            <span className="text-white">{agent.agentName}</span>
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {metrics.map(metric => {
-                      const values = selectedAgents.map(a => (a as any)[metric.key] ?? 0);
-                      const maxVal = Math.max(...values);
-                      return (
-                        <tr key={metric.key} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
-                          <td className="px-4 py-3 text-gray-400">{metric.label}</td>
-                          {selectedAgents.map((agent, i) => {
-                            const val = (agent as any)[metric.key] ?? 0;
-                            const isMax = val === maxVal && maxVal > 0;
-                            return (
-                              <td key={agent.agentName} className={`px-4 py-3 text-right font-medium ${isMax ? 'text-emerald-400' : 'text-gray-200'}`}>
-                                {metric.format(val)}
-                                {isMax && <span className="ml-1 text-[10px] text-emerald-500">▲</span>}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+          )}
+
+          {selected.length === 0 && (
+            <p className="text-gray-500 text-sm">Select at least 2 agents to compare</p>
           )}
         </div>
       </div>
+
+      {selectedAgents.length >= 2 && (
+        <>
+          {/* Summary Cards */}
+          <div
+            className="grid gap-4"
+            style={{ gridTemplateColumns: `repeat(${selectedAgents.length}, 1fr)` }}
+          >
+            {selectedAgents.map(a => (
+              <div
+                key={a.name}
+                className="bg-[#0f1923] border rounded-xl p-5"
+                style={{ borderColor: a.color + '44' }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                    style={{ background: a.color + '33', color: a.color }}
+                  >
+                    {a.initials}
+                  </div>
+                  <div>
+                    <div className="text-white font-semibold">{a.name}</div>
+                    <div className="text-xs" style={{ color: a.color }}>
+                      {a.metrics!.closedDeals} closed deals
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {comparisonMetrics.map(m => (
+                    <div key={m.key} className="flex items-center justify-between">
+                      <span className="text-gray-400 text-xs">{m.label}</span>
+                      <span className="text-white text-sm font-medium">
+                        {m.format((a.metrics as any)[m.key] ?? 0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bar Charts */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {barCharts.map(chart => {
+              const chartData = [{
+                name: chart.label,
+                ...Object.fromEntries(
+                  selectedAgents.map(a => [a.name, (a.metrics as any)[chart.key] ?? 0])
+                ),
+              }];
+              return (
+                <div key={chart.key} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+                  <h3 className="text-white font-semibold mb-4">{chart.label}</h3>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e2d3d" />
+                      <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis
+                        tick={{ fill: '#6b7280', fontSize: 11 }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={chart.fmt}
+                      />
+                      <Tooltip
+                        contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }}
+                        formatter={(v: number) => [chart.tooltip(v), '']}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
+                      {selectedAgents.map(a => (
+                        <Bar key={a.name} dataKey={a.name} fill={a.color} radius={[4, 4, 0, 0]} />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              );
+            })}
+
+            {/* Radar Chart */}
+            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+              <h3 className="text-white font-semibold mb-4">Overall Performance (Normalized)</h3>
+              <ResponsiveContainer width="100%" height={200}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="#1e2d3d" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 9 }} />
+                  {selectedAgents.map(a => (
+                    <Radar
+                      key={a.name}
+                      name={a.name}
+                      dataKey={a.name}
+                      stroke={a.color}
+                      fill={a.color}
+                      fillOpacity={0.15}
+                    />
+                  ))}
+                  <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
+                  <Tooltip
+                    contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Comparison Table */}
+          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#1e2d3d]">
+              <h3 className="text-white font-semibold">Detailed Comparison</h3>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs bg-[#0a0f16]">
+                    <th className="px-4 py-3 text-left">Metric</th>
+                    {selectedAgents.map(a => (
+                      <th key={a.name} className="px-4 py-3 text-right" style={{ color: a.color }}>
+                        {a.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonMetrics.map(m => {
+                    const values = selectedAgents.map(a => (a.metrics as any)[m.key] ?? 0);
+                    const maxVal = Math.max(...values);
+                    return (
+                      <tr key={m.key} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
+                        <td className="px-4 py-3 text-gray-300">{m.label}</td>
+                        {selectedAgents.map((a, i) => {
+                          const val = values[i];
+                          const isMax = val === maxVal && maxVal > 0;
+                          return (
+                            <td key={a.name} className="px-4 py-3 text-right">
+                              <span
+                                className={isMax ? 'font-bold' : ''}
+                                style={{ color: isMax ? a.color : '#9ca3af' }}
+                              >
+                                {m.format(val)}
+                                {isMax && <span className="ml-1 text-[10px]">▲</span>}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {selectedAgents.length === 1 && (
+        <div className="text-center py-12 text-gray-500">
+          <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>Add one more agent to start comparing</p>
+        </div>
+      )}
     </div>
   );
 }

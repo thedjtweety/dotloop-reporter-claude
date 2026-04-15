@@ -33,17 +33,17 @@ export default function GoalsPage() {
   // Build goals from agent metrics with simulated targets
   const goals: AgentGoal[] = agentMetrics.map(a => {
     const gciTarget = a.totalCommission * 4.5; // simulate annual target
-    const volTarget = a.avgSalePrice * a.totalDeals * 4.5;
-    const dealsTarget = Math.round(a.totalDeals * 4.5);
+    const volTarget = a.averageSalesPrice * a.closedDeals * 4.5;
+    const dealsTarget = Math.round(a.closedDeals * 4.5);
     const pct = a.totalCommission / (gciTarget || 1);
     const status: AgentGoal['status'] = pct > YEAR_PROGRESS / 100 + 0.05 ? 'ahead' : pct < YEAR_PROGRESS / 100 - 0.05 ? 'behind' : 'on-track';
     return {
       agentName: a.agentName,
       gciCurrent: a.totalCommission,
       gciTarget,
-      volCurrent: a.avgSalePrice * a.totalDeals,
+      volCurrent: a.averageSalesPrice * a.closedDeals,
       volTarget,
-      dealsCurrent: a.totalDeals,
+      dealsCurrent: a.closedDeals,
       dealsTarget,
       status,
       projectedGCI: a.totalCommission * (12 / (new Date().getMonth() + 1)),

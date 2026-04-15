@@ -423,6 +423,7 @@ function HomeContent() {
         filteredRecords: sampleData,
         metrics: calculatedMetrics,
         agentMetrics: agentMetricsWithPlans,
+        isDemoMode: true,
       });
       setIsLoading(false);
     }, 1500);

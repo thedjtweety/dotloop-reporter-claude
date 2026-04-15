@@ -7,8 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 
 export default function MarketPage() {
-  const ctx = useTransactionData();
-  const allRecords = ctx.allRecords || [];
+  const { allRecords, hasData, activateDemoMode } = useTransactionData();
   const [activeTab, setActiveTab] = useState<'geographic' | 'seasonal' | 'property' | 'pricing'>('geographic');
   const [period, setPeriod] = useState('YTD');
 
@@ -70,6 +69,23 @@ export default function MarketPage() {
   const totalDeals = allRecords.length;
   const avgPrice = totalDeals > 0 ? totalVolume / totalDeals : 0;
   const topState = stateData[0];
+
+  if (!hasData) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen bg-[#0d1117]">
+        <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
+          <MapPin className="w-8 h-8 text-gray-500" />
+        </div>
+        <h3 className="text-white text-lg font-semibold mb-2">No Market Data</h3>
+        <p className="text-gray-400 text-sm max-w-sm text-center mb-6">
+          Upload a Dotloop CSV export to analyze geographic, seasonal, and property type market trends.
+        </p>
+        <button onClick={activateDemoMode} className="px-4 py-2 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600">
+          Load Demo Data
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white p-6">

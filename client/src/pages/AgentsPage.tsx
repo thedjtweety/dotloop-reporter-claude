@@ -1,70 +1,153 @@
-import { useState } from 'react';
+/**
+ * AgentsPage - Full Agent Leaderboard with Podium, Sortable Table, Bar Chart, and Drill-Down
+ */
+import { useState, useMemo } from 'react';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+} from 'recharts';
+import {
+  Trophy, Download, FileText, Eye, Search, X, ChevronUp, ChevronDown, Users,
+} from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { AgentMetrics } from '@/lib/csvParser';
 import { formatCurrency } from '@/lib/formatUtils';
-import { Search, Download, Printer, GitCompare, Eye, FileText, BarChart2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-interface AgentRow {
-  name: string;
-  initials: string;
-  color: string;
-  plan: string;
-  deals: number;
-  closeRate: number;
-  avgPrice: number;
-  totalGCI: number;
-  companyDollar: number;
-  netCommission: number;
-  buyPct: number;
-  capped: boolean;
-}
+const AGENT_COLORS = [
+  '#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6',
+  '#06b6d4','#f97316','#ec4899','#84cc16','#14b8a6',
+];
 
-const COLORS = ['#10b981','#3b82f6','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#14b8a6','#a3e635'];
+type SortField = 'agentName'|'closedDeals'|'totalSalesVolume'|'totalCommission'|'averageSalesPrice'|'closingRate'|'companyDollar';
+type SortDir = 'asc'|'desc';
 
 function getInitials(name: string) {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-export default function AgentsPage() {
-  const ctx = useTransactionData();
-  const agentMetrics = ctx.agentMetrics || [];
-  const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<string>('totalGCI');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
+function EmptyState({ onDemo }: { onDemo: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
+        <Users className="w-8 h-8 text-gray-500" />
+      </div>
+      <h3 className="text-white text-lg font-semibold mb-2">No Agent Data</h3>
+      <p className="text-gray-400 text-sm max-w-sm mb-6">
+        Upload a CSV file from the Dashboard to see agent performance metrics, or try the demo mode.
+      </p>
+      <Button onClick={onDemo} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+        Load Demo Data
+      </Button>
+    </div>
+  );
+}
 
-  const agents: AgentRow[] = agentMetrics.map((a, i) => ({
-    name: a.agentName,
-    initials: getInitials(a.agentName),
-    color: COLORS[i % COLORS.length],
-    plan: a.planName || 'Standard',
-    deals: a.totalDeals,
-    closeRate: a.closingRate,
-    avgPrice: a.avgSalePrice,
-    totalGCI: a.totalCommission,
-    companyDollar: a.totalCommission * 0.25,
-    netCommission: a.netCommission ?? a.totalCommission * 0.75,
-    buyPct: 0,
-    capped: (a.netCommission ?? 0) > 0,
+type EnrichedAgent = AgentMetrics & { color: string; initials: string };
+
+function AgentDrillDown({ agent, onClose, records }: { agent: EnrichedAgent; onClose: () => void; records: any[] }) {
+  const agentRecords = records.filter(r =>
+    (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
+  );
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-[#0d1117] border border-[#1e2d3d] rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2d3d]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ background: agent.color + '33', color: agent.color }}>
+              {agent.initials}
+            </div>
+            <div>
+              <div className="text-white font-semibold">{agent.agentName}</div>
+              <div className="text-gray-400 text-sm">{agentRecords.length} transactions</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="grid grid-cols-4 gap-4 p-6 border-b border-[#1e2d3d]">
+          {[
+            { label: 'Closed Deals', value: String(agent.closedDeals), color: 'text-emerald-400' },
+            { label: 'Total GCI', value: formatCurrency(agent.totalCommission), color: 'text-emerald-400' },
+            { label: 'Sales Volume', value: formatCurrency(agent.totalSalesVolume), color: 'text-blue-400' },
+            { label: 'Avg Price', value: formatCurrency(agent.averageSalesPrice), color: 'text-purple-400' },
+          ].map(m => (
+            <div key={m.label} className="bg-[#1a2332] rounded-lg p-3">
+              <div className="text-gray-400 text-xs mb-1">{m.label}</div>
+              <div className={`font-bold text-lg ${m.color}`}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="flex-1 overflow-auto p-6">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-gray-400 text-xs border-b border-[#1e2d3d]">
+                <th className="text-left pb-2">Loop Name</th>
+                <th className="text-left pb-2">Status</th>
+                <th className="text-right pb-2">Price</th>
+                <th className="text-right pb-2">Closing Date</th>
+                <th className="text-right pb-2">Commission</th>
+              </tr>
+            </thead>
+            <tbody>
+              {agentRecords.slice(0, 50).map((r: any, i: number) => (
+                <tr key={i} className="border-b border-[#1a2332] hover:bg-[#1a2332]/50">
+                  <td className="py-2 text-gray-200 truncate max-w-[200px]">{r.loopName || r.address || '—'}</td>
+                  <td className="py-2"><Badge variant="outline" className="text-[10px]">{r.loopStatus || '—'}</Badge></td>
+                  <td className="py-2 text-right text-gray-300">{formatCurrency(r.salePrice || r.price || 0)}</td>
+                  <td className="py-2 text-right text-gray-400">{r.closingDate || '—'}</td>
+                  <td className="py-2 text-right text-emerald-400">{formatCurrency(r.commissionTotal || 0)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AgentsPage() {
+  const { agentMetrics, filteredRecords, hasData, activateDemoMode } = useTransactionData();
+  const [sortField, setSortField] = useState<SortField>('totalCommission');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [search, setSearch] = useState('');
+  const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
+  const [drillDown, setDrillDown] = useState<EnrichedAgent | null>(null);
+  const [chartMetric, setChartMetric] = useState<'totalCommission'|'closedDeals'|'totalSalesVolume'>('totalCommission');
+
+  const enriched: EnrichedAgent[] = useMemo(() =>
+    agentMetrics.map((a, i) => ({
+      ...a,
+      color: AGENT_COLORS[i % AGENT_COLORS.length],
+      initials: getInitials(a.agentName),
+    })),
+    [agentMetrics]
+  );
+
+  const filtered = useMemo(() => {
+    if (!search) return enriched;
+    return enriched.filter(a => a.agentName.toLowerCase().includes(search.toLowerCase()));
+  }, [enriched, search]);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const av = (a as any)[sortField];
+      const bv = (b as any)[sortField];
+      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc' ? av - bv : bv - av;
+    });
+  }, [filtered, sortField, sortDir]);
+
+  const top3 = useMemo(() => [...enriched].sort((a, b) => b.totalCommission - a.totalCommission).slice(0, 3), [enriched]);
+  const chartData = sorted.slice(0, 10).map(a => ({
+    name: a.agentName.split(' ')[0],
+    value: (a as any)[chartMetric] as number,
+    color: a.color,
   }));
 
-  const filtered = agents.filter(a => a.name.toLowerCase().includes(search.toLowerCase()));
-  const sorted = [...filtered].sort((a, b) => {
-    const av = (a as any)[sortField] ?? 0;
-    const bv = (b as any)[sortField] ?? 0;
-    return sortDir === 'desc' ? bv - av : av - bv;
-  });
-
-  const top3 = [...agents].sort((a, b) => b.totalGCI - a.totalGCI).slice(0, 3);
-  const [first, second, third] = [top3[1], top3[0], top3[2]];
-
-  const handleSort = (field: string) => {
+  const handleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     else { setSortField(field); setSortDir('desc'); }
-  };
-
-  const SortIcon = ({ field }: { field: string }) => {
-    if (sortField !== field) return <ChevronDown className="w-3 h-3 opacity-30" />;
-    return sortDir === 'desc' ? <ChevronDown className="w-3 h-3 text-emerald-400" /> : <ChevronUp className="w-3 h-3 text-emerald-400" />;
   };
 
   const toggleSelect = (name: string) => {
@@ -75,204 +158,175 @@ export default function AgentsPage() {
     });
   };
 
-  const totalAgents = agents.length;
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ChevronDown className="w-3 h-3 opacity-30" />;
+    return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 text-emerald-400" /> : <ChevronDown className="w-3 h-3 text-emerald-400" />;
+  };
+
+  if (!hasData) return <div className="p-6"><EmptyState onDemo={activateDemoMode} /></div>;
+
+  const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
+  const podiumLabels = ['#2', '#1', '#3'];
+  const podiumBorders = ['border-[#1e2d3d]', 'border-yellow-500/40', 'border-orange-500/40'];
+  const podiumLabelColors = ['text-gray-400', 'text-yellow-400', 'text-orange-400'];
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6">
+    <div className="p-6 space-y-6 min-h-screen bg-[#0d1117] text-white">
       {/* Header */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <BarChart2 className="w-6 h-6 text-emerald-400" />
-            Agent Leaderboard
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">{totalAgents} agents · Ranked by total GCI</p>
+          <h1 className="text-2xl font-bold text-white">Agent Leaderboard</h1>
+          <p className="text-gray-400 text-sm mt-1">{agentMetrics.length} agents · {filteredRecords.length} transactions</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332] transition-colors">
-            <FileText className="w-4 h-4" /> Saved Views
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332] transition-colors">
-            <Download className="w-4 h-4" /> Export CSV
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332] transition-colors">
-            <Printer className="w-4 h-4" /> Print Dashboard
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332] transition-colors">
-            <GitCompare className="w-4 h-4" /> Compare
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332] transition-colors">
-            90 Days <ChevronDown className="w-3 h-3" />
-          </button>
-        </div>
+        <Button variant="outline" size="sm" className="border-[#1e2d3d] text-gray-300 hover:text-white bg-transparent">
+          <Download className="w-4 h-4 mr-1" /> Export CSV
+        </Button>
       </div>
 
       {/* Podium */}
       {top3.length >= 3 && (
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          {/* #2 */}
-          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: second?.color + '33', color: second?.color }}>
-              {second?.initials}
+        <div className="grid grid-cols-3 gap-4">
+          {podiumOrder.map((agent, i) => (
+            <div key={agent.agentName}
+              className={`bg-[#0f1923] border ${podiumBorders[i]} rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-[#1a2332] transition-colors`}
+              onClick={() => setDrillDown(agent)}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: agent.color + '33', color: agent.color }}>
+                {agent.initials}
+              </div>
+              <div>
+                <div className={`text-xs font-medium ${podiumLabelColors[i]}`}>{podiumLabels[i]}</div>
+                <div className="text-white font-semibold">{agent.agentName}</div>
+                <div className="text-emerald-400 font-bold">{formatCurrency(agent.totalCommission)}</div>
+                <div className="text-gray-400 text-xs">{agent.closedDeals} deals · {formatCurrency(agent.averageSalesPrice)} avg</div>
+              </div>
             </div>
-            <div>
-              <div className="text-gray-400 text-xs">#2</div>
-              <div className="text-white font-semibold">{second?.name}</div>
-              <div className="text-emerald-400 font-bold">{formatCurrency(second?.totalGCI ?? 0)}</div>
-              <div className="text-gray-400 text-xs">{second?.deals} deals · {formatCurrency(second?.avgPrice ?? 0)} avg</div>
-            </div>
-          </div>
-          {/* #1 */}
-          <div className="bg-[#0f1923] border border-yellow-500/40 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: first?.color + '33', color: first?.color }}>
-              {first?.initials}
-            </div>
-            <div>
-              <div className="text-yellow-400 text-xs">#1</div>
-              <div className="text-white font-semibold">{first?.name}</div>
-              <div className="text-emerald-400 font-bold">{formatCurrency(first?.totalGCI ?? 0)}</div>
-              <div className="text-gray-400 text-xs">{first?.deals} deals · {formatCurrency(first?.avgPrice ?? 0)} avg</div>
-            </div>
-          </div>
-          {/* #3 */}
-          <div className="bg-[#0f1923] border border-orange-500/40 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: third?.color + '33', color: third?.color }}>
-              {third?.initials}
-            </div>
-            <div>
-              <div className="text-orange-400 text-xs">#3</div>
-              <div className="text-white font-semibold">{third?.name}</div>
-              <div className="text-emerald-400 font-bold">{formatCurrency(third?.totalGCI ?? 0)}</div>
-              <div className="text-gray-400 text-xs">{third?.deals} deals · {formatCurrency(third?.avgPrice ?? 0)} avg</div>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
-        {/* Table header controls */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e2d3d]">
-          <span className="text-gray-300 text-sm">Showing {filtered.length} of {totalAgents} agents</span>
+      {/* Chart */}
+      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search agents..."
-                className="bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48"
-              />
-            </div>
-            <select className="bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-1.5 text-sm text-gray-200 focus:outline-none">
-              <option>All Agents</option>
-            </select>
+            <Trophy className="w-5 h-5 text-yellow-400" />
+            <h2 className="text-white font-semibold">Performance Chart (Top 10)</h2>
+          </div>
+          <div className="flex gap-1">
+            {([
+              { key: 'totalCommission' as const, label: 'GCI' },
+              { key: 'closedDeals' as const, label: 'Deals' },
+              { key: 'totalSalesVolume' as const, label: 'Volume' },
+            ]).map(m => (
+              <button key={m.key} onClick={() => setChartMetric(m.key)}
+                className={`px-3 py-1 rounded text-xs transition-colors ${chartMetric === m.key ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-gray-400 hover:text-gray-200'}`}>
+                {m.label}
+              </button>
+            ))}
           </div>
         </div>
-
-        {agents.length === 0 ? (
-          <div className="text-center py-16 text-gray-500">
-            <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>No agent data available. Upload a CSV file to see agents.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#1e2d3d] text-gray-400">
-                  <th className="w-8 px-4 py-3"><input type="checkbox" className="rounded" /></th>
-                  <th className="px-3 py-3 text-left w-8">#</th>
-                  <th className="px-3 py-3 text-left">Agent Name</th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('deals')}>
-                    <span className="flex items-center justify-end gap-1">Deals <SortIcon field="deals" /></span>
-                  </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('closeRate')}>
-                    <span className="flex items-center justify-end gap-1">Close Rate <SortIcon field="closeRate" /></span>
-                  </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('avgPrice')}>
-                    <span className="flex items-center justify-end gap-1">Avg Price <SortIcon field="avgPrice" /></span>
-                  </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('totalGCI')}>
-                    <span className="flex items-center justify-end gap-1">Total GCI <SortIcon field="totalGCI" /></span>
-                  </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('companyDollar')}>
-                    <span className="flex items-center justify-end gap-1">Company Dollar <SortIcon field="companyDollar" /></span>
-                  </th>
-                  <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('netCommission')}>
-                    <span className="flex items-center justify-end gap-1">Net Commission <SortIcon field="netCommission" /></span>
-                  </th>
-                  <th className="px-3 py-3 text-right">Buy %</th>
-                  <th className="px-3 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map((agent, idx) => (
-                  <tr key={agent.name} className="border-b border-[#1a2332] hover:bg-[#1a2332]/50 transition-colors">
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedAgents.has(agent.name)}
-                        onChange={() => toggleSelect(agent.name)}
-                        className="rounded"
-                      />
-                    </td>
-                    <td className="px-3 py-3 text-gray-400">{idx + 1}</td>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: agent.color + '33', color: agent.color }}>
-                          {agent.initials}
-                        </div>
-                        <div>
-                          <div className="text-white font-medium">{agent.name}</div>
-                          <div className="text-gray-500 text-xs flex items-center gap-1">
-                            <span className="text-yellow-400">$</span> {agent.plan}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-right text-gray-200">{agent.deals}</td>
-                    <td className="px-3 py-3 text-right">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        agent.closeRate >= 40 ? 'bg-emerald-500/20 text-emerald-400' :
-                        agent.closeRate >= 20 ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-red-500/20 text-red-400'
-                      }`}>
-                        {agent.closeRate.toFixed(0)}%
-                      </span>
-                    </td>
-                    <td className="px-3 py-3 text-right text-gray-200">{formatCurrency(agent.avgPrice)}</td>
-                    <td className="px-3 py-3 text-right text-emerald-400 font-medium">{formatCurrency(agent.totalGCI)}</td>
-                    <td className="px-3 py-3 text-right text-gray-200">{formatCurrency(agent.companyDollar)}</td>
-                    <td className="px-3 py-3 text-right">
-                      <span className="text-blue-400 font-medium">{formatCurrency(agent.netCommission)}</span>
-                      {agent.capped && (
-                        <span className="ml-1 px-1 py-0.5 bg-yellow-500/20 text-yellow-400 text-[10px] rounded">CAP</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-3 text-right text-gray-400">0%</td>
-                    <td className="px-3 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2 text-gray-400">
-                        <button className="hover:text-white transition-colors" title="Report"><FileText className="w-4 h-4" /></button>
-                        <button className="hover:text-white transition-colors" title="View"><Eye className="w-4 h-4" /></button>
-                        <button className="hover:text-white transition-colors" title="Download"><Download className="w-4 h-4" /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#1e2d3d" />
+            <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false}
+              tickFormatter={v => chartMetric === 'closedDeals' ? String(v) : `$${(v/1000).toFixed(0)}k`} />
+            <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} labelStyle={{ color: '#fff' }}
+              formatter={(v: number) => chartMetric === 'closedDeals' ? [v, 'Deals'] : [formatCurrency(v), chartMetric === 'totalCommission' ? 'GCI' : 'Volume']} />
+            <Bar dataKey="value" radius={[4,4,0,0]}>
+              {chartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
-    </div>
-  );
-}
 
-// Fix missing import
-function Users({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
+      {/* Table */}
+      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2d3d]">
+          <h2 className="text-white font-semibold">All Agents ({filtered.length})</h2>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search agents..."
+                className="bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48" />
+            </div>
+            {selectedAgents.size > 0 && (
+              <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded">{selectedAgents.size} selected</span>
+            )}
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs bg-[#0a0f16]">
+                <th className="w-8 px-4 py-3">
+                  <input type="checkbox" onChange={e => setSelectedAgents(e.target.checked ? new Set(sorted.map(a => a.agentName)) : new Set())} className="rounded" />
+                </th>
+                <th className="px-3 py-3 text-left w-8">#</th>
+                <th className="px-3 py-3 text-left cursor-pointer hover:text-white" onClick={() => handleSort('agentName')}>
+                  <span className="flex items-center gap-1">Agent <SortIcon field="agentName" /></span>
+                </th>
+                <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('closedDeals')}>
+                  <span className="flex items-center justify-end gap-1">Deals <SortIcon field="closedDeals" /></span>
+                </th>
+                <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('closingRate')}>
+                  <span className="flex items-center justify-end gap-1">Close % <SortIcon field="closingRate" /></span>
+                </th>
+                <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('averageSalesPrice')}>
+                  <span className="flex items-center justify-end gap-1">Avg Price <SortIcon field="averageSalesPrice" /></span>
+                </th>
+                <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('totalCommission')}>
+                  <span className="flex items-center justify-end gap-1">Total GCI <SortIcon field="totalCommission" /></span>
+                </th>
+                <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('companyDollar')}>
+                  <span className="flex items-center justify-end gap-1">Co. Dollar <SortIcon field="companyDollar" /></span>
+                </th>
+                <th className="px-3 py-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('totalSalesVolume')}>
+                  <span className="flex items-center justify-end gap-1">Volume <SortIcon field="totalSalesVolume" /></span>
+                </th>
+                <th className="px-3 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((agent, idx) => (
+                <tr key={agent.agentName} className="border-b border-[#1a2332] hover:bg-[#1a2332]/50 transition-colors">
+                  <td className="px-4 py-3">
+                    <input type="checkbox" checked={selectedAgents.has(agent.agentName)} onChange={() => toggleSelect(agent.agentName)} className="rounded" />
+                  </td>
+                  <td className="px-3 py-3 text-gray-500 text-xs">{idx + 1}</td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: agent.color + '33', color: agent.color }}>
+                        {agent.initials}
+                      </div>
+                      <span className="text-white font-medium">{agent.agentName}</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-right text-gray-200">{agent.closedDeals}</td>
+                  <td className="px-3 py-3 text-right">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${agent.closingRate >= 40 ? 'bg-emerald-500/20 text-emerald-400' : agent.closingRate >= 20 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {agent.closingRate.toFixed(0)}%
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-right text-gray-200">{formatCurrency(agent.averageSalesPrice)}</td>
+                  <td className="px-3 py-3 text-right text-emerald-400 font-medium">{formatCurrency(agent.totalCommission)}</td>
+                  <td className="px-3 py-3 text-right text-gray-200">{formatCurrency(agent.companyDollar)}</td>
+                  <td className="px-3 py-3 text-right text-blue-400">{formatCurrency(agent.totalSalesVolume)}</td>
+                  <td className="px-3 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2 text-gray-400">
+                      <button onClick={() => setDrillDown(agent)} className="hover:text-white transition-colors" title="View Details"><Eye className="w-4 h-4" /></button>
+                      <button className="hover:text-white transition-colors" title="Report"><FileText className="w-4 h-4" /></button>
+                      <button className="hover:text-white transition-colors" title="Download"><Download className="w-4 h-4" /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {sorted.length === 0 && <div className="text-center py-12 text-gray-500">No agents match your search.</div>}
+      </div>
+
+      {drillDown && <AgentDrillDown agent={drillDown} onClose={() => setDrillDown(null)} records={filteredRecords} />}
+    </div>
   );
 }

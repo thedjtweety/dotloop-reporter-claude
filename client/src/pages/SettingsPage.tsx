@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Settings, Building2, DollarSign, Users, Bell, Database, Shield, ChevronRight, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Settings, Building2, DollarSign, Users, Bell, Database, Shield, ChevronRight, Save, Plus, Trash2, Download, Upload, Key, Lock } from 'lucide-react';
+import { useTransactionData } from '@/contexts/TransactionDataContext';
 
 const TABS = [
   { key: 'brokerage', label: 'Brokerage Info', icon: Building2 },
@@ -10,10 +11,22 @@ const TABS = [
   { key: 'security', label: 'Security', icon: Shield },
 ];
 
+const STORAGE_KEY = 'dotloop_settings';
+
 export default function SettingsPage() {
+  const { agentMetrics } = useTransactionData();
   const [activeTab, setActiveTab] = useState('brokerage');
   const [saved, setSaved] = useState(false);
-  const [brokerage, setBrokerage] = useState({
+
+  // Load from localStorage on mount
+  const loadSaved = (key: string, fallback: any) => {
+    try {
+      const raw = localStorage.getItem(`${STORAGE_KEY}_${key}`);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch { return fallback; }
+  };
+
+  const [brokerage, setBrokerage] = useState(() => loadSaved('brokerage', {
     name: '',
     address: '',
     city: '',
@@ -26,29 +39,47 @@ export default function SettingsPage() {
     brokerLicense: '',
     fiscalYearStart: 'January',
     timezone: 'America/New_York',
-  });
+  }));
 
-  const [commissionDefaults, setCommissionDefaults] = useState({
+  const [commissionDefaults, setCommissionDefaults] = useState(() => loadSaved('commission', {
     defaultSplit: '70',
     capAmount: '16000',
     transactionFee: '250',
     eoFee: '150',
     royaltyFee: '0',
     defaultCommissionRate: '3',
-  });
+  }));
 
-  const [notifications, setNotifications] = useState({
+  const [notifications, setNotifications] = useState(() => loadSaved('notifications', {
     emailReports: true,
     weeklyDigest: true,
     dealAlerts: false,
     goalMilestones: true,
     newAgentJoins: false,
-  });
+  }));
+
+  const [customAgents, setCustomAgents] = useState<{ name: string; email: string; role: string }[]>(() => loadSaved('customAgents', []));
+  const [newAgent, setNewAgent] = useState({ name: '', email: '', role: 'Agent' });
+  const [dataRetention, setDataRetention] = useState(() => loadSaved('dataRetention', { months: '24', autoClean: false }));
+  const [apiKey, setApiKey] = useState(() => loadSaved('apiKey', { key: '', showKey: false }));
 
   const handleSave = () => {
+    localStorage.setItem(`${STORAGE_KEY}_brokerage`, JSON.stringify(brokerage));
+    localStorage.setItem(`${STORAGE_KEY}_commission`, JSON.stringify(commissionDefaults));
+    localStorage.setItem(`${STORAGE_KEY}_notifications`, JSON.stringify(notifications));
+    localStorage.setItem(`${STORAGE_KEY}_customAgents`, JSON.stringify(customAgents));
+    localStorage.setItem(`${STORAGE_KEY}_dataRetention`, JSON.stringify(dataRetention));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
+
+  const addCustomAgent = () => {
+    if (!newAgent.name.trim()) return;
+    setCustomAgents(prev => [...prev, { ...newAgent }]);
+    setNewAgent({ name: '', email: '', role: 'Agent' });
+  };
+
+  const removeCustomAgent = (idx: number) => setCustomAgents(prev => prev.filter((_, i) => i !== idx));
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white p-6">
@@ -217,11 +248,201 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {(activeTab === 'agents' || activeTab === 'data' || activeTab === 'security') && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Settings className="w-10 h-10 text-gray-500 mb-3 opacity-30" />
-              <p className="text-white font-medium mb-1">{TABS.find(t => t.key === activeTab)?.label}</p>
-              <p className="text-gray-400 text-sm">Configuration options coming soon</p>
+          {activeTab === 'agents' && (
+            <div>
+              <h2 className="text-white font-semibold text-lg mb-2">Agent Management</h2>
+              <p className="text-gray-400 text-sm mb-5">Manage agents imported from Dotloop and add custom entries.</p>
+
+              {/* Agents from data */}
+              {agentMetrics.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-gray-300 text-sm font-medium mb-3">Agents from Imported Data ({agentMetrics.length})</h3>
+                  <div className="bg-[#1a2332] rounded-lg overflow-hidden">
+                    <div className="max-h-48 overflow-y-auto">
+                      {agentMetrics.slice(0, 30).map(a => (
+                        <div key={a.agentName} className="flex items-center justify-between px-4 py-2.5 border-b border-[#0d1117]/50 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-xs font-bold text-emerald-400">
+                              {a.agentName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </div>
+                            <span className="text-gray-200 text-sm">{a.agentName}</span>
+                          </div>
+                          <span className="text-gray-500 text-xs">{a.closedDeals} closed deals</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Add custom agent */}
+              <div className="mb-4">
+                <h3 className="text-gray-300 text-sm font-medium mb-3">Add Custom Agent</h3>
+                <div className="grid grid-cols-3 gap-3 mb-2">
+                  <input
+                    value={newAgent.name}
+                    onChange={e => setNewAgent(a => ({ ...a, name: e.target.value }))}
+                    placeholder="Full Name"
+                    className="bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  />
+                  <input
+                    value={newAgent.email}
+                    onChange={e => setNewAgent(a => ({ ...a, email: e.target.value }))}
+                    placeholder="Email"
+                    className="bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={newAgent.role}
+                      onChange={e => setNewAgent(a => ({ ...a, role: e.target.value }))}
+                      className="flex-1 bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                    >
+                      {['Agent', 'Team Lead', 'Broker', 'Admin'].map(r => <option key={r}>{r}</option>)}
+                    </select>
+                    <button onClick={addCustomAgent} className="px-3 py-2 rounded-md bg-emerald-500 text-white hover:bg-emerald-600">
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {customAgents.length > 0 && (
+                <div className="bg-[#1a2332] rounded-lg overflow-hidden">
+                  {customAgents.map((a, i) => (
+                    <div key={i} className="flex items-center justify-between px-4 py-2.5 border-b border-[#0d1117]/50 last:border-0">
+                      <div>
+                        <div className="text-gray-200 text-sm">{a.name}</div>
+                        <div className="text-gray-500 text-xs">{a.email} · {a.role}</div>
+                      </div>
+                      <button onClick={() => removeCustomAgent(i)} className="text-gray-500 hover:text-red-400">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'data' && (
+            <div>
+              <h2 className="text-white font-semibold text-lg mb-2">Data & Import Settings</h2>
+              <p className="text-gray-400 text-sm mb-5">Configure data retention, export formats, and import preferences.</p>
+              <div className="space-y-5">
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-3">Data Retention</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">Keep data for (months)</label>
+                      <select
+                        value={dataRetention.months}
+                        onChange={e => setDataRetention((d: any) => ({ ...d, months: e.target.value }))}
+                        className="w-full bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                      >
+                        {['6', '12', '24', '36', '60', 'Forever'].map(m => <option key={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <div className="flex items-center justify-between w-full p-3 bg-[#0d1117] rounded-lg">
+                        <span className="text-gray-300 text-sm">Auto-clean old data</span>
+                        <button
+                          onClick={() => setDataRetention((d: any) => ({ ...d, autoClean: !d.autoClean }))}
+                          className={`relative w-10 h-5 rounded-full transition-colors ${dataRetention.autoClean ? 'bg-emerald-500' : 'bg-[#2a3d50]'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${dataRetention.autoClean ? 'left-5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-3">Export Formats</h3>
+                  <div className="flex gap-3">
+                    {['CSV', 'Excel (.xlsx)', 'PDF Report', 'JSON'].map(fmt => (
+                      <div key={fmt} className="flex items-center gap-2 px-3 py-2 bg-[#0d1117] rounded-lg">
+                        <Download className="w-4 h-4 text-emerald-400" />
+                        <span className="text-gray-300 text-sm">{fmt}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-1">Import History</h3>
+                  <p className="text-gray-400 text-xs mb-3">Recent CSV imports are stored in your browser's local storage.</p>
+                  <button
+                    onClick={() => {
+                      const keys = Object.keys(localStorage).filter(k => k.startsWith('dotloop_'));
+                      if (keys.length === 0) return alert('No stored data found.');
+                      if (confirm(`Clear ${keys.length} stored items? This cannot be undone.`)) {
+                        keys.forEach(k => localStorage.removeItem(k));
+                        alert('All stored data cleared.');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-md border border-red-500/30 text-red-400 text-sm hover:bg-red-500/10"
+                  >
+                    <Trash2 className="w-4 h-4" /> Clear All Stored Data
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'security' && (
+            <div>
+              <h2 className="text-white font-semibold text-lg mb-2">Security</h2>
+              <p className="text-gray-400 text-sm mb-5">Manage access controls and API keys for integrations.</p>
+              <div className="space-y-5">
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+                    <Key className="w-4 h-4 text-emerald-400" /> API Key
+                  </h3>
+                  <p className="text-gray-400 text-xs mb-3">Use this key to integrate with external tools via the Dotloop Reporter API.</p>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type={apiKey.showKey ? 'text' : 'password'}
+                        value={apiKey.key || 'dk_live_••••••••••••••••••••••••••••••••'}
+                        readOnly
+                        className="w-full bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-300 font-mono focus:outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setApiKey((k: any) => ({ ...k, showKey: !k.showKey }))}
+                      className="px-3 py-2 rounded-md border border-[#1e2d3d] text-gray-400 hover:bg-[#1a2332] text-sm"
+                    >
+                      {apiKey.showKey ? 'Hide' : 'Show'}
+                    </button>
+                    <button className="px-3 py-2 rounded-md bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-sm">
+                      Regenerate
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-3 flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-blue-400" /> Access Control
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { label: 'Require login to view reports', desc: 'Only authenticated users can access reports', enabled: true },
+                      { label: 'Allow public dashboard links', desc: 'Share read-only dashboard links externally', enabled: false },
+                      { label: 'Two-factor authentication', desc: 'Require 2FA for admin actions', enabled: false },
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-[#0d1117] rounded-lg">
+                        <div>
+                          <div className="text-gray-200 text-sm">{item.label}</div>
+                          <div className="text-gray-500 text-xs mt-0.5">{item.desc}</div>
+                        </div>
+                        <div className={`relative w-10 h-5 rounded-full ${item.enabled ? 'bg-emerald-500' : 'bg-[#2a3d50]'}`}>
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${item.enabled ? 'left-5' : 'left-0.5'}`} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

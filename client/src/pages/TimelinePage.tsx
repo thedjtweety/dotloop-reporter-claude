@@ -5,8 +5,7 @@ import { Clock, ChevronDown } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ScatterChart, Scatter, ZAxis } from 'recharts';
 
 export default function TimelinePage() {
-  const ctx = useTransactionData();
-  const allRecords = ctx.allRecords || [];
+  const { allRecords, agentMetrics, hasData, activateDemoMode } = useTransactionData();
   const [activeTab, setActiveTab] = useState<'lifecycle' | 'velocity' | 'bottlenecks' | 'agent'>('lifecycle');
   const [period, setPeriod] = useState('90d');
 
@@ -58,6 +57,23 @@ export default function TimelinePage() {
   ];
 
   const totalStageDays = stageDurations.reduce((s, d) => s + d.days, 0);
+
+  if (!hasData) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen bg-[#0d1117]">
+        <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
+          <Clock className="w-8 h-8 text-gray-500" />
+        </div>
+        <h3 className="text-white text-lg font-semibold mb-2">No Timeline Data</h3>
+        <p className="text-gray-400 text-sm max-w-sm text-center mb-6">
+          Upload a Dotloop CSV export to analyze transaction velocity and lifecycle stages.
+        </p>
+        <button onClick={activateDemoMode} className="px-4 py-2 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600">
+          Load Demo Data
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white p-6">
@@ -172,11 +188,115 @@ export default function TimelinePage() {
         </div>
       )}
 
-      {(activeTab === 'velocity' || activeTab === 'bottlenecks' || activeTab === 'agent') && (
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-8 flex flex-col items-center justify-center min-h-64">
-          <Clock className="w-10 h-10 text-gray-500 mb-3 opacity-30" />
-          <p className="text-white font-medium mb-1">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Analysis</p>
-          <p className="text-gray-400 text-sm">Upload CSV data with date fields to see {activeTab} insights</p>
+      {activeTab === 'velocity' && (
+        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+          <h2 className="text-white font-semibold mb-4">Monthly Deal Velocity (Deals Closed per Month)</h2>
+          <ResponsiveContainer width="100%" height={280}>
+            <BarChart
+              data={Array.from({ length: 12 }, (_, i) => {
+                const month = new Date(0, i).toLocaleString('default', { month: 'short' });
+                const recs = allRecords.filter(r => {
+                  const d = r.closingDate ? new Date(r.closingDate) : null;
+                  return d && d.getMonth() === i && (r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
+                });
+                const avgDays = (() => {
+                  const daysArr = recs.map(r => {
+                    const c = new Date(r.closingDate!);
+                    const o = r.createdDate ? new Date(r.createdDate) : null;
+                    if (!o) return null;
+                    return (c.getTime() - o.getTime()) / (1000 * 60 * 60 * 24);
+                  }).filter((d): d is number => d !== null);
+                  return daysArr.length > 0 ? daysArr.reduce((s, d) => s + d, 0) / daysArr.length : 0;
+                })();
+                return { month, deals: recs.length, avgDays: Math.round(avgDays) };
+              })}
+              margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e2d3d" />
+              <XAxis dataKey="month" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} />
+              <Bar yAxisId="left" dataKey="deals" fill="#10b981" radius={[4, 4, 0, 0]} name="Deals Closed" />
+              <Bar yAxisId="right" dataKey="avgDays" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Avg Days to Close" opacity={0.7} />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex gap-4 mt-2 text-xs text-gray-400">
+            <span className="flex items-center gap-1"><span className="w-3 h-2 bg-emerald-500 rounded inline-block" /> Deals Closed</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-2 bg-blue-500 rounded inline-block opacity-70" /> Avg Days to Close</span>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'bottlenecks' && (
+        <div className="space-y-4">
+          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+            <h2 className="text-white font-semibold mb-2">Stage Duration Breakdown</h2>
+            <p className="text-gray-400 text-xs mb-4">Industry benchmarks for each transaction stage. Longer durations indicate potential bottlenecks.</p>
+            <div className="space-y-4">
+              {stageDurations.map(stage => (
+                <div key={stage.stage}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-gray-200 text-sm">{stage.stage}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-xs">Benchmark: {stage.days} days</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded ${
+                        stage.days <= 7 ? 'bg-emerald-500/20 text-emerald-400' :
+                        stage.days <= 14 ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>{stage.days <= 7 ? 'Fast' : stage.days <= 14 ? 'Normal' : 'Slow'}</span>
+                    </div>
+                  </div>
+                  <div className="h-3 bg-[#1a2332] rounded-full">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${(stage.days / totalStageDays) * 100}%`, background: stage.color }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'agent' && (
+        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#1e2d3d]">
+            <h2 className="text-white font-semibold">Agent Transaction Velocity</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs bg-[#0a0f16]">
+                  <th className="px-4 py-3 text-left">Agent</th>
+                  <th className="px-4 py-3 text-right">Closed Deals</th>
+                  <th className="px-4 py-3 text-right">Total Transactions</th>
+                  <th className="px-4 py-3 text-right">Closing Rate</th>
+                  <th className="px-4 py-3 text-right">Avg Sale Price</th>
+                  <th className="px-4 py-3 text-right">Total GCI</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agentMetrics.slice(0, 20).map(a => (
+                  <tr key={a.agentName} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
+                    <td className="px-4 py-3 text-gray-200">{a.agentName}</td>
+                    <td className="px-4 py-3 text-right text-emerald-400">{a.closedDeals}</td>
+                    <td className="px-4 py-3 text-right text-gray-300">{a.totalTransactions}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={`text-xs font-medium ${
+                        a.closingRate >= 70 ? 'text-emerald-400' :
+                        a.closingRate >= 50 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>{a.closingRate.toFixed(0)}%</span>
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-300">{formatCurrency(a.averageSalesPrice)}</td>
+                    <td className="px-4 py-3 text-right text-blue-400">{formatCurrency(a.totalCommission)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

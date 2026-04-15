@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { UserPlus, Plus, Search, ChevronDown, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { UserPlus, Plus, Search, ChevronDown, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatUtils';
+import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 type Stage = 'prospect' | 'contacted' | 'interview' | 'offer' | 'hired' | 'rejected';
 
@@ -27,6 +29,7 @@ const STAGE_COLORS: Record<Stage, string> = {
 const STAGES: Stage[] = ['prospect', 'contacted', 'interview', 'offer', 'hired', 'rejected'];
 
 export default function RecruitingPage() {
+  const { agentMetrics, hasData, activateDemoMode } = useTransactionData();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [activeTab, setActiveTab] = useState<'pipeline' | 'retention' | 'analytics'>('pipeline');
   const [search, setSearch] = useState('');
@@ -197,10 +200,73 @@ export default function RecruitingPage() {
       )}
 
       {activeTab === 'retention' && (
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-8 flex flex-col items-center justify-center min-h-64">
-          <AlertTriangle className="w-10 h-10 text-yellow-400 mb-3 opacity-60" />
-          <p className="text-white font-medium mb-1">Retention Risk Analysis</p>
-          <p className="text-gray-400 text-sm">Upload CSV data to identify agents at risk of leaving based on performance trends</p>
+        <div className="space-y-4">
+          {!hasData ? (
+            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-12 flex flex-col items-center justify-center">
+              <AlertTriangle className="w-10 h-10 text-yellow-400 mb-3 opacity-60" />
+              <p className="text-white font-medium mb-1">Retention Risk Analysis</p>
+              <p className="text-gray-400 text-sm mb-4">Upload CSV data or load demo data to identify agents at risk</p>
+              <button onClick={activateDemoMode} className="px-4 py-2 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600">Load Demo Data</button>
+            </div>
+          ) : (
+            <>
+              <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+                <h2 className="text-white font-semibold mb-4">Agent Retention Risk Score</h2>
+                <p className="text-gray-400 text-xs mb-4">Agents with low closing rates or below-average GCI may be at risk. Consider proactive engagement.</p>
+                <div className="space-y-3">
+                  {agentMetrics
+                    .map(a => ({
+                      ...a,
+                      riskScore: Math.round(
+                        (a.closingRate < 30 ? 40 : a.closingRate < 50 ? 20 : 0) +
+                        (a.closedDeals < 3 ? 30 : a.closedDeals < 6 ? 15 : 0) +
+                        (a.totalCommission < 10000 ? 30 : a.totalCommission < 25000 ? 15 : 0)
+                      ),
+                    }))
+                    .sort((a, b) => b.riskScore - a.riskScore)
+                    .slice(0, 15)
+                    .map(a => (
+                      <div key={a.agentName} className="flex items-center gap-3">
+                        <div className="w-32 text-gray-300 text-sm truncate">{a.agentName}</div>
+                        <div className="flex-1 h-2 bg-[#1a2332] rounded-full">
+                          <div
+                            className="h-2 rounded-full"
+                            style={{
+                              width: `${a.riskScore}%`,
+                              background: a.riskScore >= 60 ? '#ef4444' : a.riskScore >= 30 ? '#f59e0b' : '#10b981',
+                            }}
+                          />
+                        </div>
+                        <div className="w-16 text-right">
+                          <span className={`text-xs font-medium ${
+                            a.riskScore >= 60 ? 'text-red-400' : a.riskScore >= 30 ? 'text-yellow-400' : 'text-emerald-400'
+                          }`}>
+                            {a.riskScore >= 60 ? 'High' : a.riskScore >= 30 ? 'Medium' : 'Low'}
+                          </span>
+                        </div>
+                        <div className="w-20 text-right text-gray-400 text-xs">{a.closedDeals} deals</div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+              <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+                <h2 className="text-white font-semibold mb-4">GCI Distribution (Retention Indicator)</h2>
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={agentMetrics.slice(0, 15).map(a => ({ name: a.agentName.split(' ')[0], gci: a.totalCommission })).sort((a, b) => b.gci - a.gci)}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e2d3d" />
+                    <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                    <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} formatter={(v: number) => [formatCurrency(v), 'GCI']} />
+                    <Bar dataKey="gci" radius={[4, 4, 0, 0]}>
+                      {agentMetrics.slice(0, 15).map((_, i) => <Cell key={i} fill={i < 3 ? '#10b981' : i < 8 ? '#3b82f6' : '#ef4444'} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <p className="text-gray-500 text-xs mt-2">Red bars indicate agents in the bottom tier — higher retention risk</p>
+              </div>
+            </>
+          )}
         </div>
       )}
 

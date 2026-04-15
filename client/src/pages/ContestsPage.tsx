@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { Trophy, Plus, Calendar, Users, Target } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Trophy, Plus, Calendar, Users, Target, Medal, Award, X } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatUtils';
+import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { Button } from '@/components/ui/button';
 
 interface Contest {
   id: string;
@@ -14,10 +16,19 @@ interface Contest {
   description: string;
 }
 
-const DEMO_CONTESTS: Contest[] = [];
+const SEED_CONTESTS: Contest[] = [
+  { id: '1', name: 'Q2 Closer Challenge', type: 'deals', status: 'active', startDate: '2026-04-01', endDate: '2026-06-30', prize: '$2,500 Cash Bonus', participants: 0, description: 'Most closed deals in Q2 wins.' },
+  { id: '2', name: 'Spring Volume Sprint', type: 'volume', status: 'active', startDate: '2026-03-01', endDate: '2026-05-31', prize: 'Luxury Weekend Getaway', participants: 0, description: 'Highest total sales volume in spring.' },
+  { id: '3', name: 'GCI Grand Prix', type: 'gci', status: 'upcoming', startDate: '2026-07-01', endDate: '2026-09-30', prize: '$5,000 + Trophy', participants: 0, description: 'Top GCI earner in Q3 takes home the grand prize.' },
+  { id: '4', name: 'New Year Kickoff', type: 'deals', status: 'completed', startDate: '2026-01-01', endDate: '2026-03-31', prize: '$1,500 Gift Card', participants: 0, description: 'Q1 deals competition.' },
+];
+
+const MEDAL_COLORS = ['#f59e0b', '#9ca3af', '#cd7f32'];
 
 export default function ContestsPage() {
-  const [contests, setContests] = useState<Contest[]>(DEMO_CONTESTS);
+  const { agentMetrics, hasData, activateDemoMode } = useTransactionData();
+  const [contests, setContests] = useState<Contest[]>(SEED_CONTESTS);
+  const [selectedContest, setSelectedContest] = useState<Contest | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'completed' | 'create'>('active');
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({
@@ -32,6 +43,22 @@ export default function ContestsPage() {
   const activeContests = contests.filter(c => c.status === 'active');
   const upcomingContests = contests.filter(c => c.status === 'upcoming');
   const completedContests = contests.filter(c => c.status === 'completed');
+
+  const getLeaderboard = (contest: Contest) => {
+    return [...agentMetrics]
+      .sort((a, b) =>
+        contest.type === 'deals' ? b.closedDeals - a.closedDeals :
+        contest.type === 'volume' ? b.totalSalesVolume - a.totalSalesVolume :
+        b.totalCommission - a.totalCommission
+      )
+      .slice(0, 10);
+  };
+
+  const getLeaderValue = (a: any, type: Contest['type']) => {
+    if (type === 'deals') return { label: `${a.closedDeals} deals`, raw: a.closedDeals };
+    if (type === 'volume') return { label: formatCurrency(a.totalSalesVolume), raw: a.totalSalesVolume };
+    return { label: formatCurrency(a.totalCommission), raw: a.totalCommission };
+  };
 
   const handleCreate = () => {
     if (!form.name.trim()) return;
@@ -141,7 +168,7 @@ export default function ContestsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayContests.map(contest => (
-            <div key={contest.id} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5 hover:border-yellow-500/30 transition-colors">
+            <div key={contest.id} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5 hover:border-yellow-500/30 transition-colors cursor-pointer" onClick={() => setSelectedContest(contest)}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-white font-semibold">{contest.name}</h3>
@@ -175,6 +202,74 @@ export default function ContestsPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Contest Detail Modal */}
+      {selectedContest && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedContest(null)}>
+          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2d3d]">
+              <div>
+                <h2 className="text-white font-semibold text-lg">{selectedContest.name}</h2>
+                <p className="text-gray-400 text-sm">{selectedContest.startDate} → {selectedContest.endDate}</p>
+              </div>
+              <button onClick={() => setSelectedContest(null)} className="text-gray-400 hover:text-gray-200"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-[#1a2332] rounded-lg p-3">
+                  <div className="text-gray-400 text-xs mb-1">Metric</div>
+                  <div className="text-white font-medium capitalize">{selectedContest.type}</div>
+                </div>
+                <div className="bg-[#1a2332] rounded-lg p-3">
+                  <div className="text-gray-400 text-xs mb-1">Prize</div>
+                  <div className="text-yellow-400 font-medium">{selectedContest.prize}</div>
+                </div>
+                <div className="bg-[#1a2332] rounded-lg p-3">
+                  <div className="text-gray-400 text-xs mb-1">Participants</div>
+                  <div className="text-white font-medium">{agentMetrics.length}</div>
+                </div>
+              </div>
+              {hasData && agentMetrics.length > 0 ? (
+                <div>
+                  <h3 className="text-white font-semibold mb-3">Leaderboard</h3>
+                  <div className="space-y-2">
+                    {getLeaderboard(selectedContest).map((agent, i) => {
+                      const { label, raw } = getLeaderValue(agent, selectedContest.type);
+                      const maxRaw = getLeaderValue(getLeaderboard(selectedContest)[0], selectedContest.type).raw;
+                      const pct = maxRaw > 0 ? (raw / maxRaw) * 100 : 0;
+                      return (
+                        <div key={agent.agentName} className="flex items-center gap-3">
+                          <div className="w-6 text-center">
+                            {i < 3 ? (
+                              <span style={{ color: MEDAL_COLORS[i] }} className="text-sm font-bold">#{i+1}</span>
+                            ) : (
+                              <span className="text-gray-500 text-xs">#{i+1}</span>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-gray-200 text-sm">{agent.agentName}</span>
+                              <span className="text-gray-300 text-xs font-medium">{label}</span>
+                            </div>
+                            <div className="h-1.5 bg-[#1a2332] rounded-full">
+                              <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : i === 2 ? '#cd7f32' : '#10b981' }} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Upload CSV data or load demo data to see the leaderboard</p>
+                  <button onClick={() => { activateDemoMode(); setSelectedContest(null); }} className="mt-2 text-emerald-400 hover:text-emerald-300 text-sm">Load demo data →</button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
