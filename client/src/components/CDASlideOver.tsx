@@ -97,60 +97,212 @@ export interface CDAData {
   additionalNotes?: string;
 }
 
-// ─── Map DotloopRecord → CDAData ──────────────────────────────────────────────
+// ─── Load brokerage settings from localStorage ───────────────────────────────
+function loadBrokerageSettings() {
+  try {
+    const raw = localStorage.getItem('dotloop_settings_brokerage');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+// ─── Load commission defaults from localStorage ───────────────────────────────
+function loadCommissionDefaults() {
+  try {
+    const raw = localStorage.getItem('dotloop_settings_commission');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+// ─── Load agent plan assignments from localStorage ────────────────────────────
+function loadAgentPlanAssignments(): Record<string, { splitPercent: number; transactionFee: number; capAmount: number }> {
+  try {
+    // Try tRPC-backed localStorage cache first
+    const raw = localStorage.getItem('dotloop_agent_assignments');
+    if (raw) return JSON.parse(raw);
+    // Fallback: try legacy commission storage
+    const legacyAssignments = localStorage.getItem('dotloop_agent_plan_assignments');
+    const legacyPlans = localStorage.getItem('dotloop_commission_plans');
+    if (legacyAssignments && legacyPlans) {
+      const assignments = JSON.parse(legacyAssignments);
+      const plans = JSON.parse(legacyPlans);
+      const result: Record<string, { splitPercent: number; transactionFee: number; capAmount: number }> = {};
+      for (const a of assignments) {
+        const plan = plans.find((p: any) => p.id === a.planId);
+        if (plan) {
+          result[a.agentName] = {
+            splitPercent: plan.splitPercentage || 80,
+            transactionFee: plan.deductions?.find((d: any) => d.name?.toLowerCase().includes('transaction'))?.amount || 0,
+            capAmount: plan.capAmount || 0,
+          };
+        }
+      }
+      return result;
+    }
+    return {};
+  } catch { return {}; }
+}
+
+// ─── Load custom agent contact info from Settings ────────────────────────────
+function loadCustomAgentContacts(): Record<string, { email: string; role: string }> {
+  try {
+    const raw = localStorage.getItem('dotloop_settings_customAgents');
+    if (!raw) return {};
+    const agents: Array<{ name: string; email: string; role: string }> = JSON.parse(raw);
+    const result: Record<string, { email: string; role: string }> = {};
+    for (const a of agents) {
+      if (a.name) result[a.name] = { email: a.email || '', role: a.role || 'Agent' };
+    }
+    return result;
+  } catch { return {}; }
+}
+
+// ─── Map DotloopRecord → CDAData (comprehensive auto-fill) ───────────────────
 export function mapRecordToCDA(record: DotloopRecord): CDAData {
+  // Load all available data sources
+  const brokerage = loadBrokerageSettings();
+  const commDefaults = loadCommissionDefaults();
+  const agentPlans = loadAgentPlanAssignments();
+  const agentContacts = loadCustomAgentContacts();
+
+  // ── Property & Financial ──────────────────────────────────────────────────
   const salePrice = record.salePrice || record.price || 0;
-  const address = [record.address, record.city, record.state].filter(Boolean).join(', ') || record.loopName || '';
-  const agentName = record.agents ? record.agents.split(',')[0].trim() : record.createdBy || '';
-  const commRate = record.commissionRate > 0 ? record.commissionRate : salePrice > 0 && record.commissionTotal > 0 ? (record.commissionTotal / salePrice) * 100 : 3;
-  const grossCommission = salePrice * (commRate / 100);
-  const sellingSplit = 50;
-  const listingSplit = 50;
+  const addressParts = [
+    record.address || record.streetAddress,
+    record.city,
+    record.state,
+    record.zip,
+  ].filter(Boolean);
+  const address = addressParts.length > 0 ? addressParts.join(', ') : (record.loopName || '');
+
+  // Commission rate: use record value, calculate from total, or fall back to settings default
+  const settingsDefaultRate = parseFloat(commDefaults.defaultCommissionRate || '3');
+  const commRate = record.commissionRate > 0
+    ? record.commissionRate
+    : salePrice > 0 && record.commissionTotal > 0
+      ? (record.commissionTotal / salePrice) * 100
+      : settingsDefaultRate;
+
+  const grossCommission = record.commissionTotal > 0 ? record.commissionTotal : salePrice * (commRate / 100);
+
+  // ── Agent Info ────────────────────────────────────────────────────────────
+  // Handle multiple agents (comma-separated)
+  const agentList = record.agents
+    ? record.agents.split(',').map((a: string) => a.trim()).filter(Boolean)
+    : record.createdBy
+      ? [record.createdBy.trim()]
+      : [];
+  const primaryAgent = agentList[0] || '';
+  const secondaryAgent = agentList[1] || '';
+
+  // ── Commission Split from Plan ────────────────────────────────────────────
+  const agentPlan = agentPlans[primaryAgent];
+  const defaultSplitPct = parseFloat(commDefaults.defaultSplit || '80');
+  const agentSplit = agentPlan?.splitPercent ?? defaultSplitPct;
+  const brokerSplit = 100 - agentSplit;
+  const transactionFee = agentPlan?.transactionFee ?? parseFloat(commDefaults.transactionFee || '0');
+
+  // ── Selling / Listing split ───────────────────────────────────────────────
+  // Determine from buySide/sellSide commission if available
+  let sellingSplit = 50;
+  let listingSplit = 50;
+  if (record.buySideCommission > 0 && record.sellSideCommission > 0) {
+    const total = record.buySideCommission + record.sellSideCommission;
+    sellingSplit = Math.round((record.buySideCommission / total) * 100);
+    listingSplit = 100 - sellingSplit;
+  }
+
   const sellingGross = grossCommission * (sellingSplit / 100);
   const listingGross = grossCommission * (listingSplit / 100);
-  const agentSplit = 80;
-  const brokerSplit = 20;
+
+  // Agent commissions after transaction fee deduction
+  const sellingAgentNet = Math.max(0, sellingGross * (agentSplit / 100) - transactionFee);
+  const listingAgentNet = Math.max(0, listingGross * (agentSplit / 100) - transactionFee);
+
+  // ── Brokerage info from Settings ─────────────────────────────────────────
+  const brokerageName = brokerage.name || '';
+  const brokerageAddress = [brokerage.address, brokerage.city, brokerage.state, brokerage.zip]
+    .filter(Boolean).join(', ');
+
+  // ── Agent contact info from Settings ─────────────────────────────────────
+  const primaryAgentContact = agentContacts[primaryAgent] || { email: '', role: 'Agent' };
+
+  // ── Referral ──────────────────────────────────────────────────────────────
+  const referralPct = record.referralPercentage || 0;
+  const referralFee = referralPct > 0 ? grossCommission * (referralPct / 100) : 0;
+  const referralSource = record.referralSource || record.leadSource || '';
+
+  // ── Additional notes from record metadata ────────────────────────────────
+  const notes: string[] = [];
+  if (record.loopId) notes.push(`Loop ID: ${record.loopId}`);
+  if (record.complianceStatus && record.complianceStatus !== 'No Status') notes.push(`Compliance: ${record.complianceStatus}`);
+  if (record.tags?.length) notes.push(`Tags: ${record.tags.join(', ')}`);
+  if (record.subdivision) notes.push(`Subdivision: ${record.subdivision}`);
+  if (record.schoolDistrict) notes.push(`School District: ${record.schoolDistrict}`);
+  if (record.yearBuilt) notes.push(`Year Built: ${record.yearBuilt}`);
+  if (record.squareFootage) notes.push(`Sq Ft: ${record.squareFootage.toLocaleString()}`);
+  if (record.bedrooms) notes.push(`Beds: ${record.bedrooms}`);
+  if (record.bathrooms) notes.push(`Baths: ${record.bathrooms}`);
+  if (record.earnestMoney) notes.push(`Earnest Money: $${record.earnestMoney.toLocaleString()}`);
+  if (transactionFee > 0) notes.push(`Transaction Fee: $${transactionFee} applied`);
 
   return {
+    // Property
     propertyAddress: address,
-    mlsNumber: record.mlsNumber || '',
+    mlsNumber: (record as any).mlsNumber || (record as any).mls || '',
     salePrice,
     closingDate: record.closingDate || '',
     acceptanceDate: record.offerDate || '',
-    loanType: '',
-    sellerName: record.sellerName || '',
-    sellerAddress: '',
-    sellerPhone: '',
-    sellerEmail: '',
-    buyerName: record.buyerName || '',
-    buyerAddress: '',
-    buyerPhone: '',
-    buyerEmail: '',
+    loanType: (record as any).loanType || (record as any).financingType || '',
+    // Parties — seller
+    sellerName: (record as any).sellerName || (record as any).seller || '',
+    sellerAddress: (record as any).sellerAddress || '',
+    sellerPhone: (record as any).sellerPhone || '',
+    sellerEmail: (record as any).sellerEmail || '',
+    // Parties — buyer
+    buyerName: (record as any).buyerName || (record as any).buyer || '',
+    buyerAddress: (record as any).buyerAddress || '',
+    buyerPhone: (record as any).buyerPhone || '',
+    buyerEmail: (record as any).buyerEmail || '',
+    // Commission
     totalCommissionRate: commRate,
     totalGrossCommission: grossCommission,
     sellingSplitPercent: sellingSplit,
     listingSplitPercent: listingSplit,
     sellingGrossCommission: sellingGross,
     listingGrossCommission: listingGross,
-    sellingCompanyName: '',
-    sellingCompanyAddress: '',
-    sellingAgent1Name: agentName,
+    // Selling side
+    sellingCompanyName: brokerageName,
+    sellingCompanyAddress: brokerageAddress,
+    sellingAgent1Name: primaryAgent,
     sellingAgent1SplitPercent: agentSplit,
-    sellingAgent1Commission: sellingGross * (agentSplit / 100),
+    sellingAgent1Commission: sellingAgentNet,
+    sellingAgent2Name: secondaryAgent,
+    sellingAgent2SplitPercent: secondaryAgent ? agentSplit : 0,
+    sellingAgent2Commission: secondaryAgent ? sellingGross * (agentSplit / 100) / 2 : 0,
     sellingBrokerSplitPercent: brokerSplit,
     sellingBrokerageCommission: sellingGross * (brokerSplit / 100),
-    sellingCommissionAfterFees: sellingGross * (agentSplit / 100),
-    listingCompanyName: '',
-    listingCompanyAddress: '',
-    listingAgent1Name: agentName,
+    sellingCommissionAfterFees: sellingAgentNet,
+    // Listing side
+    listingCompanyName: brokerageName,
+    listingCompanyAddress: brokerageAddress,
+    listingAgent1Name: primaryAgent,
     listingAgent1SplitPercent: agentSplit,
-    listingAgent1Commission: listingGross * (agentSplit / 100),
+    listingAgent1Commission: listingAgentNet,
+    listingAgent2Name: secondaryAgent,
+    listingAgent2SplitPercent: secondaryAgent ? agentSplit : 0,
+    listingAgent2Commission: secondaryAgent ? listingGross * (agentSplit / 100) / 2 : 0,
     listingBrokerSplitPercent: brokerSplit,
     listingBrokerageCommission: listingGross * (brokerSplit / 100),
-    listingCommissionAfterFees: listingGross * (agentSplit / 100),
-    referralPercent: record.referralPercentage || 0,
-    referralFee: record.referralPercentage ? grossCommission * (record.referralPercentage / 100) : 0,
-    additionalNotes: '',
+    listingCommissionAfterFees: listingAgentNet,
+    // Referral
+    referralCompanyName: referralSource,
+    referralPercent: referralPct,
+    referralFee,
+    referralType: referralPct > 0 ? 'selling' : undefined,
+    // Meta
+    titleCompany: (record as any).titleCompany || (record as any).closingCompany || '',
+    closingOfficer: (record as any).closingOfficer || (record as any).closingAttorney || '',
+    additionalNotes: notes.join(' | '),
   };
 }
 

@@ -26,9 +26,11 @@ import {
   Calendar,
   X,
   FlaskConical,
+  History,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTransactionData, DateRangeFilter } from '../contexts/TransactionDataContext';
+import { useCDAPanel } from '../contexts/CDAContext';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
@@ -114,6 +116,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { dateFilter, setDateFilter, teamFilter, setTeamFilter, teams, hasData, isDemoMode, activateDemoMode } = useTransactionData();
+  const { openCDAHistory } = useCDAPanel();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
@@ -395,6 +398,15 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             );
           })}
 
+          {/* CDA History button */}
+          <button
+            onClick={openCDAHistory}
+            title={collapsed ? 'CDA History' : undefined}
+            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-md text-sm text-amber-400 hover:bg-amber-500/10 transition-colors ${collapsed ? 'justify-center' : ''}`}
+          >
+            <History className={`shrink-0 ${collapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
+            {!collapsed && <span className="truncate">CDA History</span>}
+          </button>
           {/* Demo mode button */}
           {!hasData && !collapsed && (
             <button
