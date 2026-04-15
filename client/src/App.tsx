@@ -7,67 +7,78 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { ModalProvider } from "./contexts/ModalContext";
 import { TransactionDataProvider } from "./contexts/TransactionDataContext";
 import Home from "./pages/Home";
+import SidebarLayout from "./components/SidebarLayout";
 
-import AdminDashboard from "./pages/AdminDashboard";
-import CreativeDashboard from "./pages/CreativeDashboard";
-import PerformanceDashboard from "./pages/PerformanceDashboard";
-import AuditLog from "./pages/AuditLog";
-import RoleManagement from "./pages/RoleManagement";
-import TenantSettings from "./pages/TenantSettings";
-import CommissionManagement from "./pages/CommissionManagement";
-import PerformanceTrendsPage from "./pages/PerformanceTrendsPage";
-import BenchmarkComparisonPage from "./pages/BenchmarkComparisonPage";
-import ManageDotloopConnections from "./pages/ManageDotloopConnections";
+// Existing pages
 import OAuthCallback from "./pages/OAuthCallback";
-import CommissionTemplates from "./pages/CommissionTemplates";
 import Privacy from "./pages/Privacy";
 import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import NetCommissionReportPage from "./pages/NetCommissionReportPage";
 import SimpleCDABuilder from "./pages/SimpleCDABuilder";
 import CDAHistory from "./pages/CDAHistory";
-import UploadHistory from "./pages/UploadHistory";
-import NetCommissionReportPage from "./pages/NetCommissionReportPage";
+import CommissionManagement from "./pages/CommissionManagement";
+import AuditLog from "./pages/AuditLog";
 
+// New pages
+import AgentsPage from "./pages/AgentsPage";
+import ComparePage from "./pages/ComparePage";
+import TeamsPage from "./pages/TeamsPage";
+import GoalsPage from "./pages/GoalsPage";
+import TrendsPage from "./pages/TrendsPage";
+import ContestsPage from "./pages/ContestsPage";
+import ForecastingPage from "./pages/ForecastingPage";
+import RecruitingPage from "./pages/RecruitingPage";
+import MarketPage from "./pages/MarketPage";
+import TimelinePage from "./pages/TimelinePage";
+import SettingsPage from "./pages/SettingsPage";
+
+// Pages that use sidebar layout
+const SIDEBAR_ROUTES = [
+  { path: "/", component: Home },
+  { path: "/agents", component: AgentsPage },
+  { path: "/commission", component: CommissionManagement },
+  { path: "/net-commission-report", component: NetCommissionReportPage },
+  { path: "/cda-builder", component: SimpleCDABuilder },
+  { path: "/cda-history", component: CDAHistory },
+  { path: "/compare", component: ComparePage },
+  { path: "/teams", component: TeamsPage },
+  { path: "/goals", component: GoalsPage },
+  { path: "/trends", component: TrendsPage },
+  { path: "/contests", component: ContestsPage },
+  { path: "/forecasting", component: ForecastingPage },
+  { path: "/recruiting", component: RecruitingPage },
+  { path: "/market", component: MarketPage },
+  { path: "/timeline", component: TimelinePage },
+  { path: "/audit-log", component: AuditLog },
+  { path: "/settings", component: SettingsPage },
+];
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-       <Route path="/" component={Home} />
+      {/* Routes with sidebar */}
+      {SIDEBAR_ROUTES.map(({ path, component: Component }) => (
+        <Route key={path} path={path}>
+          <SidebarLayout>
+            <Component />
+          </SidebarLayout>
+        </Route>
+      ))}
 
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/audit-log" component={AuditLog} />
-      <Route path="/roles" component={RoleManagement} />
-      <Route path="/performance" component={PerformanceDashboard} />
-      <Route path="/creative" component={CreativeDashboard} />
-      <Route path="/settings" component={TenantSettings} />
-      <Route path="/commission" component={CommissionManagement} />
-      <Route path="/trends" component={PerformanceTrendsPage} />
-      <Route path="/benchmarks" component={BenchmarkComparisonPage} />
-      <Route path="/settings/dotloop" component={ManageDotloopConnections} />
+      {/* Routes without sidebar */}
       <Route path="/api/dotloop/callback" component={OAuthCallback} />
-      <Route path="/commission-templates" component={CommissionTemplates} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms" component={TermsOfService} />
-      <Route path="/cda-builder" component={SimpleCDABuilder} />
-      <Route path="/cda-history" component={CDAHistory} />
-      <Route path="/uploads" component={UploadHistory} />
-      <Route path="/net-commission-report" component={NetCommissionReportPage} />
 
-      <Route path="{/404}" component={NotFound} />
-      {/* Final fallback route */}
+      {/* Fallback */}
       <Route component={NotFound} />
     </Switch>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
   return (

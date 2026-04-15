@@ -4036,3 +4036,25 @@
 - [x] Test bulk actions with sample data (checkbox selection, export, highlighting)
 - [x] Test CSV export with selected transactions
 - [x] Optimize toolbar rendering with sticky positioning and responsive layout
+
+## Phase: Major Sidebar Revamp (Current)
+- [x] Create SidebarLayout component with collapsible left navigation
+- [x] Wire all routes through SidebarLayout in App.tsx
+- [x] Add all 15+ navigation items to sidebar
+- [x] Sidebar: Data filter dropdown (All Data)
+- [x] Sidebar: Team filter dropdown (All Teams)
+- [x] Sidebar: Theme toggle (Light/Dark)
+- [x] Sidebar: Collapse/expand functionality with localStorage persistence
+- [x] Sidebar: Active route highlighting
+- [x] AgentsPage (/agents) - Agent leaderboard with podium, table, compare
+- [x] ComparePage (/compare) - Agent comparison tool
+- [x] TeamsPage (/teams) - Teams & offices management
+- [x] GoalsPage (/goals) - Agent goals tracking with progress bars
+- [x] TrendsPage (/trends) - Multi-year trends analysis with year comparison
+- [x] ContestsPage (/contests) - Contests & challenges management
+- [x] ForecastingPage (/forecasting) - Pipeline forecasting
+- [x] RecruitingPage (/recruiting) - Agent pipeline & retention risk
+- [x] MarketPage (/market) - Market insights geographic/seasonal/property
+- [x] TimelinePage (/timeline) - Listing-to-close lifecycle analysis
+- [x] SettingsPage (/settings) - Brokerage configuration with sub-sections
+- [x] Fixed TransactionDataContext import error (use useTransactionData hook)
