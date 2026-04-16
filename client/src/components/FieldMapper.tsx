@@ -76,6 +76,17 @@ const FIELD_GROUPS = {
       { key: 'complianceStatus', label: 'Compliance Status', required: false },
       { key: 'tags', label: 'Tags', required: false },
     ]
+  },
+  parties: {
+    title: 'Buyer & Seller Info',
+    fields: [
+      { key: 'buyerName', label: 'Buyer Name', required: false },
+      { key: 'buyerEmail', label: 'Buyer Email', required: false },
+      { key: 'buyerPhone', label: 'Buyer Phone', required: false },
+      { key: 'sellerName', label: 'Seller Name', required: false },
+      { key: 'sellerEmail', label: 'Seller Email', required: false },
+      { key: 'sellerPhone', label: 'Seller Phone', required: false },
+    ]
   }
 };
 

@@ -39,6 +39,12 @@ export interface DotloopRecord {
   yearBuilt: number;
   lotSize: number;
   subdivision: string;
+  buyerName?: string;
+  buyerEmail?: string;
+  buyerPhone?: string;
+  sellerName?: string;
+  sellerEmail?: string;
+  sellerPhone?: string;
   [key: string]: any;
 }
 
@@ -421,6 +427,12 @@ export function normalizeRecord(raw: any, mapping?: Record<string, string>): Dot
       yearBuilt: parseInt(getValue('yearBuilt', ['Property / Year Built']) || '0') || 0,
       lotSize: parseInt(getValue('lotSize', ['Property / Lot Size']) || '0') || 0,
       subdivision: getValue('subdivision', ['Geographic Description / Subdivision']) || '',
+      buyerName: getValue('buyerName', ['Buyer Name', 'Parties / Buyer Name', 'Buyer']) || '',
+      buyerEmail: getValue('buyerEmail', ['Buyer Email', 'Parties / Buyer Email']) || '',
+      buyerPhone: getValue('buyerPhone', ['Buyer Phone', 'Parties / Buyer Phone']) || '',
+      sellerName: getValue('sellerName', ['Seller Name', 'Parties / Seller Name', 'Seller']) || '',
+      sellerEmail: getValue('sellerEmail', ['Seller Email', 'Parties / Seller Email']) || '',
+      sellerPhone: getValue('sellerPhone', ['Seller Phone', 'Parties / Seller Phone']) || '',
     };
   } catch (error) {
     console.error('Error normalizing record:', error);
