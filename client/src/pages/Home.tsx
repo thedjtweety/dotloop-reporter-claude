@@ -426,7 +426,7 @@ function HomeContent() {
 
   const handleDemoMode = () => {
     setIsLoading(true);
-    setTimeout(() => {
+    try {
       const { data: sampleData, stats } = generateDemoData({ complexity: 'random' });
       
       // Note: Demo data is kept in memory only (not stored in localStorage) to avoid quota issues
@@ -450,8 +450,16 @@ function HomeContent() {
         agentMetrics: agentMetricsWithPlans,
         isDemoMode: true,
       });
+      
+      // Navigate to dashboard after data is loaded
+      setTimeout(() => {
+        setIsLoading(false);
+        setLocation('/');
+      }, 500);
+    } catch (error) {
+      console.error('❌ Demo mode error:', error);
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   // Update metrics when date range, records, or filters change
