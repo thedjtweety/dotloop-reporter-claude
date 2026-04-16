@@ -1243,7 +1243,7 @@ function HomeContent() {
               <div>
                 <p className="text-sm text-foreground dark:text-white font-medium">Closed</p>
                 <p className="text-2xl font-display font-bold text-foreground dark:text-white">
-                  {metrics.closed}
+                  {contextMetrics.closed}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-green-500/20 dark:bg-green-500/30 flex items-center justify-center">
@@ -1260,7 +1260,7 @@ function HomeContent() {
               <div>
                 <p className="text-sm text-foreground dark:text-white font-medium">Archived</p>
                 <p className="text-2xl font-display font-bold text-foreground dark:text-white">
-                  {metrics.archived}
+                  {contextMetrics.archived}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
@@ -1280,7 +1280,7 @@ function HomeContent() {
               <TabsTrigger value="leadsource">Lead Source</TabsTrigger>
               <TabsTrigger value="property">Property Type</TabsTrigger>
               <TabsTrigger value="geographic">Geographic</TabsTrigger>
-              {metrics?.hasFinancialData && (
+              {contextMetrics?.hasFinancialData && (
                 <TabsTrigger value="financial">Financial</TabsTrigger>
               )}
               <TabsTrigger value="insights">Insights</TabsTrigger>
@@ -1399,7 +1399,7 @@ function HomeContent() {
             </TabsContent>
             </TabAnimation>
 
-            {metrics?.hasFinancialData && (
+            {contextMetrics?.hasFinancialData && (
               <>
                 <TabAnimation isVisible={activeTab === 'financial'} duration={400}>
                 <TabsContent value="financial" className="space-y-4">
@@ -1411,7 +1411,7 @@ function HomeContent() {
                         </h2>
                         <PerformanceBadge lastUpdated={new Date()} processingTimeMs={334} />
                       </div>
-                      <FinancialChart metrics={metrics} />
+                      <FinancialChart metrics={contextMetrics} />
                     </Card>
                     <Card className="p-6 bg-card border border-border">
                       <h2 className="text-xl font-display font-bold text-foreground mb-4">
@@ -1430,8 +1430,8 @@ function HomeContent() {
                         Revenue Distribution
                       </h2>
                       <RevenueDistributionChart 
-                        totalCommission={metrics.totalCommission}
-                        companyDollar={metrics.totalCompanyDollar}
+                        totalCommission={contextMetrics.totalCommission}
+                        companyDollar={contextMetrics.totalCompanyDollar}
                       />
                     </Card>
                     <Card className="p-6 bg-card border border-border">
@@ -1557,7 +1557,7 @@ function HomeContent() {
         </div>
 
         {/* Commission Projector Section */}
-        {metrics?.hasFinancialData && (
+        {contextMetrics?.hasFinancialData && (
           <div data-section="projector">
             <CollapsibleSection title="Commission Projector" icon={<DollarSign className="w-6 h-6" />}>
               <CommissionProjector records={filteredRecords} />
