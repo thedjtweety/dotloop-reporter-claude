@@ -24,6 +24,7 @@ import AuditLog from "./pages/AuditLog";
 // New pages
 import AgentsPage from "./pages/AgentsPage";
 import ComparePage from "./pages/ComparePage";
+import ComparisonPage from "./pages/ComparisonPage";
 import TeamsPage from "./pages/TeamsPage";
 import GoalsPage from "./pages/GoalsPage";
 import TrendsPage from "./pages/TrendsPage";
@@ -45,6 +46,7 @@ const SIDEBAR_ROUTES = [
   { path: "/cda-builder", component: SimpleCDABuilder },
   { path: "/cda-history", component: CDAHistory },
   { path: "/compare", component: ComparePage },
+  { path: "/comparison", component: ComparisonPage },
   { path: "/teams", component: TeamsPage },
   { path: "/goals", component: GoalsPage },
   { path: "/trends", component: TrendsPage },

@@ -131,7 +131,7 @@ function HomeContent() {
   // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
   let { user, loading, error, isAuthenticated, logout } = useAuth();
   const { filters, addFilter } = useFilters();
-  const { setTransactionData } = useTransactionData();
+  const { setTransactionData, setComparisonDataSet, comparisonMode, toggleComparisonMode } = useTransactionData();
 
   const [location, setLocation] = useLocation();
   const { metricsOrder, isEditMode, isLoaded, reorderMetrics, resetToDefault, toggleEditMode } = useMetricsOrder();
@@ -144,6 +144,7 @@ function HomeContent() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [sparklineTrends, setSparklineTrends] = useState<any>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [comparisonUploadFileName, setComparisonUploadFileName] = useState('');
   
   // Rate limit modal state
   const [showRateLimitModal, setShowRateLimitModal] = useState(false);
@@ -397,6 +398,29 @@ function HomeContent() {
       setRecentFiles(updated);
     } catch (error) {
       console.error('[Home] Failed to delete upload:', error);
+    }
+  };
+
+  const handleComparisonFileUpload = async (file: File) => {
+    setIsLoading(true);
+    try {
+      const text = await file.text();
+      const records = parseCSV(text);
+      const calculatedMetrics = calculateMetrics(records);
+      const metrics = calculateAgentMetrics(records);
+      const agentMetricsWithPlans = applyPlansToAllAgents(metrics, records);
+      
+      setComparisonDataSet({
+        allRecords: records,
+        metrics: calculatedMetrics,
+        agentMetrics: agentMetricsWithPlans,
+        fileName: file.name,
+      });
+      setComparisonUploadFileName(file.name);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error uploading comparison file:', error);
+      setIsLoading(false);
     }
   };
 
@@ -810,6 +834,71 @@ function HomeContent() {
                 <DataQualityGuide onOpenGuide={() => setShowCSVGuide(true)} />
               </div>
             </div>
+
+            {/* Comparison Mode Section */}
+            {allRecords.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-border">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-semibold mb-2">Compare Datasets</h3>
+                      <p className="text-sm text-foreground/70">
+                        Load a second CSV file to compare metrics side-by-side
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={toggleComparisonMode}
+                        variant={comparisonMode ? 'default' : 'outline'}
+                        className="gap-2"
+                      >
+                        {comparisonMode ? '✓ Comparison Active' : 'Enable Comparison'}
+                      </Button>
+                      {comparisonMode && comparisonUploadFileName && (
+                        <Button
+                          onClick={() => setLocation('/comparison')}
+                          variant="default"
+                          className="gap-2 bg-blue-600 hover:bg-blue-700"
+                        >
+                          View Comparison
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {comparisonMode && (
+                    <Card className="p-6 bg-blue-500/5 border-blue-500/20">
+                      <div className="space-y-4">
+                        {!comparisonUploadFileName ? (
+                          <div>
+                            <p className="text-sm text-foreground/70 mb-3">Upload a second dataset to compare</p>
+                            <Card className="p-6 border-dashed border-2 border-border bg-card/50 hover:bg-card/80 transition-colors">
+                              <UploadZone onFileUpload={handleComparisonFileUpload} isLoading={isLoading} />
+                            </Card>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between p-3 bg-green-500/10 border border-green-500/20 rounded">
+                            <div>
+                              <p className="text-sm font-medium text-green-400">✓ Comparison dataset loaded</p>
+                              <p className="text-xs text-foreground/70">{comparisonUploadFileName}</p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setComparisonDataSet(null);
+                                setComparisonUploadFileName('');
+                              }}
+                            >
+                              Clear
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            )}
             
             {/* Show Upload History to all users */}
             <div className="mt-12 text-left">

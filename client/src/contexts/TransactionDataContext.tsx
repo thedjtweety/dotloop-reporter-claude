@@ -4,6 +4,8 @@
  * Provides transaction data, agent metrics, commission plans, and global sidebar filters
  * across the entire application. All pages read from filteredRecords which respects
  * the active date range and team filter set in the sidebar.
+ *
+ * Supports comparison mode: load a second dataset to compare metrics side-by-side.
  */
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
 import { DotloopRecord, DashboardMetrics, AgentMetrics, calculateMetrics, calculateAgentMetrics } from '@/lib/csvParser';
@@ -39,7 +41,16 @@ export interface TeamFilter {
   teamName: string;
 }
 
+export interface ComparisonDataSet {
+  allRecords: DotloopRecord[];
+  filteredRecords: DotloopRecord[];
+  metrics: DashboardMetrics | null;
+  agentMetrics: AgentMetrics[];
+  name: string;
+}
+
 interface TransactionDataContextType {
+  // Primary dataset
   allRecords: DotloopRecord[];
   filteredRecords: DotloopRecord[];
   metrics: DashboardMetrics | null;
@@ -68,6 +79,28 @@ interface TransactionDataContextType {
   clearTransactionData: () => void;
   hasData: boolean;
   teams: string[];
+  dataStatistics: {
+    transactionCount: number;
+    totalGCI: number;
+    closeRate: number;
+  };
+
+  // Comparison mode
+  comparisonMode: boolean;
+  comparisonDataSet: ComparisonDataSet | null;
+  setComparisonDataSet: (data: {
+    allRecords: DotloopRecord[];
+    metrics: DashboardMetrics | null;
+    agentMetrics: AgentMetrics[];
+    fileName: string;
+  } | null) => void;
+  toggleComparisonMode: () => void;
+  clearComparisonData: () => void;
+  comparisonStatistics: {
+    transactionCount: number;
+    totalGCI: number;
+    closeRate: number;
+  };
 }
 
 const TransactionDataContext = createContext<TransactionDataContextType | undefined>(undefined);
@@ -112,6 +145,10 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [activeDataSetName, setActiveDataSetName] = useState('');
 
+  // Comparison mode state
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [comparisonDataSet, setComparisonDataSetState] = useState<ComparisonDataSet | null>(null);
+
   // Track whether metrics were set externally (e.g., from Home.tsx with commission plans applied)
   // When true, skip auto-recalculation so commission-plan-applied metrics are preserved
   const externalMetricsRef = useRef(false);
@@ -146,6 +183,17 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
     });
     return Array.from(names).sort();
   }, [allRecords]);
+
+  const comparisonStatistics = useMemo(() => {
+    if (!comparisonDataSet) {
+      return { transactionCount: 0, totalGCI: 0, closeRate: 0 };
+    }
+    return {
+      transactionCount: comparisonDataSet.filteredRecords.length,
+      totalGCI: comparisonDataSet.metrics?.totalGCI ?? 0,
+      closeRate: comparisonDataSet.metrics?.closeRate ?? 0,
+    };
+  }, [comparisonDataSet]);
 
   const value: TransactionDataContextType = {
     allRecords,
@@ -196,11 +244,43 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
       setCommissionPlans([]);
       setAgentAssignments([]);
       setIsDemoMode(false);
+      setActiveDataSetName('');
       setDateFilterState(DEFAULT_DATE_FILTER);
       setTeamFilterState(DEFAULT_TEAM_FILTER);
     },
     hasData: allRecords.length > 0,
     teams,
+    dataStatistics: {
+      transactionCount: filteredRecords.length,
+      totalGCI: metrics?.totalGCI ?? 0,
+      closeRate: metrics?.closeRate ?? 0,
+    },
+
+    // Comparison mode
+    comparisonMode,
+    comparisonDataSet,
+    setComparisonDataSet: (data) => {
+      if (data === null) {
+        setComparisonDataSetState(null);
+      } else {
+        const filtered = applyFilters(data.allRecords, dateFilter, teamFilter);
+        setComparisonDataSetState({
+          allRecords: data.allRecords,
+          filteredRecords: filtered,
+          metrics: data.metrics,
+          agentMetrics: data.agentMetrics,
+          name: data.fileName,
+        });
+      }
+    },
+    toggleComparisonMode: () => {
+      setComparisonMode((prev) => !prev);
+    },
+    clearComparisonData: () => {
+      setComparisonDataSetState(null);
+      setComparisonMode(false);
+    },
+    comparisonStatistics,
   };
 
   return (

@@ -27,6 +27,7 @@ import {
   X,
   FlaskConical,
   History,
+  Trash2,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTransactionData, DateRangeFilter } from '../contexts/TransactionDataContext';
@@ -115,7 +116,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [location, setLocation] = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { dateFilter, setDateFilter, teamFilter, setTeamFilter, teams, hasData, isDemoMode, activateDemoMode } = useTransactionData();
+  const { dateFilter, setDateFilter, teamFilter, setTeamFilter, teams, hasData, isDemoMode, activateDemoMode, clearTransactionData, activeDataSetName, dataStatistics } = useTransactionData();
   const { openCDAHistory } = useCDAPanel();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -400,6 +401,27 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             );
           })}
 
+          {/* Data statistics (when data loaded) */}
+          {hasData && !collapsed && (
+            <div className="px-2 py-2 rounded bg-emerald-500/5 border border-emerald-500/20 mb-2">
+              <div className="text-[10px] text-gray-400 mb-1.5 font-medium">Data Summary</div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Transactions:</span>
+                  <span className="text-emerald-400 font-medium">{dataStatistics.transactionCount}</span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Total GCI:</span>
+                  <span className="text-emerald-400 font-medium">${(dataStatistics.totalGCI / 1000000).toFixed(1)}M</span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Close Rate:</span>
+                  <span className="text-emerald-400 font-medium">{(dataStatistics.closeRate * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* CDA History button */}
           <button
             onClick={openCDAHistory}
@@ -409,6 +431,22 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             <History className={`shrink-0 ${collapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
             {!collapsed && <span className="truncate">CDA History</span>}
           </button>
+
+          {/* Clear Data button */}
+          {hasData && !collapsed && (
+            <button
+              onClick={() => {
+                if (confirm('Clear all data and return to home? This will reset all filters and loaded data.')) {
+                  clearTransactionData();
+                  setLocation('/');
+                }
+              }}
+              className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Clear Data</span>
+            </button>
+          )}
           {/* Demo mode button */}
           {!hasData && !collapsed && (
             <button
