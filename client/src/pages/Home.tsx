@@ -1053,7 +1053,7 @@ function HomeContent() {
       <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" onDemoClick={handleDemoMode} isDemoLoading={isLoading} />
 
       {/* Main Dashboard */}
-      <main className="container py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8">
+      <main className="flex-1 overflow-y-auto container py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8">
         {/* Filter Badge */}
         <FilterBadge />
         
