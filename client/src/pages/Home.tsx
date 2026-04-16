@@ -1209,7 +1209,7 @@ function HomeContent() {
               <div>
                 <p className="text-sm text-foreground font-medium">Active Listings</p>
                 <p className="text-2xl font-display font-bold text-foreground">
-                  {metrics.activeListings}
+                  {contextMetrics.activeListings}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
@@ -1226,7 +1226,7 @@ function HomeContent() {
               <div>
                 <p className="text-sm text-foreground font-medium">Under Contract</p>
                 <p className="text-2xl font-display font-bold text-foreground">
-                  {metrics.underContract}
+                  {contextMetrics.underContract}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center">
