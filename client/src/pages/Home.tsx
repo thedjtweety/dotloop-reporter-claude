@@ -1650,9 +1650,6 @@ function HomeContent() {
           transactions={analyticsDrillDownTransactions}
         />
       )}
-
-      {/* Legal Footer */}
-      <Footer />
     </div>
   );
 }
