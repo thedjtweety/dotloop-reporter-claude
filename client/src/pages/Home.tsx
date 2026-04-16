@@ -429,33 +429,34 @@ function HomeContent() {
     try {
       const { data: sampleData, stats } = generateDemoData({ complexity: 'random' });
       
-      // Note: Demo data is kept in memory only (not stored in localStorage) to avoid quota issues
-      // CommissionCalculator accesses data from component state instead
-      
       // Setup demo commission plans and agent assignments
       const { plans, assignments } = setupDemoPlanData(sampleData);
       console.log(`✅ Demo setup: ${plans.length} plans, ${assignments.length} agents assigned`);
       console.log(`🎯 Demo Generated [${stats.complexity}]:\n  📊 ${stats.agentCount} agents | ${stats.transactionCount} transactions\n  💰 $${stats.totalGCI.toLocaleString()} GCI | $${stats.totalVolume.toLocaleString()} volume\n  🌎 ${stats.stateCount} states | ${stats.propertyTypeCount} property types\n  📅 ${stats.dateRange.earliest} to ${stats.dateRange.latest}`);
+      
+      // Calculate metrics
+      const calculatedMetrics = calculateMetrics(sampleData);
+      const agentMetrics2 = calculateAgentMetrics(sampleData);
+      const agentMetricsWithPlans = applyPlansToAllAgents(agentMetrics2, sampleData);
+      
+      // Update BOTH local state AND context (context is the single source of truth for rendering)
       setAllRecords(sampleData);
       setFilteredRecords(sampleData);
-      const calculatedMetrics = calculateMetrics(sampleData);
       setMetrics(calculatedMetrics);
-      const metrics2 = calculateAgentMetrics(sampleData);
-      const agentMetricsWithPlans = applyPlansToAllAgents(metrics2, sampleData);
       setAgentMetrics(agentMetricsWithPlans);
+      
+      // Update context - this triggers the dashboard render
       setTransactionData({
         allRecords: sampleData,
         filteredRecords: sampleData,
         metrics: calculatedMetrics,
         agentMetrics: agentMetricsWithPlans,
         isDemoMode: true,
+        fileName: 'Demo Data',
       });
       
-      // Navigate to dashboard after data is loaded
-      setTimeout(() => {
-        setIsLoading(false);
-        setLocation('/');
-      }, 500);
+      // Stop loading immediately - context update triggers render
+      setIsLoading(false);
     } catch (error) {
       console.error('❌ Demo mode error:', error);
       setIsLoading(false);
