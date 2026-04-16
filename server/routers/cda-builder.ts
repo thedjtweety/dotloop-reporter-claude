@@ -111,6 +111,10 @@ export const cdaBuilderRouter = router({
           closingCompany: input.formData.titleCompany,
           closingOfficer: input.formData.closerName,
           propertyAddress: input.formData.propertyAddress,
+          city: input.formData.city,
+          state: input.formData.state,
+          buyerName: input.formData.buyerName,
+          sellerName: input.formData.sellerName,
           salePrice: input.formData.salePrice,
           closingDate: input.formData.closingDate,
           totalCommissionRate: input.formData.totalCommissionRate,
@@ -136,22 +140,63 @@ export const cdaBuilderRouter = router({
       }
     }),
 
-  // Get CDA document history
-  getHistory: protectedProcedure.query(async ({ ctx }) => {
+  // Get CDA documents
+  getCDADocuments: protectedProcedure.query(async ({ ctx }) => {
     try {
       const db = await getDb();
       if (!db) throw new Error('Database not available');
-
       const documents = await db.query.cdaDocuments.findMany({
         where: (table, { eq }) => eq(table.tenantId, ctx.tenantId),
         orderBy: (table, { desc }) => desc(table.createdAt),
-        limit: 50,
+        limit: 100,
       });
-
       return documents;
     } catch (error) {
-      console.error('Error fetching CDA history:', error);
-      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to fetch CDA history' });
+      console.error('Error fetching CDA documents:', error);
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to fetch CDA documents' });
     }
   }),
+
+  // Delete CDA document
+  deleteCDADocument: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+
+        const doc = await db.query.cdaDocuments.findFirst({
+          where: (table, { eq, and }) => and(eq(table.id, input.id), eq(table.tenantId, ctx.tenantId)),
+        });
+
+        if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
+
+        await db.delete(cdaDocuments).where((table, { eq }) => eq(table.id, input.id));
+        return { success: true };
+      } catch (error) {
+        console.error('Error deleting CDA document:', error);
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to delete CDA document' });
+      }
+    }),
+
+  // Download CDA document
+  downloadCDADocument: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
+
+        const doc = await db.query.cdaDocuments.findFirst({
+          where: (table, { eq, and }) => and(eq(table.id, input.id), eq(table.tenantId, ctx.tenantId)),
+        });
+
+        if (!doc || !doc.pdfUrl) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
+
+        return { pdfUrl: doc.pdfUrl };
+      } catch (error) {
+        console.error('Error downloading CDA document:', error);
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to download CDA document' });
+      }
+    }),
 });
