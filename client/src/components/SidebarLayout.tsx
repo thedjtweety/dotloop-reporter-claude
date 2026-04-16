@@ -28,7 +28,6 @@ import {
   FlaskConical,
   History,
   Trash2,
-  MoreVertical,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTransactionData, DateRangeFilter } from '../contexts/TransactionDataContext';
@@ -43,18 +42,14 @@ interface NavItem {
   badge?: string;
 }
 
-// PRIMARY NAVIGATION - Most important
-const primaryNavItems: NavItem[] = [
+// ALL NAVIGATION ITEMS - All visible in sidebar
+const navItems: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { label: 'Agents', icon: Users, path: '/agents' },
   { label: 'Commission', icon: DollarSign, path: '/commission' },
+  { label: 'Net Report', icon: FileText, path: '/net-commission-report' },
   { label: 'CDA Builder', icon: Building2, path: '/cda-builder' },
   { label: 'CDA History', icon: History, path: '/cda-history' },
-];
-
-// SECONDARY NAVIGATION - Less frequently used
-const secondaryNavItems: NavItem[] = [
-  { label: 'Net Report', icon: FileText, path: '/net-commission-report' },
   { label: 'Compare', icon: GitCompare, path: '/compare' },
   { label: 'Teams', icon: UsersRound, path: '/teams' },
   { label: 'Goals', icon: Target, path: '/goals' },
@@ -122,12 +117,10 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
-  const [showSecondaryMenu, setShowSecondaryMenu] = useState(false);
   const [calendarRange, setCalendarRange] = useState<{ from?: Date; to?: Date }>({});
 
   const datePickerRef = useRef<HTMLDivElement>(null);
   const teamDropdownRef = useRef<HTMLDivElement>(null);
-  const secondaryMenuRef = useRef<HTMLDivElement>(null);
 
   const { dateFilter, setDateFilter, teamFilter, setTeamFilter } = useTransactionData();
   const { transactionData, dataStatistics, clearTransactionData } = useTransactionData();
@@ -146,9 +139,6 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       }
       if (teamDropdownRef.current && !teamDropdownRef.current.contains(e.target as Node)) {
         setShowTeamDropdown(false);
-      }
-      if (secondaryMenuRef.current && !secondaryMenuRef.current.contains(e.target as Node)) {
-        setShowSecondaryMenu(false);
       }
     };
 
@@ -191,7 +181,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       {/* Sidebar */}
       <aside
         className={`flex flex-col bg-[#0d1117] border-r border-[#1e2d3d] transition-all duration-300 ${
-          collapsed ? 'w-[56px]' : 'w-[200px]'
+          collapsed ? 'w-[56px]' : 'w-[220px]'
         } shrink-0 z-20 relative`}
       >
         {/* Logo */}
@@ -353,12 +343,9 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           </div>
         )}
 
-        {/* PRIMARY NAV - Prominent and Large */}
-        <nav className="py-3 px-1.5 space-y-1 border-b border-[#1e2d3d] bg-[#0a0e13]">
-          <div className={`${!collapsed ? 'px-2 py-1 mb-2' : ''}`}>
-            {!collapsed && <div className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Navigation</div>}
-          </div>
-          {primaryNavItems.map((item) => {
+        {/* PRIMARY NAV - All tabs visible */}
+        <nav className="flex-1 overflow-y-auto py-2 space-y-0.5 px-1.5 scrollbar-thin">
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
             return (
@@ -378,52 +365,6 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             );
           })}
         </nav>
-
-        {/* SECONDARY NAV - Collapsible Menu */}
-        <div className="flex-1 overflow-y-auto py-2 px-1.5 space-y-0.5">
-          {/* Secondary menu toggle */}
-          <div ref={secondaryMenuRef} className="relative">
-            <button
-              onClick={() => setShowSecondaryMenu(!showSecondaryMenu)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                showSecondaryMenu
-                  ? 'bg-[#1a2332] text-gray-300'
-                  : 'text-gray-500 hover:bg-[#1a2332] hover:text-gray-400'
-              } ${collapsed ? 'justify-center' : ''}`}
-            >
-              {!collapsed && <span className="uppercase tracking-wider">More Tools</span>}
-              {!collapsed && <ChevronDown className={`w-4 h-4 transition-transform ${showSecondaryMenu ? 'rotate-180' : ''}`} />}
-              {collapsed && <MoreVertical className="w-4 h-4" />}
-            </button>
-
-            {/* Secondary menu items - Dropdown */}
-            {showSecondaryMenu && !collapsed && (
-              <div className="mt-1 space-y-0.5 pl-2 border-l-2 border-[#1e2d3d]">
-                {secondaryNavItems.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.path);
-                  return (
-                    <button
-                      key={item.path}
-                      onClick={() => {
-                        setLocation(item.path);
-                        setShowSecondaryMenu(false);
-                      }}
-                      className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded text-xs transition-colors ${
-                        active
-                          ? 'bg-emerald-500/20 text-emerald-400'
-                          : 'text-gray-400 hover:bg-[#1a2332] hover:text-gray-200'
-                      }`}
-                    >
-                      <Icon className="shrink-0 w-4 h-4" />
-                      <span className="truncate">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* DATA SUMMARY - Sticky Card */}
         {hasData && !collapsed && (
@@ -459,7 +400,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                   setLocation('/');
                 }
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors"
             >
               <Trash2 className="w-4 h-4 shrink-0" />
               <span className="truncate">Clear Data</span>
@@ -477,25 +418,32 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
           <button
             onClick={toggleTheme}
             title={collapsed ? `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode` : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:bg-[#1a2332] hover:text-gray-200 transition-colors ${collapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:bg-[#1a2332] hover:text-gray-200 transition-colors ${collapsed ? 'justify-center' : ''}`}
           >
             {theme === 'dark' ? <Sun className="w-4 h-4 shrink-0" /> : <Moon className="w-4 h-4 shrink-0" />}
             {!collapsed && <span className="truncate">{theme === 'dark' ? 'Light' : 'Dark'} mode</span>}
           </button>
 
-          {/* Settings button */}
-          <button
-            onClick={() => setLocation('/settings')}
-            title={collapsed ? 'Settings' : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isActive('/settings')
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : 'text-gray-400 hover:bg-[#1a2332] hover:text-gray-200'
-            } ${collapsed ? 'justify-center' : ''}`}
-          >
-            <Settings className="w-4 h-4 shrink-0" />
-            {!collapsed && <span className="truncate">Settings</span>}
-          </button>
+          {/* Bottom nav items */}
+          {bottomItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            return (
+              <button
+                key={item.path}
+                onClick={() => setLocation(item.path)}
+                title={collapsed ? item.label : undefined}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  active
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'text-gray-400 hover:bg-[#1a2332] hover:text-gray-200'
+                } ${collapsed ? 'justify-center' : ''}`}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </button>
+            );
+          })}
 
           {/* Collapse button */}
           <button
