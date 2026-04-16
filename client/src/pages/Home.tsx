@@ -131,7 +131,7 @@ function HomeContent() {
   // To implement login/logout functionality, simply call logout() or redirect to getLoginUrl()
   let { user, loading, error, isAuthenticated, logout } = useAuth();
   const { filters, addFilter } = useFilters();
-  const { setTransactionData, setComparisonDataSet, comparisonMode, toggleComparisonMode } = useTransactionData();
+  const { setTransactionData, setComparisonDataSet, comparisonMode, toggleComparisonMode, metrics: contextMetrics, allRecords: contextAllRecords } = useTransactionData();
 
   const [location, setLocation] = useLocation();
   const { metricsOrder, isEditMode, isLoaded, reorderMetrics, resetToDefault, toggleEditMode } = useMetricsOrder();
@@ -804,7 +804,10 @@ function HomeContent() {
     setShowFieldMapper(false);
   };
 
-  if (!metrics) {
+  // Use context metrics for render condition (single source of truth)
+  const shouldShowEmptyState = !contextMetrics || contextMetrics === null;
+  
+  if (shouldShowEmptyState) {
     return (
       <div className="min-h-screen bg-background flex flex-col pb-16">
         <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" onDemoClick={handleDemoMode} isDemoLoading={isLoading} />
@@ -1055,17 +1058,17 @@ function HomeContent() {
         <FilterBadge />
         
         {/* Pipeline Pulse Dashboard */}
-        {metrics && filteredRecords.length > 0 && (
+        {contextMetrics && contextAllRecords.length > 0 && (
           <div className="mb-12 space-y-8" data-tour="pipeline-pulse">
             {/* KPI Cards Row - Modern Design */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
               <MetricCardModern
                 icon={<TrendingUp className="w-5 h-5 text-accent" />}
                 title="Total Transactions"
-                value={metrics.totalTransactions.toLocaleString()}
+                value={contextMetrics.totalTransactions.toLocaleString()}
                 trend={{
-                  value: metrics.trends?.totalTransactions?.value || 0,
-                  isPositive: (metrics.trends?.totalTransactions?.direction === 'up') || false,
+                  value: contextMetrics.trends?.totalTransactions?.value || 0,
+                  isPositive: (contextMetrics.trends?.totalTransactions?.direction === 'up') || false,
                   label: 'vs previous'
                 }}
                 status="active"
@@ -1074,10 +1077,10 @@ function HomeContent() {
               <MetricCardModern
                 icon={<DollarSign className="w-5 h-5 text-accent" />}
                 title="Total Sales Volume"
-                value={formatCurrency(metrics.totalSalesVolume)}
+                value={formatCurrency(contextMetrics.totalSalesVolume)}
                 trend={{
-                  value: metrics.trends?.totalVolume?.value || 0,
-                  isPositive: (metrics.trends?.totalVolume?.direction === 'up') || false,
+                  value: contextMetrics.trends?.totalVolume?.value || 0,
+                  isPositive: (contextMetrics.trends?.totalVolume?.direction === 'up') || false,
                   label: 'vs previous'
                 }}
                 status="active"
@@ -1086,10 +1089,10 @@ function HomeContent() {
               <MetricCardModern
                 icon={<CheckCircle className="w-5 h-5 text-accent" />}
                 title="Closing Rate"
-                value={formatPercentage(metrics.closingRate)}
+                value={formatPercentage(contextMetrics.closingRate)}
                 trend={{
-                  value: metrics.trends?.closingRate?.value || 0,
-                  isPositive: (metrics.trends?.closingRate?.direction === 'up') || false,
+                  value: contextMetrics.trends?.closingRate?.value || 0,
+                  isPositive: (contextMetrics.trends?.closingRate?.direction === 'up') || false,
                   label: 'vs previous'
                 }}
                 status="active"
@@ -1098,9 +1101,9 @@ function HomeContent() {
               <MetricCardModern
                 icon={<Calendar className="w-5 h-5 text-accent" />}
                 title="Pipeline Status"
-                value={`${metrics.activeListings + metrics.underContract}`}
+                value={`${contextMetrics.activeListings + contextMetrics.underContract}`}
                 trend={{
-                  value: ((metrics.activeListings + metrics.underContract) / metrics.totalTransactions * 100),
+                  value: ((contextMetrics.activeListings + contextMetrics.underContract) / contextMetrics.totalTransactions * 100),
                   isPositive: true,
                   label: 'active'
                 }}
@@ -1114,15 +1117,15 @@ function HomeContent() {
               {/* Left: Pipeline Breakdown */}
               <div>
                 <PipelineFunnelChart
-                  records={filteredRecords}
+                  records={contextAllRecords}
                   onStageClick={handlePipelineStageClick}
                 />
               </div>
               
               {/* Right: Projected to Close with Drill-Down */}
-              {filteredRecords.length > 0 && metrics && (
+              {contextAllRecords.length > 0 && contextMetrics && (
                 <ProjectedToCloseCard
-                  records={filteredRecords}
+                  records={contextAllRecords}
                 />
               )}
             </div>
