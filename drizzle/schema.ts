@@ -500,3 +500,91 @@ export const cdaFieldMappings = mysqlTable("cda_field_mappings", {
 	index("cda_field_mappings_template_idx").on(table.templateId),
 	index("cda_field_mappings_cda_field_idx").on(table.cdaField),
 ]);
+
+
+// Brokerage Branding & White Label
+export const brokerageBranding = mysqlTable("brokerage_branding", {
+	id: int().autoincrement().notNull().primaryKey(),
+	tenantId: int().notNull().unique(),
+	brokerageName: varchar({ length: 255 }).notNull(),
+	tagline: text(),
+	address: text(),
+	phone: varchar({ length: 20 }),
+	licenseNumber: varchar({ length: 100 }),
+	
+	// Branding Colors
+	primaryColor: varchar({ length: 7 }).default('#10b981').notNull(), // Hex color
+	secondaryColor: varchar({ length: 7 }).default('#3b82f6').notNull(),
+	accentColor: varchar({ length: 7 }).default('#8b5cf6').notNull(),
+	
+	// Logo
+	logoUrl: text(), // S3 URL
+	logoFileName: varchar({ length: 255 }),
+	
+	// Metadata
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("brokerage_branding_tenant_idx").on(table.tenantId),
+]);
+
+// CDA Documents (Archive/History)
+export const cdaDocuments = mysqlTable("cda_documents", {
+	id: varchar({ length: 64 }).notNull().primaryKey(),
+	tenantId: int().notNull(),
+	
+	// Document Info
+	documentName: varchar({ length: 255 }).notNull(),
+	description: text(),
+	
+	// Transaction Reference
+	transactionId: varchar({ length: 255 }),
+	loopName: varchar({ length: 255 }),
+	
+	// Parties Involved
+	closingCompany: varchar({ length: 255 }),
+	closingOfficer: varchar({ length: 255 }),
+	propertyAddress: text(),
+	salePrice: decimal({ precision: 15, scale: 2 }),
+	closingDate: varchar({ length: 10 }),
+	
+	// Commission Details
+	totalCommissionRate: decimal({ precision: 5, scale: 2 }),
+	listingSide: decimal({ precision: 5, scale: 2 }),
+	buyingSide: decimal({ precision: 5, scale: 2 }),
+	referralFee: decimal({ precision: 5, scale: 2 }),
+	franchiseFee: decimal({ precision: 5, scale: 2 }),
+	listingAgentSplit: decimal({ precision: 5, scale: 2 }),
+	buyingAgentSplit: decimal({ precision: 5, scale: 2 }),
+	
+	// Agents & Brokers
+	agentsData: text().notNull(), // JSON array of agent/broker details
+	
+	// Deductions
+	deductions: text(), // JSON array of flat-fee deductions
+	
+	// Disbursement Instructions
+	disbursementInstructions: text(),
+	
+	// PDF & Storage
+	pdfUrl: text(), // S3 URL
+	pdfFileName: varchar({ length: 255 }),
+	
+	// Status & Workflow
+	status: mysqlEnum(['draft','generated','approved','archived']).default('draft').notNull(),
+	
+	// Metadata
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	approvedBy: int(),
+	approvedAt: timestamp({ mode: 'string' }),
+},
+(table) => [
+	index("cda_documents_tenant_idx").on(table.tenantId),
+	index("cda_documents_status_idx").on(table.status),
+	index("cda_documents_created_by_idx").on(table.createdBy),
+	index("cda_documents_transaction_idx").on(table.transactionId),
+	index("cda_documents_created_at_idx").on(table.createdAt),
+]);

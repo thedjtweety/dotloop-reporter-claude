@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NetCommissionReportPage from "./pages/NetCommissionReportPage";
 import SimpleCDABuilder from "./pages/SimpleCDABuilder";
+import CDABuilderPage from "./pages/CDABuilderPage";
 import CDAHistory from "./pages/CDAHistory";
 import CommissionManagement from "./pages/CommissionManagement";
 import AuditLog from "./pages/AuditLog";
@@ -43,7 +44,7 @@ const SIDEBAR_ROUTES = [
   { path: "/agents", component: AgentsPage },
   { path: "/commission", component: CommissionManagement },
   { path: "/net-commission-report", component: NetCommissionReportPage },
-  { path: "/cda-builder", component: SimpleCDABuilder },
+  { path: "/cda-builder", component: CDABuilderPage },
   { path: "/cda-history", component: CDAHistory },
   { path: "/compare", component: ComparePage },
   { path: "/comparison", component: ComparisonPage },

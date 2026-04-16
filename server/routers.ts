@@ -23,6 +23,8 @@ import { cdaHistoryRouter } from './routers/cda-history';
 // import { tierHistoryRouter } from './tierHistoryRouter'; // Removed: tierHistory table was dropped in migration
 // Note: tierHistoryRouter.ts file contains imports of the removed tierHistory table
 import { seedRouter } from './seedRouter';
+import { brandingRouter } from './routers/branding';
+import { cdaBuilderRouter } from './routers/cda-builder';
 import { healthRouter } from './healthRouter';
 import { uploadsRouter } from './routers/uploads';
 import {
@@ -254,6 +256,8 @@ export const appRouter = router({
   uploadHistory: uploadsRouter,
   seed: seedRouter,
   health: healthRouter,
+  branding: brandingRouter,
+  cdaBuilder: cdaBuilderRouter,
 });
 
 export type AppRouter = typeof appRouter;

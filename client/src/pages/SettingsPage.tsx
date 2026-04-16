@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Settings, Building2, DollarSign, Users, Bell, Database, Shield, ChevronRight, Save, Plus, Trash2, Download, Upload, Key, Lock } from 'lucide-react';
+import { Settings, Building2, DollarSign, Users, Bell, Database, Shield, ChevronRight, Save, Plus, Trash2, Download, Upload, Key, Lock, Palette } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 
 const TABS = [
   { key: 'brokerage', label: 'Brokerage Info', icon: Building2 },
+  { key: 'branding', label: 'Branding & White Label', icon: Palette },
   { key: 'commission', label: 'Commission Defaults', icon: DollarSign },
   { key: 'agents', label: 'Agent Management', icon: Users },
   { key: 'notifications', label: 'Notifications', icon: Bell },
@@ -384,6 +385,109 @@ export default function SettingsPage() {
                   >
                     <Trash2 className="w-4 h-4" /> Clear All Stored Data
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'branding' && (
+            <div>
+              <h2 className="text-white font-semibold text-lg mb-2">Branding & White Label</h2>
+              <p className="text-gray-400 text-sm mb-5">Customize your brokerage appearance across CDA documents and reports.</p>
+              <div className="space-y-5">
+                {/* Branding Info */}
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-4 flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-emerald-400" /> Brokerage Branding
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">Brokerage Name</label>
+                      <input
+                        type="text"
+                        placeholder="Your Brokerage Name"
+                        className="w-full bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">Tagline / Slogan</label>
+                      <input
+                        type="text"
+                        placeholder="Your Trusted Real Estate Partner"
+                        className="w-full bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Brand Colors */}
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-4 flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-emerald-400" /> Brand Colors
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-gray-400 text-xs mb-2 block">Primary Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          defaultValue="#10b981"
+                          className="w-12 h-10 rounded-md cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          defaultValue="#10b981"
+                          className="flex-1 bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs mb-2 block">Secondary Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          defaultValue="#8b5cf6"
+                          className="w-12 h-10 rounded-md cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          defaultValue="#8b5cf6"
+                          className="flex-1 bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs mb-2 block">Accent Color</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          defaultValue="#f59e0b"
+                          className="w-12 h-10 rounded-md cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          defaultValue="#f59e0b"
+                          className="flex-1 bg-[#0d1117] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Logo Upload */}
+                <div className="bg-[#1a2332] rounded-lg p-4">
+                  <h3 className="text-white text-sm font-medium mb-4 flex items-center gap-2">
+                    <Upload className="w-4 h-4 text-emerald-400" /> CDA Logo
+                  </h3>
+                  <div className="border-2 border-dashed border-[#1e2d3d] rounded-lg p-6 text-center hover:border-emerald-500 transition-colors">
+                    <div className="text-gray-400 text-sm mb-2">Click to upload or drag and drop</div>
+                    <div className="text-gray-500 text-xs">PNG, JPG (Max 5MB)</div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
