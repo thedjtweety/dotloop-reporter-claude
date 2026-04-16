@@ -51,6 +51,7 @@ interface TransactionDataContextType {
   setDateFilter: (filter: DateRangeFilter) => void;
   setTeamFilter: (filter: TeamFilter) => void;
   isDemoMode: boolean;
+  activeDataSetName: string; // 'Demo Data' or CSV file name
   activateDemoMode: () => void;
   setTransactionData: (data: {
     allRecords: DotloopRecord[];
@@ -58,6 +59,7 @@ interface TransactionDataContextType {
     metrics: DashboardMetrics | null;
     agentMetrics: AgentMetrics[];
     isDemoMode?: boolean;
+    fileName?: string;
   }) => void;
   setCommissionData: (data: {
     plans: CommissionPlan[];
@@ -108,6 +110,7 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
   const [dateFilter, setDateFilterState] = useState<DateRangeFilter>(DEFAULT_DATE_FILTER);
   const [teamFilter, setTeamFilterState] = useState<TeamFilter>(DEFAULT_TEAM_FILTER);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [activeDataSetName, setActiveDataSetName] = useState('');
 
   // Track whether metrics were set externally (e.g., from Home.tsx with commission plans applied)
   // When true, skip auto-recalculation so commission-plan-applied metrics are preserved
@@ -156,6 +159,7 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
     setDateFilter: setDateFilterState,
     setTeamFilter: setTeamFilterState,
     isDemoMode,
+    activeDataSetName,
     activateDemoMode: () => {
       const demo = generateSampleData(200);
       externalMetricsRef.current = false; // Allow auto-recalculation for simple demo
@@ -163,6 +167,7 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
       setMetrics(calculateMetrics(demo));
       setAgentMetrics(calculateAgentMetrics(demo));
       setIsDemoMode(true);
+      setActiveDataSetName('Demo Data');
     },
     setTransactionData: (data) => {
       // Mark metrics as externally set to prevent useEffect from overwriting them
@@ -172,6 +177,11 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
       setAgentMetrics(data.agentMetrics);
       if (data.isDemoMode !== undefined) {
         setIsDemoMode(data.isDemoMode);
+      }
+      if (data.fileName) {
+        setActiveDataSetName(data.fileName);
+      } else if (data.isDemoMode) {
+        setActiveDataSetName('Demo Data');
       }
     },
     setCommissionData: (data) => {

@@ -34,6 +34,7 @@ import MarketPage from "./pages/MarketPage";
 import TimelinePage from "./pages/TimelinePage";
 import SettingsPage from "./pages/SettingsPage";
 import { CDAProvider } from "./contexts/CDAContext";
+import { useTransactionData } from "./contexts/TransactionDataContext";
 
 // Pages that use sidebar layout
 const SIDEBAR_ROUTES = [
@@ -57,16 +58,29 @@ const SIDEBAR_ROUTES = [
 ];
 
 function Router() {
+  const { hasData } = useTransactionData();
+
   return (
     <Switch>
       {/* Routes with sidebar */}
-      {SIDEBAR_ROUTES.map(({ path, component: Component }) => (
-        <Route key={path} path={path}>
-          <SidebarLayout>
-            <Component />
-          </SidebarLayout>
-        </Route>
-      ))}
+      {SIDEBAR_ROUTES.map(({ path, component: Component }) => {
+        // Home page doesn't show sidebar until data is loaded
+        if (path === "/" && !hasData) {
+          return (
+            <Route key={path} path={path}>
+              <Component />
+            </Route>
+          );
+        }
+        // All other routes or Home with data show sidebar
+        return (
+          <Route key={path} path={path}>
+            <SidebarLayout>
+              <Component />
+            </SidebarLayout>
+          </Route>
+        );
+      })}
 
       {/* Routes without sidebar */}
       <Route path="/api/dotloop/callback" component={OAuthCallback} />

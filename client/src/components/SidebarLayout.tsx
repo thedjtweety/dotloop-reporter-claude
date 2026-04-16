@@ -194,7 +194,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           {!collapsed && (
             <div className="min-w-0">
               <div className="text-white font-bold text-sm leading-tight truncate">Dotloop Reporter</div>
-              <div className="text-gray-500 text-[10px] truncate">Real Estate Analytics</div>
+              <div className="text-gray-500 text-[10px] truncate">
+                {activeDataSetName ? `📊 ${activeDataSetName}` : 'Real Estate Analytics'}
+              </div>
             </div>
           )}
         </div>

@@ -385,6 +385,7 @@ function HomeContent() {
       filteredRecords: file.data,
       metrics: calculatedMetrics,
       agentMetrics: agentMetricsWithPlans,
+      fileName: uploadFileName || 'Uploaded CSV',
     });
   };
 
