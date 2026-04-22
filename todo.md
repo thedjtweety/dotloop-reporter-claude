@@ -4058,3 +4058,22 @@
 - [x] TimelinePage (/timeline) - Listing-to-close lifecycle analysis
 - [x] SettingsPage (/settings) - Brokerage configuration with sub-sections
 - [x] Fixed TransactionDataContext import error (use useTransactionData hook)
+
+## Phase 35: Sticky Headers & Page-Level Search
+- [x] Create PageHeader component with sticky positioning
+- [x] Implement sticky sidebar headers on all navigation pages
+- [x] Create SearchBar component for page-level search
+- [x] Add search functionality to Agents page
+- [ ] Add search functionality to Commission page
+- [x] Add search functionality to Teams page
+- [x] Add search functionality to Goals page
+- [ ] Add search functionality to Trends page
+- [ ] Add search functionality to Contests page
+- [ ] Add search functionality to Forecasting page
+- [ ] Add search functionality to Recruiting page
+- [ ] Add search functionality to Market page
+- [ ] Add search functionality to Timeline page
+- [ ] Add search functionality to Audit Log page
+- [x] Test sticky headers scroll behavior
+- [x] Test search filtering on all pages
+- [x] Verify search works with filters applied
