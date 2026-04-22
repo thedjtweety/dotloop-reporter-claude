@@ -4122,3 +4122,53 @@
 - [x] Fix NaN% values in dashboard metrics
 - [x] Test commission calculations with demo data
 - [x] Verify all pipeline breakdown metrics calculate correctly
+
+
+## PHASE 1: Foundation & OAuth Integration (ROADMAP)
+
+### Priority 1.1: Dotloop OAuth Integration ⭐⭐⭐ (CRITICAL)
+- [x] Create oauth_tokens table schema (already exists)
+- [x] Create tokenAuditLogs table schema (already exists)
+- [x] Implement token encryption with AES-256-GCM (token-encryption.ts)
+- [x] Implement OAuth authorization URL generation (getAuthorizationUrl procedure)
+- [x] Implement OAuth callback handler (handleCallback procedure)
+- [x] Implement token refresh logic (getValidAccessToken)
+- [x] Implement token revocation (revokeAccess procedure)
+- [x] Implement multi-account support (setPrimaryConnection, deleteConnection)
+- [x] Implement token audit logging (logTokenAudit helper)
+- [x] Write comprehensive OAuth tests (10 passing tests)
+- [ ] Create frontend UI for "Connect Dotloop" button
+- [ ] Implement OAuth redirect flow in frontend
+- [ ] Test full OAuth flow end-to-end
+- [ ] Add error handling for token expiration
+- [ ] Add token refresh background job
+
+### Priority 1.2: Multi-Tenancy Foundation ⭐⭐⭐ (CRITICAL)
+- [ ] Add tenant_id UUID to ALL existing tables
+- [ ] Create tenants table with id, name, created_at, owner_id
+- [ ] Create tenant_members table for role-based access
+- [ ] Add indexes on (tenant_id, user_id) for all queries
+- [ ] Implement requireTenant middleware
+- [ ] Implement requireAdmin middleware
+- [ ] Implement requireBroker middleware
+- [ ] Update all queries to filter by tenant_id
+- [ ] Test tenant isolation with multiple users
+- [ ] Test cross-tenant data access prevention
+
+### Priority 1.3: Role-Based Access Control (RBAC)
+- [ ] Add role enum to users table (admin, broker, member, agent)
+- [ ] Create middleware for role checks
+- [ ] Apply role checks to all API endpoints
+- [ ] Implement frontend role-based UI hiding
+- [ ] Test admin access to all features
+- [ ] Test broker access restrictions
+- [ ] Test member access restrictions
+- [ ] Test agent self-service dashboard
+
+### Priority 1.4: Audit Logging Infrastructure
+- [ ] Create audit_logs table schema
+- [ ] Implement audit logging for all user actions
+- [ ] Implement audit logging for all data changes
+- [ ] Create audit log viewer page
+- [ ] Add audit log filtering and search
+- [ ] Test audit trail completeness
