@@ -458,7 +458,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex-1 flex flex-col overflow-y-auto">
         {children}
       </main>
     </div>
