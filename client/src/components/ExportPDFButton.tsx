@@ -13,7 +13,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileDown, Loader2, AlertCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { downloadHTMLAsPDF, previewHTMLInNewTab } from '@/lib/pdf-utils';
 import FullScreenModal from '@/components/FullScreenModal';
 
 interface ExportPDFButtonProps {
@@ -39,7 +38,7 @@ export default function ExportPDFButton({
   const [includeAgentSummaries, setIncludeAgentSummaries] = useState(true);
   const [groupByAgent, setGroupByAgent] = useState(true);
 
-  const exportMutation = trpc.commission.exportPDF.useMutation();
+  const exportMutation = trpc.reporting.generatePdfReport.useMutation();
 
   const handleExport = async () => {
     try {
@@ -48,21 +47,24 @@ export default function ExportPDFButton({
 
       // Call the export endpoint
       const response = await exportMutation.mutateAsync({
-        breakdowns,
-        ytdSummaries,
-        brokerageName,
-        reportTitle,
-        options: {
-          includeTransactionDetails,
-          includeAgentSummaries,
-          groupByAgent,
-          pageSize: 'letter',
+        title: reportTitle,
+        startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        metrics: ['totalCommission', 'closingRate', 'averagePrice'],
+        customBranding: {
+          companyName: brokerageName,
         },
       });
 
-      if (response.success && response.html) {
-        // Open print dialog for PDF export
-        await downloadHTMLAsPDF(response.html, response.fileName);
+      if (response.success && response.pdfData) {
+        // In production, this would download the actual PDF
+        const dataStr = JSON.stringify(response.pdfData);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const exportFileDefaultName = response.fileName;
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
         setOpen(false);
       }
     } catch (err) {

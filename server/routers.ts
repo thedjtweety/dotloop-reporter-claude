@@ -29,6 +29,9 @@ import { healthRouter } from './healthRouter';
 import { uploadsRouter } from './routers/uploads';
 import { uploadRouter } from './routers/uploadRouter';
 import { dashboardRouter } from './routers/dashboardRouter';
+import { commissionManagementRouter } from './routers/commissionManagementRouter';
+import { reportingRouter } from './routers/reportingRouter';
+import { teamManagementRouter } from './routers/teamManagementRouter';
 import {
   createUpload,
   getUserUploads,
@@ -246,11 +249,13 @@ export const appRouter = router({
   auditLogs: auditLogRouter,
   upload: uploadRouter,
   dashboard: dashboardRouter,
+  commission: commissionManagementRouter,
+  reporting: reportingRouter,
+  team: teamManagementRouter,
   dotloopOAuth: dotloopOAuthRouter,
   dotloopApi: dotloopApiRouter,
   dotloopConnections: dotloopOAuthRouter, // Alias for backward compatibility
   tenantSettings: tenantSettingsRouter,
-  commission: commissionRouter,
   commissionRecalculation: commissionRecalculationRouter,
   // tierHistory: tierHistoryRouter, // Removed: tierHistory table was dropped in migration
   cda: cdaRouter,
