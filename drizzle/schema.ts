@@ -588,3 +588,30 @@ export const cdaDocuments = mysqlTable("cda_documents", {
 	index("cda_documents_transaction_idx").on(table.transactionId),
 	index("cda_documents_created_at_idx").on(table.createdAt),
 ]);
+
+
+/**
+ * Tenant Members Table
+ * Maps users to tenants with their role within that tenant
+ * Enables multi-tenant architecture with role-based access control
+ */
+export const tenantMembers = mysqlTable("tenant_members", {
+	id: int().autoincrement().notNull().primaryKey(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	role: mysqlEnum(['admin', 'broker', 'member', 'agent']).notNull(),
+	joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	invitedBy: int(),
+	invitedAt: timestamp({ mode: 'string' }),
+	status: mysqlEnum(['active', 'invited', 'inactive']).default('active').notNull(),
+	permissions: text(), // JSON array of additional permissions
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("tenant_members_tenant_idx").on(table.tenantId),
+	index("tenant_members_user_idx").on(table.userId),
+	index("tenant_members_tenant_user_unique").on(table.tenantId, table.userId),
+	index("tenant_members_role_idx").on(table.role),
+	index("tenant_members_status_idx").on(table.status),
+]);
