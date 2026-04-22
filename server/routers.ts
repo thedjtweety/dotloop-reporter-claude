@@ -32,6 +32,9 @@ import { dashboardRouter } from './routers/dashboardRouter';
 import { commissionManagementRouter } from './routers/commissionManagementRouter';
 import { reportingRouter } from './routers/reportingRouter';
 import { teamManagementRouter } from './routers/teamManagementRouter';
+import { dotloopApiIntegrationRouter } from './routers/dotloopApiIntegrationRouter';
+import { performanceOptimizationRouter } from './routers/performanceOptimizationRouter';
+import { securityHardeningRouter } from './routers/securityHardeningRouter';
 import {
   createUpload,
   getUserUploads,
@@ -245,13 +248,15 @@ export const appRouter = router({
   }),
 
   admin: adminRouter,
-  performance: performanceRouter,
   auditLogs: auditLogRouter,
   upload: uploadRouter,
   dashboard: dashboardRouter,
   commission: commissionManagementRouter,
   reporting: reportingRouter,
   team: teamManagementRouter,
+  dotloopIntegration: dotloopApiIntegrationRouter,
+  performance: performanceOptimizationRouter,
+  security: securityHardeningRouter,
   dotloopOAuth: dotloopOAuthRouter,
   dotloopApi: dotloopApiRouter,
   dotloopConnections: dotloopOAuthRouter, // Alias for backward compatibility
