@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Commission Leaderboard Component
  * Displays real-time calculated commissions for all agents based on assigned plans

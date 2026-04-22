@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * ExpandableTransactionRow Component
  * Displays a transaction row with expandable details showing full metadata

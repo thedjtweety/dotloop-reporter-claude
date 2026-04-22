@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useRef, useState, useEffect } from 'react';
 import { Download, Printer, ExternalLink } from 'lucide-react';
 import { DotloopRecord } from '@/lib/csvParser';

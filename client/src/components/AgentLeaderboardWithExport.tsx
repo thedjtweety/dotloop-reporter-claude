@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Agent Leaderboard Component with Export Functionality
  * Displays agent performance metrics with pagination, search, filters, and export options

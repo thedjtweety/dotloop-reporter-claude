@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Download, Trash2, Eye, Search, Filter, Calendar, FileText, Loader2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';

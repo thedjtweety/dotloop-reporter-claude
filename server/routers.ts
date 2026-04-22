@@ -244,7 +244,7 @@ export const appRouter = router({
   auditLogs: auditLogRouter,
   dotloopOAuth: dotloopOAuthRouter,
   dotloopApi: dotloopApiRouter,
-  // dotloopConnections: dotloopConnectionsRouter, // Removed: consolidated into dotloopOAuthRouter
+  dotloopConnections: dotloopOAuthRouter, // Alias for backward compatibility
   tenantSettings: tenantSettingsRouter,
   commission: commissionRouter,
   commissionRecalculation: commissionRecalculationRouter,

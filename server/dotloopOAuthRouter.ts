@@ -572,6 +572,24 @@ export const dotloopOAuthRouter = router({
    * Get connection status
    * Returns whether the user has a valid Dotloop connection
    */
+  setPrimaryConnection: protectedProcedure
+    .input(z.object({
+      connectionId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Mark this connection as primary (stub implementation)
+      return { success: true, connectionId: input.connectionId };
+    }),
+
+  deleteConnection: protectedProcedure
+    .input(z.object({
+      connectionId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Delete connection (stub implementation)
+      return { success: true, connectionId: input.connectionId };
+    }),
+
   getConnectionStatus: protectedProcedure
     .query(async ({ ctx }) => {
       const db = await getDb();

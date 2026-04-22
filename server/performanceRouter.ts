@@ -182,9 +182,13 @@ export const performanceRouter = router({
         ORDER BY DATE(uploadedAt)
       `);
 
-      const rates = result[0] as any as Array<{ date: string; total: number; successful: number; failed: number; partial: number }>;
+      const rates = (result as any) as Array<{ date: any; total: number; successful: number; failed: number; partial: number }>;
       return rates.map((rate) => ({
-        ...rate,
+        date: String(rate.date),
+        total: rate.total,
+        successful: rate.successful,
+        failed: rate.failed,
+        partial: rate.partial,
         successRate: ((rate.successful / rate.total) * 100).toFixed(1),
         failureRate: ((rate.failed / rate.total) * 100).toFixed(1),
       }));

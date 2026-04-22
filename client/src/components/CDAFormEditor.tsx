@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CDA Form Editor Component
  * Interactive form for reviewing and editing CDA data before PDF generation

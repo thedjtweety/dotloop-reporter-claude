@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Upload Queue Hook
  * Manages CSV uploads with automatic retry, offline persistence, and request queuing

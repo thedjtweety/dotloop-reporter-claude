@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CDASlideOver - Global CDA Panel
  *

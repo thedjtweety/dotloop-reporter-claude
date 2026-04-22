@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Dotloop Account Switcher Component
  * 

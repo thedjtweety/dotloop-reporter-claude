@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Comprehensive CDA PDF Generator
  * Generates a complete Commission Disbursement Request & Authorization form

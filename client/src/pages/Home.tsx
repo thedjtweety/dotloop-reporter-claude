@@ -266,10 +266,10 @@ function HomeContent() {
     const loadRecentFiles = async () => {
       try {
         const uploads = await getAllUploadsFromIndexedDB();
-        const recentFilesList = uploads.map((upload: StoredUpload) => ({
+        const recentFilesList = uploads.map(upload => ({
           id: upload.id,
           name: upload.fileName,
-          date: new Date(upload.uploadDate).toLocaleDateString(),
+          date: new Date(upload.uploadDate).getTime(),
           recordCount: upload.recordCount,
           data: upload.data,
         }));
@@ -360,12 +360,12 @@ function HomeContent() {
       };
       await saveUploadToIndexedDB(upload);
       const uploads = await getAllUploadsFromIndexedDB();
-      const recentFilesList = uploads.map((u: StoredUpload) => ({
-        id: u.id,
-        name: u.fileName,
-        date: new Date(u.uploadDate).toLocaleDateString(),
-        recordCount: u.recordCount,
-        data: u.data,
+      const recentFilesList = uploads.map((file: any) => ({
+        id: file.id,
+        name: file.fileName,
+        date: new Date(file.uploadDate).getTime(),
+        recordCount: file.recordCount,
+        data: file.data,
       }));
       setRecentFiles(recentFilesList);
     } catch (e) {

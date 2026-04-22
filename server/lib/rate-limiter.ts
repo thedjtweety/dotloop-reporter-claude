@@ -82,11 +82,11 @@ class RateLimiter {
     const now = Date.now();
     const keysToDelete: string[] = [];
 
-    for (const [key, entry] of this.limits.entries()) {
+    Array.from(this.limits.entries()).forEach(([key, entry]) => {
       if (now > entry.resetTime + this.windowMs) {
         keysToDelete.push(key);
       }
-    }
+    })
 
     keysToDelete.forEach(key => this.limits.delete(key));
   }

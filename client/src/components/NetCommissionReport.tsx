@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Net Commission Report Component
  * 

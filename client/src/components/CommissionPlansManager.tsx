@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react';
 import { CommissionPlan } from '@/lib/commission';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

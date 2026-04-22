@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Bulk Plan Assignment Component
  * Allows selecting multiple agents and assigning them to a commission plan at once

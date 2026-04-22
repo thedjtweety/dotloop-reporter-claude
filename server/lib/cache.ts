@@ -83,11 +83,11 @@ export class Cache<T> {
     const now = Date.now();
     const keysToDelete: string[] = [];
 
-    for (const [key, entry] of this.entries.entries()) {
+    Array.from(this.entries.entries()).forEach(([key, entry]) => {
       if (now > entry.expiresAt) {
         keysToDelete.push(key);
       }
-    }
+    })
 
     keysToDelete.forEach(key => this.entries.delete(key));
   }
