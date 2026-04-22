@@ -5,6 +5,7 @@ import { brokerageBranding } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { storagePut } from '../storage';
 import { TRPCError } from '@trpc/server';
+import { getTenantIdFromUser } from '../lib/tenant-utils';
 
 export const brandingRouter = router({
   // Get branding for current tenant
@@ -13,9 +14,11 @@ export const brandingRouter = router({
       const db = await getDb();
       if (!db) throw new Error('Database not available');
 
-      const branding = await db.query.brokerageBranding.findFirst({
-        where: eq(brokerageBranding.tenantId, ctx.tenantId),
-      });
+      if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
+      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      
+      const brandingResults = await db.select().from(brokerageBranding).where(eq(brokerageBranding.tenantId, tenantId)).limit(1);
+      const branding = brandingResults[0] || null;
 
       return branding || null;
     } catch (error) {
@@ -43,10 +46,12 @@ export const brandingRouter = router({
         const db = await getDb();
         if (!db) throw new Error('Database not available');
 
+        if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
+        
         // Check if branding exists for this tenant
-        const existing = await db.query.brokerageBranding.findFirst({
-          where: eq(brokerageBranding.tenantId, ctx.tenantId),
-        });
+        const existingResults = await db.select().from(brokerageBranding).where(eq(brokerageBranding.tenantId, tenantId)).limit(1);
+        const existing = existingResults[0] || null;
 
         if (existing) {
           // Update existing
@@ -56,11 +61,11 @@ export const brandingRouter = router({
               ...input,
               updatedAt: new Date().toISOString(),
             })
-            .where(eq(brokerageBranding.tenantId, ctx.tenantId));
+            .where(eq(brokerageBranding.tenantId, tenantId));
         } else {
           // Create new
           await db.insert(brokerageBranding).values({
-            tenantId: ctx.tenantId,
+            tenantId: tenantId,
             ...input,
           });
         }
@@ -81,11 +86,14 @@ export const brandingRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
         const db = await getDb();
         if (!db) throw new Error('Database not available');
+        
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
 
         const buffer = await input.file.arrayBuffer();
-        const fileName = `branding-logo-${ctx.tenantId}-${Date.now()}.${input.file.name.split('.').pop()}`;
+        const fileName = `branding-logo-${tenantId}-${Date.now()}.${input.file.name.split('.').pop()}`;
 
         // Upload to S3
         const { url } = await storagePut(
@@ -95,9 +103,8 @@ export const brandingRouter = router({
         );
 
         // Update branding with logo URL
-        const existing = await db.query.brokerageBranding.findFirst({
-          where: eq(brokerageBranding.tenantId, ctx.tenantId),
-        });
+        const existingResults = await db.select().from(brokerageBranding).where(eq(brokerageBranding.tenantId, tenantId)).limit(1);
+        const existing = existingResults[0] || null;
 
         if (existing) {
           await db
@@ -107,10 +114,10 @@ export const brandingRouter = router({
               logoFileName: fileName,
               updatedAt: new Date().toISOString(),
             })
-            .where(eq(brokerageBranding.tenantId, ctx.tenantId));
+            .where(eq(brokerageBranding.tenantId, tenantId));
         } else {
           await db.insert(brokerageBranding).values({
-            tenantId: ctx.tenantId,
+            tenantId: tenantId,
             brokerageName: 'My Brokerage',
             logoUrl: url,
             logoFileName: fileName,

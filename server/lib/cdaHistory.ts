@@ -93,7 +93,7 @@ export async function getUserCDAHistory(
       propertyAddress: r.propertyAddress || "",
       mlsNumber: r.mlsNumber || undefined,
       salePrice: parseFloat(r.salePrice?.toString() || "0"),
-      closingDate: r.closingDate,
+      closingDate: r.closingDate ? String(r.closingDate) : undefined,
       grossCommission: parseFloat(r.grossCommission?.toString() || "0"),
       commissionRate: parseFloat(r.commissionRate?.toString() || "0"),
       pdfPath: r.pdfPath || "",
@@ -125,7 +125,7 @@ export async function getCDARecord(cdaId: string, tenantId: number): Promise<CDA
     propertyAddress: r.propertyAddress || "",
     mlsNumber: r.mlsNumber || undefined,
     salePrice: parseFloat(r.salePrice?.toString() || "0"),
-    closingDate: r.closingDate,
+    closingDate: r.closingDate ? String(r.closingDate) : undefined,
     grossCommission: parseFloat(r.grossCommission?.toString() || "0"),
     commissionRate: parseFloat(r.commissionRate?.toString() || "0"),
     pdfPath: r.pdfPath || "",
@@ -145,5 +145,5 @@ export async function deleteCDARecord(cdaId: string, tenantId: number): Promise<
     .delete(cdaGenerated)
     .where(and(eq(cdaGenerated.id, cdaId), eq(cdaGenerated.tenantId, tenantId)));
 
-  return result.rowsAffected > 0;
+  return (result as any).rowsAffected > 0;
 }

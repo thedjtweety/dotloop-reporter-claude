@@ -3,7 +3,7 @@ import { publicProcedure, router } from '../_core/trpc';
 import { calculateCDA } from '../lib/cda-calculator';
 import { getDb } from '../db';
 import { commissionPlans, agentAssignments } from '../../drizzle/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, ilike } from 'drizzle-orm';
 
 /**
  * Fixed CDA Router

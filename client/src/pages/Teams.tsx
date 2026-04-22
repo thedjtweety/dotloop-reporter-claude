@@ -29,9 +29,9 @@ export default function Teams() {
       .map(([teamName, members]) => ({
         teamName,
         memberCount: members.length,
-        totalTransactions: members.reduce((sum, m) => sum + m.transactionCount, 0),
-        totalGCI: members.reduce((sum, m) => sum + (m.totalGCI || 0), 0),
-        avgCloseRate: members.reduce((sum, m) => sum + (m.closeRate || 0), 0) / members.length,
+        totalTransactions: members.reduce((sum, m) => sum + m.totalTransactions, 0),
+        totalGCI: members.reduce((sum, m) => sum + m.totalSalesVolume, 0),
+        avgCloseRate: members.reduce((sum, m) => sum + m.closingRate, 0) / members.length
       }))
       .filter(team =>
         !searchQuery.trim() ||

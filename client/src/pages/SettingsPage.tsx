@@ -153,7 +153,7 @@ export default function SettingsPage() {
                     <label className="text-gray-400 text-xs mb-1 block">{field.label}</label>
                     <input
                       value={(brokerage as any)[field.key]}
-                      onChange={e => setBrokerage(b => ({ ...b, [field.key]: e.target.value }))}
+                      onChange={(e: any) => setBrokerage((b: any) => ({ ...b, [field.key]: e.target.value }))}
                       placeholder={field.placeholder}
                       className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                     />
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                   <label className="text-gray-400 text-xs mb-1 block">Fiscal Year Start</label>
                   <select
                     value={brokerage.fiscalYearStart}
-                    onChange={e => setBrokerage(b => ({ ...b, fiscalYearStart: e.target.value }))}
+                    onChange={(e: any) => setBrokerage((b: any) => ({ ...b, fiscalYearStart: e.target.value }))}
                     className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
                   >
                     {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map(m => (
@@ -175,7 +175,7 @@ export default function SettingsPage() {
                   <label className="text-gray-400 text-xs mb-1 block">Timezone</label>
                   <select
                     value={brokerage.timezone}
-                    onChange={e => setBrokerage(b => ({ ...b, timezone: e.target.value }))}
+                    onChange={(e: any) => setBrokerage((b: any) => ({ ...b, timezone: e.target.value }))}
                     className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
                   >
                     <option value="America/New_York">Eastern (ET)</option>
@@ -206,7 +206,7 @@ export default function SettingsPage() {
                       <input
                         type="number"
                         value={(commissionDefaults as any)[field.key]}
-                        onChange={e => setCommissionDefaults(c => ({ ...c, [field.key]: e.target.value }))}
+                        onChange={(e: any) => setCommissionDefaults((c: any) => ({ ...c, [field.key]: e.target.value }))}
                         placeholder={field.placeholder}
                         className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 pr-8"
                       />
@@ -235,7 +235,7 @@ export default function SettingsPage() {
                       <div className="text-gray-400 text-xs mt-0.5">{item.desc}</div>
                     </div>
                     <button
-                      onClick={() => setNotifications(n => ({ ...n, [item.key]: !(n as any)[item.key] }))}
+                      onClick={() => setNotifications((n: any) => ({ ...n, [item.key]: !(n as any)[item.key] }))}
                       className={`relative w-10 h-5 rounded-full transition-colors ${
                         (notifications as any)[item.key] ? 'bg-emerald-500' : 'bg-[#2a3d50]'
                       }`}

@@ -32,7 +32,7 @@ import {
   agentAssignments,
 } from "../drizzle/schema";
 import { getDb } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 // Zod schemas for input validation
 const TransactionInputSchema = z.object({
@@ -447,7 +447,7 @@ export const commissionRouter = router({
             deductions: JSON.stringify(input.deductions),
             useSliding: input.useSliding ? 1 : 0,
             tiers: input.tiers ? JSON.stringify(input.tiers) : null,
-          });
+          } as any);
         }
 
         return { success: true, id: input.id };
@@ -527,7 +527,7 @@ export const commissionRouter = router({
             planId: input.planId,
             teamId: input.teamId,
             anniversaryDate: input.anniversaryDate,
-          });
+          } as any);
         }
 
         return { success: true, id: input.id };
@@ -609,7 +609,7 @@ export const commissionRouter = router({
             planId: assignment.planId,
             teamId: assignment.teamId,
             anniversaryDate: assignment.anniversaryDate,
-          });
+          } as any);
           
           results.push({ agentName: assignment.agentName, id: assignmentId, success: true });
         }
@@ -639,7 +639,8 @@ export const commissionRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const db = getDb();
+        const db = await getDb();
+        if (!db) throw new Error('Database not available');
         
         // Get all commission plans
         const plans = await db.select().from(commissionPlans);
@@ -648,7 +649,7 @@ export const commissionRouter = router({
         // Get all agent assignments
         const assignments = await db.select().from(agentAssignments);
         const assignmentMap = new Map(
-          assignments.map(a => [a.agentName, { planId: a.planId, plan: plansMap.get(a.planId) }])
+          assignments.map((a: any) => [a.agentName, { planId: a.planId, plan: plansMap.get(a.planId) }])
         );
         
         // Calculate commissions for each agent

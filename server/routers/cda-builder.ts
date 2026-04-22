@@ -5,6 +5,8 @@ import { cdaDocuments } from '../../drizzle/schema';
 import { storagePut } from '../storage';
 import { TRPCError } from '@trpc/server';
 import { generateCdaPdf } from '../services/cda-pdf-generator';
+import { eq, desc } from 'drizzle-orm';
+import { getTenantIdFromUser } from '../lib/tenant-utils';
 
 export const cdaBuilderRouter = router({
   // Generate and save CDA PDF
@@ -87,14 +89,17 @@ export const cdaBuilderRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
         const db = await getDb();
         if (!db) throw new Error('Database not available');
+        
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
 
         // Generate PDF
         const pdfBuffer = await generateCdaPdf(input.formData, input.agents, input.waterfall, input.branding);
 
         // Upload to S3
-        const fileName = `cda-${ctx.tenantId}-${Date.now()}.pdf`;
+        const fileName = `cda-${tenantId}-${Date.now()}.pdf`;
         const { url } = await storagePut(
           `cda-documents/${fileName}`,
           pdfBuffer,
@@ -105,32 +110,28 @@ export const cdaBuilderRouter = router({
         const cdaId = `cda-${ctx.user.id}-${Date.now()}`;
         await db.insert(cdaDocuments).values({
           id: cdaId,
-          tenantId: ctx.tenantId,
+          tenantId: tenantId,
           documentName: `${input.formData.propertyAddress} - ${input.formData.closingDate}`,
           description: `CDA for ${input.formData.buyerName} / ${input.formData.sellerName}`,
           closingCompany: input.formData.titleCompany,
           closingOfficer: input.formData.closerName,
           propertyAddress: input.formData.propertyAddress,
-          city: input.formData.city,
-          state: input.formData.state,
-          buyerName: input.formData.buyerName,
-          sellerName: input.formData.sellerName,
-          salePrice: input.formData.salePrice,
+          salePrice: input.formData.salePrice.toString(),
           closingDate: input.formData.closingDate,
-          totalCommissionRate: input.formData.totalCommissionRate,
-          listingSide: input.formData.listingSide,
-          buyingSide: input.formData.buyingSide,
-          referralFee: input.formData.referralFee,
-          franchiseFee: input.formData.franchiseFee,
-          listingAgentSplit: input.formData.listingAgentSplit,
-          buyingAgentSplit: input.formData.buyingAgentSplit,
+          totalCommissionRate: input.formData.totalCommissionRate.toString(),
+          listingSide: input.formData.listingSide.toString(),
+          buyingSide: input.formData.buyingSide.toString(),
+          referralFee: input.formData.referralFee.toString(),
+          franchiseFee: input.formData.franchiseFee.toString(),
+          listingAgentSplit: input.formData.listingAgentSplit.toString(),
+          buyingAgentSplit: input.formData.buyingAgentSplit.toString(),
           agentsData: JSON.stringify(input.agents),
           deductions: JSON.stringify(input.deductions),
           disbursementInstructions: input.formData.disbursementInstructions,
           pdfUrl: url,
           pdfFileName: fileName,
           status: 'generated',
-          createdBy: ctx.user.id,
+          createdBy: tenantId,
         });
 
         return { url, cdaId, fileName };
@@ -143,13 +144,13 @@ export const cdaBuilderRouter = router({
   // Get CDA documents
   getCDADocuments: protectedProcedure.query(async ({ ctx }) => {
     try {
+      if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
       const db = await getDb();
       if (!db) throw new Error('Database not available');
-      const documents = await db.query.cdaDocuments.findMany({
-        where: (table, { eq }) => eq(table.tenantId, ctx.tenantId),
-        orderBy: (table, { desc }) => desc(table.createdAt),
-        limit: 100,
-      });
+      
+      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      
+      const documents = await db.select().from(cdaDocuments).where(eq(cdaDocuments.tenantId, tenantId)).orderBy((t) => t.createdAt).limit(100);
       return documents;
     } catch (error) {
       console.error('Error fetching CDA documents:', error);
@@ -162,16 +163,17 @@ export const cdaBuilderRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
+        if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
         const db = await getDb();
         if (!db) throw new Error('Database not available');
+        
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
 
-        const doc = await db.query.cdaDocuments.findFirst({
-          where: (table, { eq, and }) => and(eq(table.id, input.id), eq(table.tenantId, ctx.tenantId)),
-        });
-
+        const docs = await db.select().from(cdaDocuments).where(eq(cdaDocuments.id, input.id)).limit(1);
+        const doc = docs.find(d => d.tenantId === tenantId);
         if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
 
-        await db.delete(cdaDocuments).where((table, { eq }) => eq(table.id, input.id));
+        await db.delete(cdaDocuments).where(eq(cdaDocuments.id, input.id));
         return { success: true };
       } catch (error) {
         console.error('Error deleting CDA document:', error);
@@ -184,14 +186,17 @@ export const cdaBuilderRouter = router({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
+        if (!ctx.user?.id) throw new TRPCError({ code: 'UNAUTHORIZED' });
         const db = await getDb();
         if (!db) throw new Error('Database not available');
+        
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
 
-        const doc = await db.query.cdaDocuments.findFirst({
-          where: (table, { eq, and }) => and(eq(table.id, input.id), eq(table.tenantId, ctx.tenantId)),
-        });
+        const docs = await db.select().from(cdaDocuments).where(eq(cdaDocuments.id, input.id)).limit(1);
+        const doc = docs.find(d => d.tenantId === tenantId);
+        if (!doc) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
 
-        if (!doc || !doc.pdfUrl) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
+        if (!doc.pdfUrl) throw new TRPCError({ code: 'NOT_FOUND', message: 'Document not found' });
 
         return { pdfUrl: doc.pdfUrl };
       } catch (error) {

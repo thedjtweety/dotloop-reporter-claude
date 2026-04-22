@@ -84,7 +84,7 @@ export default function ManageDotloopConnections() {
       toast.success('Primary connection updated');
       refetch();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || 'Failed to set primary connection');
     },
   });
@@ -95,12 +95,12 @@ export default function ManageDotloopConnections() {
       refetch();
       setDeleteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message || 'Failed to delete connection');
     },
   });
 
-  const handleEdit = (connection: any) => {
+  const handleEdit = (connection: any): void => {
     setSelectedConnection(connection);
     setNewConnectionName(connection.connectionName || connection.dotloopAccountEmail || '');
     setEditDialogOpen(true);
@@ -201,7 +201,7 @@ export default function ManageDotloopConnections() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {connections.map((connection) => {
+                  {connections.map((connection: any) => {
                     const isActive = activeConnection?.id === connection.id;
                     const displayName = connection.connectionName || connection.dotloopAccountEmail || `Connection ${connection.id}`;
                     
