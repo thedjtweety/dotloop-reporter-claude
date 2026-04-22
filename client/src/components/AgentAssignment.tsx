@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   CommissionPlan, 
   Team,
-  AgentPlanAssignment, 
-  getCommissionPlans, 
-  getTeams,
-  getAgentAssignments, 
-  saveAgentAssignments 
+  AgentPlanAssignment
 } from '@/lib/commission';
 import { DotloopRecord } from '@/lib/csvParser';
 import { trpc } from '@/lib/trpc';
@@ -68,26 +64,20 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
   }, [plansError, teamsError]);
 
   useEffect(() => {
-    // Use database plans if available, otherwise fall back to localStorage
-    if (dbPlans && dbPlans.length > 0) {
+    // Use database plans
+    if (dbPlans) {
       setPlans(dbPlans);
-    } else {
-      setPlans(getCommissionPlans());
     }
   }, [dbPlans]);
 
   useEffect(() => {
-    // Use database teams if available, otherwise fall back to localStorage
-    if (dbTeams && dbTeams.length > 0) {
+    // Use database teams
+    if (dbTeams) {
       setTeams(dbTeams);
-    } else {
-      setTeams(getTeams());
     }
   }, [dbTeams]);
 
   useEffect(() => {
-    setAssignments(getAgentAssignments());
-
     // Extract unique agents from records
     const uniqueAgents = new Set<string>();
     records.forEach(r => {
@@ -184,9 +174,7 @@ export default function AgentAssignment({ records, highlightAgent, onAssignmentC
         startDate: new Date().toISOString().split('T')[0]
       });
     }
-    setAssignments(newAssignments);
-    saveAgentAssignments(newAssignments);
-    // Dispatch custom event to notify other components of the change
+    setAssignments(newAssignments);      // Assignments are now saved to database via tRPC// Dispatch custom event to notify other components of the change
     window.dispatchEvent(new CustomEvent('commission-assignment-updated'));
   };
 

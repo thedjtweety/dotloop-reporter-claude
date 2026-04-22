@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CommissionPlan, getCommissionPlans, saveCommissionPlans } from '@/lib/commission';
+import { CommissionPlan } from '@/lib/commission';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,11 +26,9 @@ export default function CommissionPlansManager() {
   const deletePlanMutation = trpc.commission.deletePlan.useMutation();
 
   useEffect(() => {
-    // Use database plans if available, otherwise fall back to local storage
-    if (dbPlans && dbPlans.length > 0) {
+    // Use database plans
+    if (dbPlans) {
       setPlans(dbPlans);
-    } else {
-      setPlans(getCommissionPlans());
     }
   }, [dbPlans]);
 
@@ -63,7 +61,6 @@ export default function CommissionPlansManager() {
       }
 
       setPlans(updatedPlans);
-      saveCommissionPlans(updatedPlans);
       await refetch();
       setIsDialogOpen(false);
       setCurrentPlan({});

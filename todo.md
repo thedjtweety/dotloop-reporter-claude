@@ -4105,3 +4105,12 @@
 - [x] Implement bulk actions with pagination
 - [x] Test pagination with search and filters
 - [x] Test bulk actions across multiple pages
+
+## Phase 38: Fix Deprecation Warnings
+- [x] Replace getCommissionPlans() with tRPC calls in AgentAssignment.tsx
+- [x] Replace getCommissionPlans() with tRPC calls in CommissionCalculator.tsx
+- [x] Replace getCommissionPlans() with tRPC calls in CommissionPlansManager.tsx
+- [ ] Replace getPlanForAgent() with tRPC calls in AgentCommissionBreakdown.tsx
+- [ ] Replace getPlanForAgent() with tRPC calls in CommissionComparisonReport.tsx
+- [x] Test Commission components after tRPC migration
+- [x] Verify no console warnings appear
