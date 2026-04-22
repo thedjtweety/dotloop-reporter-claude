@@ -4077,3 +4077,20 @@
 - [x] Test sticky headers scroll behavior
 - [x] Test search filtering on all pages
 - [x] Verify search works with filters applied
+
+## Phase 36: Bulk Actions & Export Features
+- [x] Create BulkActionsBar component for multi-select operations
+- [x] Add checkboxes to Agents page for bulk selection
+- [x] Implement "Select All" / "Deselect All" functionality
+- [x] Add bulk email action (compose email to selected agents)
+- [x] Add bulk role assignment (promote/demote selected agents)
+- [x] Add bulk commission adjustment (apply commission change to selected)
+- [x] Create Commission page with search and status filtering
+- [x] Add commission status filter (pending, paid, disputed)
+- [x] Add export to CSV functionality (all pages)
+- [x] Add export to PDF functionality (all pages)
+- [x] Create ExportButton component for reusable export
+- [x] Test bulk actions on Agents page
+- [x] Test Commission search and filtering
+- [x] Test CSV export on multiple pages
+- [x] Test PDF export on multiple pages
