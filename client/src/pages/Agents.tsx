@@ -2,22 +2,24 @@ import { useState, useMemo } from 'react';
 import PageHeader from '@/components/PageHeader';
 import BulkActionsBar from '@/components/BulkActionsBar';
 import ExportButton from '@/components/ExportButton';
+import Pagination from '@/components/Pagination';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrendingUp } from 'lucide-react';
+import { Eye, Copy, Download } from 'lucide-react';
 
 /**
  * Agents Page
  * 
- * Displays all agents with their performance metrics.
- * Includes sticky header with search, bulk actions, and export functionality.
+ * Displays agents in a paginated table with search, bulk actions, and export.
+ * Maintains sticky header while navigating through pages.
  */
 export default function Agents() {
   const { agentMetrics } = useTransactionData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Filter agents by search query
   const filteredAgents = useMemo(() => {
@@ -31,6 +33,13 @@ export default function Agents() {
     );
   }, [agentMetrics, searchQuery]);
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredAgents.length / itemsPerPage);
+  const paginatedAgents = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAgents.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAgents, currentPage, itemsPerPage]);
+
   // Handle checkbox toggle
   const toggleAgent = (agentName: string) => {
     setSelectedIds(prev =>
@@ -40,12 +49,16 @@ export default function Agents() {
     );
   };
 
-  // Handle select all
+  // Handle select all on current page
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredAgents.length) {
-      setSelectedIds([]);
+    const pageAgentNames = paginatedAgents.map(a => a.agentName);
+    if (pageAgentNames.every(name => selectedIds.includes(name))) {
+      setSelectedIds(prev => prev.filter(id => !pageAgentNames.includes(id)));
     } else {
-      setSelectedIds(filteredAgents.map(a => a.agentName));
+      setSelectedIds(prev => [
+        ...prev,
+        ...pageAgentNames.filter(name => !prev.includes(name)),
+      ]);
     }
   };
 
@@ -103,100 +116,125 @@ export default function Agents() {
         onBulkCommissionAdjust={(ids, amount) => console.log('Adjust commission by:', amount, 'for:', ids)}
       />
 
-      {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-3">
-          {/* Select All Checkbox */}
-          {filteredAgents.length > 0 && (
-            <div className="flex items-center gap-3 p-3 bg-background border border-border rounded-lg">
-              <Checkbox
-                checked={selectedIds.length === filteredAgents.length && filteredAgents.length > 0}
-                onCheckedChange={toggleSelectAll}
-              />
-              <span className="text-sm text-foreground/70">
-                {selectedIds.length === 0 ? 'Select all' : `${selectedIds.length} selected`}
-              </span>
+      {/* Content Area with Table */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
+          <Card className="m-6 border-0 shadow-none">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                {/* Table Header */}
+                <thead className="sticky top-0 z-10 bg-background border-b border-border">
+                  <tr>
+                    <th className="px-4 py-3 text-left">
+                      <Checkbox
+                        checked={
+                          paginatedAgents.length > 0 &&
+                          paginatedAgents.every(a => selectedIds.includes(a.agentName))
+                        }
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">#</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Agent</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Deals</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Close %</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Avg Price</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Total GCI</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Co. Dollar</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Volume</th>
+                    <th className="px-4 py-3 text-left font-semibold text-foreground">Actions</th>
+                  </tr>
+                </thead>
+
+                {/* Table Body */}
+                <tbody className="divide-y divide-border">
+                  {paginatedAgents.map((agent, idx) => {
+                    const rowNumber = (currentPage - 1) * itemsPerPage + idx + 1;
+                    const isSelected = selectedIds.includes(agent.agentName);
+
+                    return (
+                      <tr
+                        key={agent.agentName}
+                        className={`hover:bg-background/50 transition-colors ${
+                          isSelected ? 'bg-primary/5' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleAgent(agent.agentName)}
+                          />
+                        </td>
+                        <td className="px-4 py-3 text-foreground/70">{rowNumber}</td>
+                        <td className="px-4 py-3">
+                          <div>
+                            <p className="font-semibold text-foreground">{agent.agentName}</p>
+                            {agent.email && (
+                              <p className="text-xs text-foreground/60">{agent.email}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-foreground">{agent.transactionCount}</td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                            {((agent.closeRate || 0) * 100).toFixed(0)}%
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-foreground">
+                          ${((agent.totalGCI || 0) / agent.transactionCount || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        </td>
+                        <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">
+                          ${(agent.totalGCI || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        </td>
+                        <td className="px-4 py-3 text-foreground">
+                          ${(agent.averageCommission || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        </td>
+                        <td className="px-4 py-3 text-foreground">
+                          ${((agent.totalGCI || 0) * 0.03).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <button className="p-1 hover:bg-background rounded transition-colors" title="View details">
+                              <Eye className="w-4 h-4 text-foreground/60 hover:text-foreground" />
+                            </button>
+                            <button className="p-1 hover:bg-background rounded transition-colors" title="Copy">
+                              <Copy className="w-4 h-4 text-foreground/60 hover:text-foreground" />
+                            </button>
+                            <button className="p-1 hover:bg-background rounded transition-colors" title="Download">
+                              <Download className="w-4 h-4 text-foreground/60 hover:text-foreground" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          )}
 
-          {/* Agent Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAgents.map((agent) => (
-              <Card
-                key={agent.agentName}
-                className={`p-4 hover:shadow-lg transition-all cursor-pointer ${
-                  selectedIds.includes(agent.agentName)
-                    ? 'ring-2 ring-primary bg-primary/5'
-                    : ''
-                }`}
-                onClick={() => toggleAgent(agent.agentName)}
-              >
-                <div className="space-y-3">
-                  {/* Checkbox and Name */}
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      checked={selectedIds.includes(agent.agentName)}
-                      onCheckedChange={() => toggleAgent(agent.agentName)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground text-lg">{agent.agentName}</h3>
-                      {agent.email && (
-                        <p className="text-sm text-foreground/70">{agent.email}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Key Metrics */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-background p-2 rounded">
-                      <p className="text-xs text-foreground/70">Transactions</p>
-                      <p className="text-lg font-bold text-foreground">{agent.transactionCount}</p>
-                    </div>
-                    <div className="bg-background p-2 rounded">
-                      <p className="text-xs text-foreground/70">Total GCI</p>
-                      <p className="text-lg font-bold text-foreground">
-                        ${(agent.totalGCI || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                      </p>
-                    </div>
-                    <div className="bg-background p-2 rounded">
-                      <p className="text-xs text-foreground/70">Avg Commission</p>
-                      <p className="text-lg font-bold text-foreground">
-                        ${(agent.averageCommission || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                      </p>
-                    </div>
-                    <div className="bg-background p-2 rounded">
-                      <p className="text-xs text-foreground/70">Close Rate</p>
-                      <p className="text-lg font-bold text-foreground">
-                        {((agent.closeRate || 0) * 100).toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Status Badge */}
-                  <div className="flex gap-2">
-                    {agent.transactionCount > 0 && (
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                        <TrendingUp className="w-3 h-3 mr-1" />
-                        Active
-                      </Badge>
-                    )}
-                  </div>
+            {/* No Results */}
+            {paginatedAgents.length === 0 && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <p className="text-foreground/70 mb-2">No agents match your search</p>
+                  <p className="text-sm text-foreground/50">Try adjusting your search query</p>
                 </div>
-              </Card>
-            ))}
-          </div>
-
-          {/* No Results */}
-          {filteredAgents.length === 0 && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <p className="text-foreground/70 mb-2">No agents match your search</p>
-                <p className="text-sm text-foreground/50">Try adjusting your search query</p>
               </div>
-            </div>
-          )}
+            )}
+          </Card>
         </div>
+
+        {/* Pagination */}
+        {filteredAgents.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={filteredAgents.length}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        )}
       </div>
     </div>
   );

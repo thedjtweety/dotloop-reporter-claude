@@ -4094,3 +4094,14 @@
 - [x] Test Commission search and filtering
 - [x] Test CSV export on multiple pages
 - [x] Test PDF export on multiple pages
+
+## Phase 37: Pagination & Table Layout
+- [x] Create Pagination component with page controls
+- [x] Convert Agents page to table layout
+- [x] Add items per page selector (10, 25, 50)
+- [x] Implement pagination logic for Agents
+- [x] Keep sticky header visible while paginating
+- [x] Add row selection checkboxes to table
+- [x] Implement bulk actions with pagination
+- [x] Test pagination with search and filters
+- [x] Test bulk actions across multiple pages
