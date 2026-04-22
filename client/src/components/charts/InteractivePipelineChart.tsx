@@ -185,15 +185,24 @@ export default function InteractivePipelineChart({ data, onDrillDown }: Interact
   const totalTransactions = filteredData.length;
 
   const renderFunnelChart = () => {
-    const maxValue = Math.max(...funnelData.map(d => d.value));
+    // Handle empty data
+    if (funnelData.length === 0 || totalTransactions === 0) {
+      return (
+        <div className="w-full flex items-center justify-center p-8 text-foreground/70">
+          No pipeline data available
+        </div>
+      );
+    }
+    
+    const maxValue = Math.max(...funnelData.map(d => d.value), 1); // Ensure maxValue is at least 1
     const funnelHeight = 90;
 
     return (
       <div className="w-full flex flex-col justify-center items-center gap-6 p-8">
         {funnelData.map((item, index) => {
-          const percentage = (item.value / maxValue) * 100;
+          const percentage = totalTransactions > 0 ? (item.value / maxValue) * 100 : 0;
           const stageConfig = PIPELINE_STAGES[item.name];
-          const percentageOfTotal = (item.value / totalTransactions) * 100;
+          const percentageOfTotal = totalTransactions > 0 ? (item.value / totalTransactions) * 100 : 0;
 
           return (
             <div key={index} className="w-full group">
@@ -223,7 +232,7 @@ export default function InteractivePipelineChart({ data, onDrillDown }: Interact
                 {/* Content */}
                 <div className="h-full flex flex-col items-center justify-center relative z-10">
                   <span className="font-bold text-white drop-shadow-lg text-lg">
-                    {percentageOfTotal.toFixed(1)}%
+                    {isNaN(percentageOfTotal) ? '0' : percentageOfTotal.toFixed(1)}%
                   </span>
                   <span className="text-white/90 text-xs drop-shadow-md">
                     of pipeline

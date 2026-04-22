@@ -4114,3 +4114,11 @@
 - [ ] Replace getPlanForAgent() with tRPC calls in CommissionComparisonReport.tsx
 - [x] Test Commission components after tRPC migration
 - [x] Verify no console warnings appear
+
+## Phase 39: Fix Commission Calculation Bug
+- [x] Investigate why commission calculation returns 0 records
+- [x] Check demo data flow to commission calculator
+- [x] Verify transaction data is being passed correctly
+- [x] Fix NaN% values in dashboard metrics
+- [x] Test commission calculations with demo data
+- [x] Verify all pipeline breakdown metrics calculate correctly
