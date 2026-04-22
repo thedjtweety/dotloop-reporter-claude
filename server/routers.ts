@@ -27,6 +27,8 @@ import { brandingRouter } from './routers/branding';
 import { cdaBuilderRouter } from './routers/cda-builder';
 import { healthRouter } from './healthRouter';
 import { uploadsRouter } from './routers/uploads';
+import { uploadRouter } from './routers/uploadRouter';
+import { dashboardRouter } from './routers/dashboardRouter';
 import {
   createUpload,
   getUserUploads,
@@ -242,6 +244,8 @@ export const appRouter = router({
   admin: adminRouter,
   performance: performanceRouter,
   auditLogs: auditLogRouter,
+  upload: uploadRouter,
+  dashboard: dashboardRouter,
   dotloopOAuth: dotloopOAuthRouter,
   dotloopApi: dotloopApiRouter,
   dotloopConnections: dotloopOAuthRouter, // Alias for backward compatibility
