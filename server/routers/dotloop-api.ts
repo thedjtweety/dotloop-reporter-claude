@@ -50,6 +50,7 @@ export const dotloopApiRouter = router({
    */
   getProfiles: publicProcedure.query(async ({ ctx }) => {
     try {
+      if (!ctx.user?.id) throw new Error('User not authenticated');
       const tenantId = await getTenantIdFromUser(ctx.user.id);
       
       // Get valid OAuth token (automatically refreshes if needed)
@@ -88,6 +89,7 @@ export const dotloopApiRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        if (!ctx.user?.id) throw new Error('User not authenticated');
         const tenantId = await getTenantIdFromUser(ctx.user.id);
         
         // Get valid OAuth token (automatically refreshes if needed)
@@ -134,6 +136,7 @@ export const dotloopApiRouter = router({
    */
   getSyncStatus: publicProcedure.query(async ({ ctx }) => {
     try {
+      if (!ctx.user?.id) throw new Error('User not authenticated');
       const tenantId = await getTenantIdFromUser(ctx.user.id);
       
       // Check if user has a valid Dotloop token
@@ -187,6 +190,7 @@ export const dotloopApiRouter = router({
    */
   testConnection: publicProcedure.query(async ({ ctx }) => {
     try {
+      if (!ctx.user?.id) throw new Error('User not authenticated');
       const tenantId = await getTenantIdFromUser(ctx.user.id);
       
       // Get valid OAuth token (automatically refreshes if needed)
@@ -220,6 +224,7 @@ export const dotloopApiRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
+        if (!ctx.user?.id) throw new Error('User not authenticated');
         const tenantId = await getTenantIdFromUser(ctx.user.id);
         const tokenData = await getValidOAuthToken(ctx.user.id, tenantId, 'dotloop');
         

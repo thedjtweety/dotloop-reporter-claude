@@ -7,6 +7,8 @@
  * - Token exchange and storage
  * - Token refresh
  * - Token revocation
+ * 
+ * Fixed for Drizzle ORM MySQL compatibility by avoiding complex `and()` conditions
  */
 
 import { z } from 'zod';
@@ -15,11 +17,12 @@ import { getDb } from './db';
 import { oauthTokens, tokenAuditLogs } from '../drizzle/schema';
 import { tokenEncryption } from './lib/token-encryption';
 import { getTenantIdFromUser } from './lib/tenant-context';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 const DOTLOOP_AUTH_URL = 'https://auth.dotloop.com/oauth/authorize';
 const DOTLOOP_TOKEN_URL = 'https://auth.dotloop.com/oauth/token';
 const DOTLOOP_REVOKE_URL = 'https://auth.dotloop.com/oauth/token/revoke';
+const DOTLOOP_API_BASE = 'https://api-gateway.dotloop.com/public/v2';
 
 /**
  * Get Dotloop OAuth credentials from environment
@@ -79,6 +82,57 @@ async function logTokenAudit(params: {
   } catch (error) {
     console.error('[DotloopOAuth] Failed to log token audit:', error);
   }
+}
+
+/**
+ * Get user's primary Dotloop token
+ * Uses simplified query to avoid Drizzle typing issues
+ */
+async function getUserPrimaryToken(db: any, tenantId: number, userId: number) {
+  const tokens = await db
+    .select()
+    .from(oauthTokens)
+    .where(eq(oauthTokens.userId, userId))
+    .limit(10);
+
+  // Filter in application layer to avoid complex Drizzle where clauses
+  return tokens.find((t: any) => 
+    t.tenantId === tenantId && 
+    t.provider === 'dotloop' && 
+    t.isActive === 1 && 
+    t.isPrimary === 1
+  );
+}
+
+/**
+ * Get user's first active Dotloop token
+ */
+async function getUserFirstToken(db: any, tenantId: number, userId: number) {
+  const tokens = await db
+    .select()
+    .from(oauthTokens)
+    .where(eq(oauthTokens.userId, userId))
+    .limit(10);
+
+  // Filter in application layer
+  return tokens.find((t: any) => 
+    t.tenantId === tenantId && 
+    t.provider === 'dotloop' && 
+    t.isActive === 1
+  );
+}
+
+/**
+ * Count user's Dotloop tokens
+ */
+async function countUserTokens(db: any, userId: number): Promise<number> {
+  const tokens = await db
+    .select()
+    .from(oauthTokens)
+    .where(eq(oauthTokens.userId, userId));
+
+  // Filter in application layer
+  return tokens.filter((t: any) => t.provider === 'dotloop').length;
 }
 
 export const dotloopOAuthRouter = router({
@@ -175,7 +229,6 @@ export const dotloopOAuthRouter = router({
             status: response.status,
             statusText: response.statusText,
             error: errorDetails,
-            headers: Object.fromEntries(response.headers.entries()),
           });
           
           throw new Error(
@@ -195,20 +248,11 @@ export const dotloopOAuthRouter = router({
         const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
 
         // Check if this is the first connection for this user
-        const existingConnections = await db
-          .select({ count: sql<number>`count(*)` })
-          .from(oauthTokens)
-          .where(
-            and(
-              eq(oauthTokens.userId, ctx.user.id),
-              eq(oauthTokens.provider, 'dotloop')
-            )
-          );
-        
-        const isFirstConnection = existingConnections[0].count === 0;
+        const tokenCount = await countUserTokens(db, ctx.user.id);
+        const isFirstConnection = tokenCount === 0;
 
         // Store tokens in database
-        const [result] = await db.insert(oauthTokens).values({
+        const insertResult = await db.insert(oauthTokens).values({
           tenantId,
           userId: ctx.user.id,
           provider: 'dotloop',
@@ -223,12 +267,10 @@ export const dotloopOAuthRouter = router({
           isActive: 1,
         });
 
-        const tokenId = Number(result.insertId);
+        const tokenId = Number((insertResult as any)[0]?.insertId || 0);
 
         // Fetch profile information from Dotloop
         try {
-          const DOTLOOP_API_BASE = 'https://api-gateway.dotloop.com/public/v2';
-          
           // Fetch account details
           const accountResponse = await fetch(`${DOTLOOP_API_BASE}/account`, {
             headers: {
@@ -345,17 +387,7 @@ export const dotloopOAuthRouter = router({
 
       try {
         // Get existing token
-        const [existingToken] = await db
-          .select()
-          .from(oauthTokens)
-          .where(
-            and(
-              eq(oauthTokens.tenantId, tenantId),
-              eq(oauthTokens.userId, ctx.user.id),
-              eq(oauthTokens.provider, 'dotloop')
-            )
-          )
-          .limit(1);
+        const existingToken = await getUserFirstToken(db, tenantId, ctx.user.id);
 
         if (!existingToken) {
           throw new Error('No Dotloop token found. Please connect your account first.');
@@ -392,7 +424,6 @@ export const dotloopOAuthRouter = router({
             status: response.status,
             statusText: response.statusText,
             error: errorDetails,
-            headers: Object.fromEntries(response.headers.entries()),
           });
           
           throw new Error(
@@ -476,17 +507,7 @@ export const dotloopOAuthRouter = router({
 
       try {
         // Get existing token
-        const [existingToken] = await db
-          .select()
-          .from(oauthTokens)
-          .where(
-            and(
-              eq(oauthTokens.tenantId, tenantId),
-              eq(oauthTokens.userId, ctx.user.id),
-              eq(oauthTokens.provider, 'dotloop')
-            )
-          )
-          .limit(1);
+        const existingToken = await getUserFirstToken(db, tenantId, ctx.user.id);
 
         if (!existingToken) {
           throw new Error('No Dotloop token found');
@@ -558,23 +579,7 @@ export const dotloopOAuthRouter = router({
 
       const tenantId = await getTenantIdFromUser(ctx.user.id);
 
-      const [token] = await db
-        .select({
-          id: oauthTokens.id,
-          expiresAt: oauthTokens.tokenExpiresAt,
-          lastUsedAt: oauthTokens.lastUsedAt,
-          lastRefreshedAt: oauthTokens.lastRefreshedAt,
-          createdAt: oauthTokens.createdAt,
-        })
-        .from(oauthTokens)
-        .where(
-          and(
-            eq(oauthTokens.tenantId, tenantId),
-            eq(oauthTokens.userId, ctx.user.id),
-            eq(oauthTokens.provider, 'dotloop')
-          )
-        )
-        .limit(1);
+      const token = await getUserFirstToken(db, tenantId, ctx.user.id);
 
       if (!token) {
         return {
@@ -584,17 +589,31 @@ export const dotloopOAuthRouter = router({
       }
 
       const now = new Date();
-      const expiresAtDate = typeof token.expiresAt === 'string' ? new Date(token.expiresAt) : token.expiresAt;
+      const expiresAtDate = typeof token.tokenExpiresAt === 'string' 
+        ? new Date(token.tokenExpiresAt) 
+        : token.tokenExpiresAt;
       const isExpired = expiresAtDate < now;
 
       return {
         connected: true,
         tokenId: token.id,
-        expiresAt: typeof token.expiresAt === 'string' ? token.expiresAt : (token.expiresAt as any).toISOString(),
+        expiresAt: typeof token.tokenExpiresAt === 'string' 
+          ? token.tokenExpiresAt 
+          : (token.tokenExpiresAt as any).toISOString(),
         isExpired,
-        lastUsedAt: token.lastUsedAt ? (typeof token.lastUsedAt === 'string' ? token.lastUsedAt : (token.lastUsedAt as any).toISOString()) : undefined,
-        lastRefreshedAt: token.lastRefreshedAt ? (typeof token.lastRefreshedAt === 'string' ? token.lastRefreshedAt : (token.lastRefreshedAt as any).toISOString()) : undefined,
-        connectedAt: typeof token.createdAt === 'string' ? token.createdAt : (token.createdAt as any).toISOString(),
+        lastUsedAt: token.lastUsedAt 
+          ? (typeof token.lastUsedAt === 'string' 
+            ? token.lastUsedAt 
+            : (token.lastUsedAt as any).toISOString()) 
+          : undefined,
+        lastRefreshedAt: token.lastRefreshedAt 
+          ? (typeof token.lastRefreshedAt === 'string' 
+            ? token.lastRefreshedAt 
+            : (token.lastRefreshedAt as any).toISOString()) 
+          : undefined,
+        connectedAt: typeof token.createdAt === 'string' 
+          ? token.createdAt 
+          : (token.createdAt as any).toISOString(),
         message: isExpired 
           ? 'Token expired - will be refreshed automatically on next use'
           : 'Connected to Dotloop',

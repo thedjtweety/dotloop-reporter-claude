@@ -12,7 +12,7 @@ import { performanceRouter } from './performanceRouter';
 import { auditLogRouter } from './auditLogRouter';
 import { dotloopOAuthRouter } from './dotloopOAuthRouter';
 import { dotloopApiRouter } from './routers/dotloop-api';
-import { dotloopConnectionsRouter } from './routers/dotloop-connections';
+// import { dotloopConnectionsRouter } from './routers/dotloop-connections'; // Removed: consolidated into dotloopOAuthRouter
 import { tenantSettingsRouter } from './tenantSettingsRouter';
 import { commissionRouter } from './commissionRouter';
 import { commissionRecalculationRouter } from './routers/commission-recalculation';
@@ -244,7 +244,7 @@ export const appRouter = router({
   auditLogs: auditLogRouter,
   dotloopOAuth: dotloopOAuthRouter,
   dotloopApi: dotloopApiRouter,
-  dotloopConnections: dotloopConnectionsRouter,
+  // dotloopConnections: dotloopConnectionsRouter, // Removed: consolidated into dotloopOAuthRouter
   tenantSettings: tenantSettingsRouter,
   commission: commissionRouter,
   commissionRecalculation: commissionRecalculationRouter,

@@ -204,17 +204,16 @@ export async function getValidOAuthToken(
   // Fetch token from database
   const db = await getDb();
   if (!db) throw new Error('Database connection not available');
-  const [tokenRecord] = await db
+  const tokenRecords = await db
     .select()
     .from(oauthTokens)
-    .where(
-      and(
-        eq(oauthTokens.userId, userId),
-        eq(oauthTokens.tenantId, tenantId),
-        eq(oauthTokens.provider, provider)
-      )
-    )
-    .limit(1);
+    .where(eq(oauthTokens.userId, userId))
+    .limit(10);
+  
+  // Filter in application layer to avoid Drizzle typing issues
+  const tokenRecord = tokenRecords.find(t => 
+    t.tenantId === tenantId && t.provider === provider
+  );
 
   if (!tokenRecord) {
     throw new Error(`No OAuth token found for user ${userId} and provider ${provider}`);
