@@ -181,7 +181,7 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
           <div className="absolute inset-0 bg-black/50 backdrop-blur-md pointer-events-none" />
 
           {/* Content */}
-          <div className="relative z-10 p-8 flex flex-col items-center justify-center text-center space-y-6 min-h-[600px] text-white">
+          <div className="relative z-10 p-8 flex flex-col items-center justify-center text-center space-y-6 h-full min-h-[600px] text-white">
             {/* Icon */}
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <Link2 className="w-10 h-10 text-white" />

@@ -827,7 +827,7 @@ function HomeContent() {
             <OnboardingChecklist />
 
             {/* Dual-column layout: CSV Upload (left) and Dotloop OAuth (right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{gridAutoRows: '1fr'}}>
               {/* Left Column: CSV Upload */}
               <div className="space-y-4 flex flex-col">
                 <div className="text-center lg:text-left">
