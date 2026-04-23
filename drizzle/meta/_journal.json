@@ -8,6 +8,13 @@
       "when": 1776905432331,
       "tag": "0004_rapid_zaladane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1776977768999,
+      "tag": "0018_add_recruiting_tables",
+      "breakpoints": true
     }
   ]
 }
