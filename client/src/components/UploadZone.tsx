@@ -84,7 +84,7 @@ export default function UploadZone({ onFileUpload, onDemoClick, isLoading = fals
   };
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-2xl shadow-2xl">
+    <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-2xl">
       {/* Background Image with Overlay */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center"
@@ -95,7 +95,7 @@ export default function UploadZone({ onFileUpload, onDemoClick, isLoading = fals
         <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 to-slate-900/70 backdrop-blur-[2px]" />
       </div>
 
-      <div className="relative z-10 p-8 md:p-16 flex flex-col items-center text-center">
+      <div className="relative z-10 p-8 md:p-16 flex flex-col items-center text-center h-full justify-center">
         <div className="mb-8 space-y-4 max-w-2xl">
           <h2 className="text-4xl md:text-5xl font-display font-bold text-white tracking-tight drop-shadow-lg">
             Transform Your Data into <span className="text-emerald-400">Actionable Insights</span>

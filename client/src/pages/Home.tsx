@@ -827,22 +827,24 @@ function HomeContent() {
             <OnboardingChecklist />
 
             {/* Dual-column layout: CSV Upload (left) and Dotloop OAuth (right) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" style={{gridAutoRows: '1fr'}}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[500px]" style={{gridAutoRows: '1fr'}}>
               {/* Left Column: CSV Upload */}
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col">
                 <div className="text-center lg:text-left mb-4">
                   <h3 className="text-xl font-semibold mb-2">📄 Upload CSV File</h3>
                   <p className="text-sm text-foreground/70">
                     Upload a Dotloop export CSV file to analyze your data
                   </p>
                 </div>
-                <Card className="p-8 border-dashed border-2 border-border bg-card/50 hover:bg-card/80 transition-colors flex-1" data-tour="upload-zone">
-                  <UploadZone onFileUpload={handleFileUpload} isLoading={isLoading} />
+                <Card className="flex-1 p-8 border-dashed border-2 border-border bg-card/50 hover:bg-card/80 transition-colors flex flex-col" data-tour="upload-zone">
+                  <div className="flex-1 flex flex-col">
+                    <UploadZone onFileUpload={handleFileUpload} isLoading={isLoading} />
+                  </div>
                 </Card>
               </div>
 
               {/* Right Column: Dotloop OAuth Login */}
-              <div className="flex flex-col h-full">
+              <div className="flex flex-col">
                 <div className="text-center lg:text-left mb-4">
                   <h3 className="text-xl font-semibold mb-2">🔗 Connect to Dotloop</h3>
                   <p className="text-sm text-foreground/70">

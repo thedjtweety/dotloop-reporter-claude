@@ -172,7 +172,7 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
   if (variant === 'card') {
     return (
       <>
-        <Card className="relative overflow-hidden p-0 border-dashed border-2 border-border hover:border-border/80 transition-all duration-300" style={{
+        <Card className="relative overflow-hidden p-0 border-dashed border-2 border-border hover:border-border/80 transition-all duration-300 h-full" style={{
           backgroundImage: 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663283621115/gtMbYvvduSqhsHRvj39YWw/dotloop-office-bg-fVKzMWLQvtaL58mYpAMTqq.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center'
