@@ -1,336 +1,422 @@
-import { useState, useMemo } from 'react';
-import { UserPlus, Plus, Search, ChevronDown, AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatUtils';
-import { useTransactionData } from '@/contexts/TransactionDataContext';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-
-type Stage = 'prospect' | 'contacted' | 'interview' | 'offer' | 'hired' | 'rejected';
-
-interface Prospect {
-  id: string;
-  name: string;
-  source: string;
-  stage: Stage;
-  gciPotential: number;
-  notes: string;
-  addedDate: string;
-  lastContact: string;
-}
-
-const STAGE_COLORS: Record<Stage, string> = {
-  prospect: 'text-gray-400 bg-gray-500/20',
-  contacted: 'text-blue-400 bg-blue-500/20',
-  interview: 'text-yellow-400 bg-yellow-500/20',
-  offer: 'text-purple-400 bg-purple-500/20',
-  hired: 'text-emerald-400 bg-emerald-500/20',
-  rejected: 'text-red-400 bg-red-500/20',
-};
-
-const STAGES: Stage[] = ['prospect', 'contacted', 'interview', 'offer', 'hired', 'rejected'];
+import { useState, useRef } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { AlertCircle, Users, Clock, TrendingUp, Search, Upload, AlertTriangle } from 'lucide-react';
+import { parseMarketViewBrokerCSV, validateMarketViewBrokerCSV } from '@/lib/marketViewBrokerParser';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 export default function RecruitingPage() {
-  const { agentMetrics, hasData, activateDemoMode } = useTransactionData();
-  const [prospects, setProspects] = useState<Prospect[]>([]);
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'retention' | 'analytics'>('pipeline');
-  const [search, setSearch] = useState('');
-  const [stageFilter, setStageFilter] = useState<Stage | 'all'>('all');
-  const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: '', source: '', gciPotential: '', notes: '' });
+  const [activeTab, setActiveTab] = useState('pipeline');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = prospects.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchStage = stageFilter === 'all' || p.stage === stageFilter;
-    return matchSearch && matchStage;
-  });
+  // Queries
+  const pipelineStats = trpc.recruiting.getPipelineStats.useQuery();
+  const conversionFunnel = trpc.recruiting.getConversionFunnel.useQuery();
+  const prospects = trpc.recruiting.getProspects.useQuery({ search: searchQuery });
+  const retentionRisk = trpc.recruiting.getRetentionRisk.useQuery();
 
-  const stageCounts = STAGES.reduce((acc, s) => {
-    acc[s] = prospects.filter(p => p.stage === s).length;
-    return acc;
-  }, {} as Record<Stage, number>);
+  // Mutations
+  const importProspects = trpc.recruiting.importProspects.useMutation();
+  const updateProspectStatus = trpc.recruiting.updateProspectStatus.useMutation();
 
-  const handleAdd = () => {
-    if (!form.name.trim()) return;
-    setProspects(prev => [...prev, {
-      id: Date.now().toString(),
-      name: form.name,
-      source: form.source || 'Direct',
-      stage: 'prospect',
-      gciPotential: parseFloat(form.gciPotential) || 0,
-      notes: form.notes,
-      addedDate: new Date().toISOString().split('T')[0],
-      lastContact: new Date().toISOString().split('T')[0],
-    }]);
-    setForm({ name: '', source: '', gciPotential: '', notes: '' });
-    setShowAdd(false);
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCsvFile(file);
+    }
   };
 
-  const updateStage = (id: string, stage: Stage) => {
-    setProspects(prev => prev.map(p => p.id === id ? { ...p, stage } : p));
+  const handleImportCSV = async () => {
+    if (!csvFile) return;
+
+    setIsImporting(true);
+    try {
+      const csvText = await csvFile.text();
+      const validation = validateMarketViewBrokerCSV(csvText);
+
+      if (!validation.valid) {
+        alert(`CSV validation failed: ${validation.errors.join(', ')}`);
+        setIsImporting(false);
+        return;
+      }
+
+      const { prospects: parsedProspects, errors } = parseMarketViewBrokerCSV(csvText);
+
+      if (errors.length > 0) {
+        console.warn('CSV parsing warnings:', errors);
+      }
+
+      await importProspects.mutateAsync({
+        prospects: parsedProspects,
+        fileName: csvFile.name,
+      });
+
+      setCsvFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      prospects.refetch();
+      pipelineStats.refetch();
+    } catch (error) {
+      alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleStatusChange = async (prospectId: string, newStatus: string) => {
+    try {
+      await updateProspectStatus.mutateAsync({
+        prospectId,
+        newStatus: newStatus as any,
+      });
+      prospects.refetch();
+      conversionFunnel.refetch();
+      pipelineStats.refetch();
+    } catch (error) {
+      alert(`Status update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  const getRiskColor = (riskLevel: string) => {
+    switch (riskLevel) {
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-300';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      lead: 'bg-blue-100 text-blue-800',
+      contacted: 'bg-cyan-100 text-cyan-800',
+      interviewing: 'bg-orange-100 text-orange-800',
+      offer_extended: 'bg-purple-100 text-purple-800',
+      onboarding: 'bg-green-100 text-green-800',
+      hired: 'bg-emerald-100 text-emerald-800',
+      declined: 'bg-red-100 text-red-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6">
-      {/* Header */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <UserPlus className="w-6 h-6 text-emerald-400" />
-            Recruiting Pipeline
-          </h1>
-          <p className="text-gray-400 text-sm mt-1">Track agent prospects and retention risks</p>
-        </div>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-500 text-white text-sm hover:bg-emerald-600"
-        >
-          <Plus className="w-4 h-4" /> Add Prospect
-        </button>
-      </div>
-
-      {/* Stage summary */}
-      <div className="grid grid-cols-6 gap-3 mb-6">
-        {STAGES.map(stage => (
-          <button
-            key={stage}
-            onClick={() => setStageFilter(stageFilter === stage ? 'all' : stage)}
-            className={`bg-[#0f1923] border rounded-xl p-3 text-center transition-colors ${
-              stageFilter === stage ? 'border-emerald-500/40' : 'border-[#1e2d3d] hover:border-[#2a3d50]'
-            }`}
-          >
-            <div className={`text-2xl font-bold ${stageFilter === stage ? 'text-emerald-400' : 'text-white'}`}>
-              {stageCounts[stage]}
-            </div>
-            <div className="text-gray-400 text-xs capitalize mt-1">{stage}</div>
-          </button>
-        ))}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-4 border-b border-[#1e2d3d]">
-        {([
-          { key: 'pipeline', label: 'Recruiting Pipeline' },
-          { key: 'retention', label: 'Retention Risk' },
-          { key: 'analytics', label: 'Analytics' },
-        ] as const).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 text-sm transition-colors border-b-2 -mb-px ${
-              activeTab === tab.key ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-gray-200'
-            }`}
-          >{tab.label}</button>
-        ))}
-      </div>
-
-      {activeTab === 'pipeline' && (
-        <>
-          {/* Filters */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search prospects..."
-                className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Recruiting</h1>
+            <p className="text-lg text-muted-foreground">Agent pipeline, prospects & retention risk</p>
           </div>
+          <Button className="bg-orange-500 hover:bg-orange-600">
+            <Users className="w-4 h-4 mr-2" />
+            Add Candidate
+          </Button>
+        </div>
 
-          {filtered.length === 0 ? (
-            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-16 flex flex-col items-center justify-center">
-              <UserPlus className="w-12 h-12 text-gray-500 mb-4 opacity-30" />
-              <p className="text-white font-medium mb-1">No prospects yet</p>
-              <p className="text-gray-400 text-sm mb-4">Add agent prospects to track your recruiting pipeline</p>
-              <button
-                onClick={() => setShowAdd(true)}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-md bg-emerald-500 text-white text-sm hover:bg-emerald-600"
-              >
-                <Plus className="w-4 h-4" /> Add Prospect
-              </button>
+        {/* Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="border-l-4 border-l-blue-500 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">In Pipeline</p>
+                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.inPipeline || 0}</p>
+              </div>
+              <Users className="w-8 h-8 text-blue-500" />
             </div>
-          ) : (
-            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#1e2d3d] text-gray-400">
-                    <th className="px-4 py-3 text-left">Name</th>
-                    <th className="px-4 py-3 text-left">Source</th>
-                    <th className="px-4 py-3 text-left">Stage</th>
-                    <th className="px-4 py-3 text-right">GCI Potential</th>
-                    <th className="px-4 py-3 text-left">Added</th>
-                    <th className="px-4 py-3 text-left">Last Contact</th>
-                    <th className="px-4 py-3 text-left">Notes</th>
-                    <th className="px-4 py-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(p => (
-                    <tr key={p.id} className="border-b border-[#1a2332] hover:bg-[#1a2332]/50">
-                      <td className="px-4 py-3 text-white font-medium">{p.name}</td>
-                      <td className="px-4 py-3 text-gray-400">{p.source}</td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={p.stage}
-                          onChange={e => updateStage(p.id, e.target.value as Stage)}
-                          className={`px-2 py-0.5 rounded text-xs font-medium bg-transparent border-0 focus:outline-none cursor-pointer ${STAGE_COLORS[p.stage]}`}
-                        >
-                          {STAGES.map(s => (
-                            <option key={s} value={s} className="bg-[#0f1923] text-gray-200 capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3 text-right text-emerald-400">{p.gciPotential ? formatCurrency(p.gciPotential) : '—'}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{p.addedDate}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{p.lastContact}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs max-w-[200px] truncate">{p.notes || '—'}</td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => setProspects(prev => prev.filter(x => x.id !== p.id))}
-                          className="text-red-400 hover:text-red-300 text-xs"
-                        >Remove</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
+          </Card>
 
-      {activeTab === 'retention' && (
-        <div className="space-y-4">
-          {!hasData ? (
-            <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-12 flex flex-col items-center justify-center">
-              <AlertTriangle className="w-10 h-10 text-yellow-400 mb-3 opacity-60" />
-              <p className="text-white font-medium mb-1">Retention Risk Analysis</p>
-              <p className="text-gray-400 text-sm mb-4">Upload CSV data or load demo data to identify agents at risk</p>
-              <button onClick={activateDemoMode} className="px-4 py-2 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600">Load Demo Data</button>
+          <Card className="border-l-4 border-l-purple-500 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Offers Pending</p>
+                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.offersPending || 0}</p>
+              </div>
+              <Clock className="w-8 h-8 text-purple-500" />
             </div>
-          ) : (
-            <>
-              <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
-                <h2 className="text-white font-semibold mb-4">Agent Retention Risk Score</h2>
-                <p className="text-gray-400 text-xs mb-4">Agents with low closing rates or below-average GCI may be at risk. Consider proactive engagement.</p>
-                <div className="space-y-3">
-                  {agentMetrics
-                    .map(a => ({
-                      ...a,
-                      riskScore: Math.round(
-                        (a.closingRate < 30 ? 40 : a.closingRate < 50 ? 20 : 0) +
-                        (a.closedDeals < 3 ? 30 : a.closedDeals < 6 ? 15 : 0) +
-                        (a.totalCommission < 10000 ? 30 : a.totalCommission < 25000 ? 15 : 0)
-                      ),
-                    }))
-                    .sort((a, b) => b.riskScore - a.riskScore)
-                    .slice(0, 15)
-                    .map(a => (
-                      <div key={a.agentName} className="flex items-center gap-3">
-                        <div className="w-32 text-gray-300 text-sm truncate">{a.agentName}</div>
-                        <div className="flex-1 h-2 bg-[#1a2332] rounded-full">
-                          <div
-                            className="h-2 rounded-full"
-                            style={{
-                              width: `${a.riskScore}%`,
-                              background: a.riskScore >= 60 ? '#ef4444' : a.riskScore >= 30 ? '#f59e0b' : '#10b981',
-                            }}
-                          />
+          </Card>
+
+          <Card className="border-l-4 border-l-green-500 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Recent Hires (90d)</p>
+                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.recentHires || 0}</p>
+              </div>
+              <TrendingUp className="w-8 h-8 text-green-500" />
+            </div>
+          </Card>
+
+          <Card className="border-l-4 border-l-orange-500 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">MVB Prospects</p>
+                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.mvbProspects || 0}</p>
+              </div>
+              <Search className="w-8 h-8 text-orange-500" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="prospects">Prospects</TabsTrigger>
+            <TabsTrigger value="retention">Retention Risk</TabsTrigger>
+          </TabsList>
+
+          {/* Pipeline Tab */}
+          <TabsContent value="pipeline" className="space-y-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Conversion Funnel
+              </h3>
+
+              <div className="space-y-4">
+                {conversionFunnel.data && (
+                  <>
+                    {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map((stage, idx) => {
+                      const stageKey = stage as keyof typeof conversionFunnel.data;
+                      const value = conversionFunnel.data[stageKey] || 0;
+                      const maxValue = conversionFunnel.data.lead || 1;
+                      const percentage = (value / maxValue) * 100;
+                      const colors = ['bg-blue-500', 'bg-cyan-500', 'bg-orange-500', 'bg-purple-500', 'bg-green-500'];
+
+                      return (
+                        <div key={stage}>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium capitalize">{stage.replace('_', ' ')}</span>
+                            <span className="text-sm font-bold">{value}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-8 overflow-hidden">
+                            <div
+                              className={`${colors[idx]} h-full flex items-center justify-center text-white text-sm font-bold transition-all`}
+                              style={{ width: `${percentage}%` }}
+                            >
+                              {percentage > 10 && `${Math.round(percentage)}%`}
+                            </div>
+                          </div>
                         </div>
-                        <div className="w-16 text-right">
-                          <span className={`text-xs font-medium ${
-                            a.riskScore >= 60 ? 'text-red-400' : a.riskScore >= 30 ? 'text-yellow-400' : 'text-emerald-400'
-                          }`}>
-                            {a.riskScore >= 60 ? 'High' : a.riskScore >= 30 ? 'Medium' : 'Low'}
-                          </span>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </Card>
+
+            {/* Pipeline Prospects by Stage */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map(stage => (
+                <Card key={stage} className="p-4">
+                  <h4 className="font-semibold mb-4 capitalize text-sm">{stage.replace('_', ' ')}</h4>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {prospects.data
+                      ?.filter((p: any) => p.pipelineStatus === stage)
+                      .map((prospect: any) => (
+                        <div key={prospect.id} className="p-2 bg-muted rounded text-sm hover:bg-muted/80 transition">
+                          <p className="font-medium">{prospect.firstName} {prospect.lastName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{prospect.email}</p>
                         </div>
-                        <div className="w-20 text-right text-gray-400 text-xs">{a.closedDeals} deals</div>
-                      </div>
-                    ))
-                  }
+                      ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* Prospects Tab */}
+          <TabsContent value="prospects" className="space-y-6">
+            <Alert className="border-yellow-200 bg-yellow-50">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription className="text-yellow-800">
+                Import agent production data from Market View Broker CSV exports. A <a href="#" className="underline font-semibold">Market View Broker subscription</a> from ShowingTime is required to access this data.
+              </AlertDescription>
+            </Alert>
+
+            {/* CSV Upload */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                Import CSV
+              </h3>
+
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mb-2"
+                  >
+                    Select CSV File
+                  </Button>
+                  {csvFile && (
+                    <p className="text-sm text-muted-foreground">Selected: <span className="font-semibold">{csvFile.name}</span></p>
+                  )}
                 </div>
-              </div>
-              <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
-                <h2 className="text-white font-semibold mb-4">GCI Distribution (Retention Indicator)</h2>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={agentMetrics.slice(0, 15).map(a => ({ name: a.agentName.split(' ')[0], gci: a.totalCommission })).sort((a, b) => b.gci - a.gci)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e2d3d" />
-                    <XAxis dataKey="name" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
-                    <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} formatter={(v: number) => [formatCurrency(v), 'GCI']} />
-                    <Bar dataKey="gci" radius={[4, 4, 0, 0]}>
-                      {agentMetrics.slice(0, 15).map((_, i) => <Cell key={i} fill={i < 3 ? '#10b981' : i < 8 ? '#3b82f6' : '#ef4444'} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                <p className="text-gray-500 text-xs mt-2">Red bars indicate agents in the bottom tier — higher retention risk</p>
-              </div>
-            </>
-          )}
-        </div>
-      )}
 
-      {activeTab === 'analytics' && (
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-8 flex flex-col items-center justify-center min-h-64">
-          <UserPlus className="w-10 h-10 text-gray-500 mb-3 opacity-30" />
-          <p className="text-white font-medium mb-1">Recruiting Analytics</p>
-          <p className="text-gray-400 text-sm">Add prospects to see conversion rates and pipeline analytics</p>
-        </div>
-      )}
+                <Button
+                  onClick={handleImportCSV}
+                  disabled={!csvFile || isImporting}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isImporting ? 'Importing...' : 'Import Prospects'}
+                </Button>
+              </div>
+            </Card>
 
-      {/* Add Modal */}
-      {showAdd && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-white font-semibold text-lg mb-4">Add Prospect</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="text-gray-400 text-xs mb-1 block">Name *</label>
-                <input
-                  value={form.name}
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Agent name"
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-gray-400 text-xs mb-1 block">Source</label>
-                <input
-                  value={form.source}
-                  onChange={e => setForm(f => ({ ...f, source: e.target.value }))}
-                  placeholder="e.g. Referral, LinkedIn, Job board"
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-              <div>
-                <label className="text-gray-400 text-xs mb-1 block">GCI Potential</label>
-                <input
-                  type="number"
-                  value={form.gciPotential}
-                  onChange={e => setForm(f => ({ ...f, gciPotential: e.target.value }))}
-                  placeholder="Estimated annual GCI"
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-              <div>
-                <label className="text-gray-400 text-xs mb-1 block">Notes</label>
-                <textarea
-                  value={form.notes}
-                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                  placeholder="Additional notes..."
-                  rows={2}
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
+            {/* Search */}
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, office, or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332]">Cancel</button>
-              <button onClick={handleAdd} className="px-4 py-2 rounded-md bg-emerald-500 text-white text-sm hover:bg-emerald-600">Add</button>
-            </div>
-          </div>
-        </div>
-      )}
+
+            {/* Prospects List */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Imported Prospects</h3>
+
+              {prospects.isLoading ? (
+                <p className="text-muted-foreground">Loading prospects...</p>
+              ) : prospects.data && prospects.data.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-semibold">Name</th>
+                        <th className="text-left py-3 px-4 font-semibold">Email</th>
+                        <th className="text-left py-3 px-4 font-semibold">Office</th>
+                        <th className="text-left py-3 px-4 font-semibold">Volume</th>
+                        <th className="text-left py-3 px-4 font-semibold">Status</th>
+                        <th className="text-left py-3 px-4 font-semibold">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prospects.data.map((prospect: any) => (
+                        <tr key={prospect.id} className="border-b hover:bg-muted/50 transition">
+                          <td className="py-3 px-4 font-medium">{prospect.firstName} {prospect.lastName}</td>
+                          <td className="py-3 px-4 text-xs">{prospect.email}</td>
+                          <td className="py-3 px-4">{prospect.office || '-'}</td>
+                          <td className="py-3 px-4">${(parseFloat(prospect.totalVolume) || 0).toLocaleString()}</td>
+                          <td className="py-3 px-4">
+                            <Badge className={getStatusColor(prospect.pipelineStatus)}>
+                              {prospect.pipelineStatus.replace('_', ' ')}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4">
+                            <select
+                              value={prospect.pipelineStatus}
+                              onChange={(e) => handleStatusChange(prospect.id, e.target.value)}
+                              className="text-xs border rounded px-2 py-1 bg-background"
+                            >
+                              <option value="lead">Lead</option>
+                              <option value="contacted">Contacted</option>
+                              <option value="interviewing">Interviewing</option>
+                              <option value="offer_extended">Offer Extended</option>
+                              <option value="onboarding">Onboarding</option>
+                              <option value="hired">Hired</option>
+                              <option value="declined">Declined</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
+                  <p className="text-muted-foreground font-medium">No prospects imported yet</p>
+                  <p className="text-sm text-muted-foreground">Upload a Market View Broker CSV to get started</p>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+
+          {/* Retention Risk Tab */}
+          <TabsContent value="retention" className="space-y-6">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5" />
+                Agent Retention Risk (90-day vs prior 90-day comparison)
+              </h3>
+
+              {retentionRisk.isLoading ? (
+                <p className="text-muted-foreground">Loading retention risk data...</p>
+              ) : retentionRisk.data && retentionRisk.data.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="border-b bg-muted/50">
+                      <tr>
+                        <th className="text-left py-3 px-4 font-semibold">Agent</th>
+                        <th className="text-right py-3 px-4 font-semibold">Prior Deals</th>
+                        <th className="text-right py-3 px-4 font-semibold">Recent Deals</th>
+                        <th className="text-right py-3 px-4 font-semibold">Change</th>
+                        <th className="text-right py-3 px-4 font-semibold">Prior Volume</th>
+                        <th className="text-right py-3 px-4 font-semibold">Recent Volume</th>
+                        <th className="text-right py-3 px-4 font-semibold">Volume Change</th>
+                        <th className="text-center py-3 px-4 font-semibold">Risk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {retentionRisk.data.map((agent: any) => (
+                        <tr key={agent.id} className="border-b hover:bg-muted/50 transition">
+                          <td className="py-3 px-4 font-medium">{agent.agentName}</td>
+                          <td className="py-3 px-4 text-right">{agent.priorDeals}</td>
+                          <td className="py-3 px-4 text-right">{agent.recentDeals}</td>
+                          <td className={`py-3 px-4 text-right font-semibold ${parseFloat(agent.dealChangePercent) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {parseFloat(agent.dealChangePercent).toFixed(1)}%
+                          </td>
+                          <td className="py-3 px-4 text-right">${(parseFloat(agent.priorVolume) || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                          <td className="py-3 px-4 text-right">${(parseFloat(agent.recentVolume) || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                          <td className={`py-3 px-4 text-right font-semibold ${parseFloat(agent.volumeChangePercent) < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {parseFloat(agent.volumeChangePercent).toFixed(1)}%
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <Badge className={getRiskColor(agent.riskLevel)}>
+                              {agent.riskLevel}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
+                  <p className="text-muted-foreground font-medium">No retention risk data available</p>
+                </div>
+              )}
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
