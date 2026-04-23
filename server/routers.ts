@@ -40,6 +40,7 @@ import { teamManagementProceduresRouter } from './routers/teamManagementProcedur
 import { goalsForecastingProceduresRouter } from './routers/goalsForecastingProcedures';
 import { adminWebhooksProceduresRouter } from './routers/adminWebhooksProcedures';
 import { dataQualityAlertsProceduresRouter } from './routers/dataQualityAlertsProcedures';
+import { dotloopDataSyncProceduresRouter } from './routers/dotloopDataSyncProcedures';
 import { settingsRouter } from './routers/settingsRouter';
 import { commissionProceduresRouter } from './routers/commissionProcedures';
 import { reportingProceduresRouter } from './routers/reportingProcedures';
@@ -288,6 +289,7 @@ export const appRouter = router({
   goalsForecastingProcedures: goalsForecastingProceduresRouter,
   adminWebhooksProcedures: adminWebhooksProceduresRouter,
   dataQualityAlertsProcedures: dataQualityAlertsProceduresRouter,
+  dotloopDataSync: dotloopDataSyncProceduresRouter,
 });
 
 export type AppRouter = typeof appRouter;
