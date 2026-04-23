@@ -849,9 +849,7 @@ function HomeContent() {
                     Login to your Dotloop workspace for real-time data sync
                   </p>
                 </div>
-                <Card className="p-8 border-2 border-border bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/50 transition-colors">
-                  <ConnectDotloop />
-                </Card>
+                <ConnectDotloop variant="card" />
               </div>
             </div>
 
