@@ -9,11 +9,8 @@ import { parseMarketViewBrokerCSV, validateMarketViewBrokerCSV } from '@/lib/mar
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import ProspectDetailModal from '@/components/ProspectDetailModal';
-import { useAuth } from '@/_core/hooks/useAuth';
-import { getLoginUrl } from '@/const';
 
 export default function RecruitingPage() {
-  const { user, isAuthenticated, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -22,53 +19,15 @@ export default function RecruitingPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Queries - only enabled when authenticated
-  const pipelineStats = trpc.recruiting.getPipelineStats.useQuery(undefined, {
-    enabled: isAuthenticated && !loading,
-  });
-  const conversionFunnel = trpc.recruiting.getConversionFunnel.useQuery(undefined, {
-    enabled: isAuthenticated && !loading,
-  });
-  const prospects = trpc.recruiting.getProspects.useQuery({ search: searchQuery }, {
-    enabled: isAuthenticated && !loading,
-  });
-  const retentionRisk = trpc.recruiting.getRetentionRisk.useQuery(undefined, {
-    enabled: isAuthenticated && !loading,
-  });
+  // Queries - public access
+  const pipelineStats = trpc.recruiting.getPipelineStats.useQuery();
+  const conversionFunnel = trpc.recruiting.getConversionFunnel.useQuery();
+  const prospects = trpc.recruiting.getProspects.useQuery({ search: searchQuery });
+  const retentionRisk = trpc.recruiting.getRetentionRisk.useQuery();
 
   // Mutations
   const importProspects = trpc.recruiting.importProspects.useMutation();
   const updateProspectStatus = trpc.recruiting.updateProspectStatus.useMutation();
-
-  // Auth guard
-  if (!isAuthenticated && !loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">Authentication Required</h1>
-          <p className="text-muted-foreground">Please log in to access the Recruiting module</p>
-          <Button
-            onClick={() => {
-              window.location.href = getLoginUrl();
-            }}
-            className="bg-orange-500 hover:bg-orange-600"
-          >
-            Log In
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

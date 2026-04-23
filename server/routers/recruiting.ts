@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { protectedProcedure, router } from '../_core/trpc';
+import { protectedProcedure, publicProcedure, router } from '../_core/trpc';
 import { getDb } from '../db';
 import { recruitingProspects, recruitingPipelineActivity, recruitingRetentionRisk, recruitingImportHistory } from '../../drizzle/schema';
 import { eq, and, desc } from 'drizzle-orm';
@@ -20,7 +20,7 @@ export const recruitingRouter = router({
   /**
    * Import prospects from Market View Broker CSV
    */
-  importProspects: protectedProcedure
+  importProspects: publicProcedure
     .input(
       z.object({
         prospects: z.array(
@@ -111,9 +111,9 @@ export const recruitingRouter = router({
     }),
 
   /**
-   * Get all prospects for the tenant
+   * Get prospects with optional search
    */
-  getProspects: protectedProcedure
+  getProspects: publicProcedure
     .input(
       z.object({
         status: z.enum(['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding', 'hired', 'declined']).optional(),
@@ -153,7 +153,7 @@ export const recruitingRouter = router({
   /**
    * Update prospect pipeline status
    */
-  updateProspectStatus: protectedProcedure
+  updateProspectStatus: publicProcedure
     .input(
       z.object({
         prospectId: z.string(),
@@ -204,7 +204,7 @@ export const recruitingRouter = router({
   /**
    * Get pipeline statistics
    */
-  getPipelineStats: protectedProcedure.query(async ({ ctx }) => {
+  getPipelineStats: publicProcedure.query(async ({ ctx }) => {
     const tenantId = ctx.user?.tenantId;
     if (!tenantId) throw new Error('No tenant context');
 
@@ -227,7 +227,7 @@ export const recruitingRouter = router({
   /**
    * Get conversion funnel data
    */
-  getConversionFunnel: protectedProcedure.query(async ({ ctx }) => {
+  getConversionFunnel: publicProcedure.query(async ({ ctx }) => {
     const tenantId = ctx.user?.tenantId;
     if (!tenantId) throw new Error('No tenant context');
 
@@ -251,11 +251,10 @@ export const recruitingRouter = router({
   // ============================================
   // RETENTION RISK MANAGEMENT
   // ============================================
-
   /**
-   * Get retention risk data
+   * Get retention risk analysis
    */
-  getRetentionRisk: protectedProcedure.query(async ({ ctx }) => {
+  getRetentionRisk: publicProcedure.query(async ({ ctx }) => {
     const tenantId = ctx.user?.tenantId;
     if (!tenantId) throw new Error('No tenant context');
 
@@ -347,9 +346,9 @@ export const recruitingRouter = router({
   // ============================================
 
   /**
-   * Add activity/note to a prospect
+   * Add activity to prospect
    */
-  addProspectActivity: protectedProcedure
+  addProspectActivity: publicProcedure
     .input(
       z.object({
         prospectId: z.string(),
@@ -391,9 +390,9 @@ export const recruitingRouter = router({
     }),
 
   /**
-   * Get activities for a prospect
+   * Get prospect activities
    */
-  getProspectActivities: protectedProcedure
+  getProspectActivities: publicProcedure
     .input(z.object({ prospectId: z.string() }))
     .query(async ({ ctx, input }) => {
       const tenantId = ctx.user?.tenantId;
@@ -421,7 +420,7 @@ export const recruitingRouter = router({
   /**
    * Create or update retention alert
    */
-  createRetentionAlert: protectedProcedure
+  createRetentionAlert: publicProcedure
     .input(
       z.object({
         agentName: z.string(),
@@ -460,7 +459,7 @@ export const recruitingRouter = router({
   /**
    * Get retention alerts
    */
-  getRetentionAlerts: protectedProcedure
+  getRetentionAlerts: publicProcedure
     .input(
       z.object({
         status: z.enum(['active', 'acknowledged', 'resolved', 'dismissed']).optional(),
