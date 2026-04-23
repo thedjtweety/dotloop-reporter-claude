@@ -341,4 +341,176 @@ export const recruitingRouter = router({
 
       return { success: true };
     }),
+
+  // ============================================
+  // PROSPECT ACTIVITY & NOTES
+  // ============================================
+
+  /**
+   * Add activity/note to a prospect
+   */
+  addProspectActivity: protectedProcedure
+    .input(
+      z.object({
+        prospectId: z.string(),
+        activityType: z.enum(['note', 'call', 'email', 'meeting', 'offer', 'status_change']),
+        title: z.string(),
+        description: z.string().optional(),
+        contactDate: z.string().optional(),
+        duration: z.number().optional(),
+        offerAmount: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = ctx.user?.tenantId;
+      const userId = ctx.user?.id;
+      if (!tenantId || !userId) throw new Error('No tenant or user context');
+
+      const db = await getDbInstance();
+      
+      // Import prospectActivity from schema
+      const { prospectActivity } = await import('../../drizzle/schema');
+      
+      const id = uuidv4();
+      await db.insert(prospectActivity).values({
+        id,
+        tenantId,
+        prospectId: input.prospectId,
+        activityType: input.activityType,
+        title: input.title,
+        description: input.description,
+        contactDate: input.contactDate ? new Date(input.contactDate).toISOString() : undefined,
+        duration: input.duration,
+        offerAmount: input.offerAmount,
+        createdBy: userId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      return { id, success: true };
+    }),
+
+  /**
+   * Get activities for a prospect
+   */
+  getProspectActivities: protectedProcedure
+    .input(z.object({ prospectId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const tenantId = ctx.user?.tenantId;
+      if (!tenantId) throw new Error('No tenant context');
+
+      const db = await getDbInstance();
+      const { prospectActivity } = await import('../../drizzle/schema');
+      
+      const activities = await db
+        .select()
+        .from(prospectActivity)
+        .where(and(
+          eq(prospectActivity.tenantId, tenantId),
+          eq(prospectActivity.prospectId, input.prospectId)
+        ))
+        .orderBy(desc(prospectActivity.createdAt));
+
+      return activities;
+    }),
+
+  // ============================================
+  // RETENTION ALERTS
+  // ============================================
+
+  /**
+   * Create or update retention alert
+   */
+  createRetentionAlert: protectedProcedure
+    .input(
+      z.object({
+        agentName: z.string(),
+        riskLevel: z.enum(['low', 'medium', 'high']),
+        dealChangePercent: z.number(),
+        volumeChangePercent: z.number(),
+        retentionAction: z.string().optional(),
+        emailRecipients: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = ctx.user?.tenantId;
+      if (!tenantId) throw new Error('No tenant context');
+
+      const db = await getDbInstance();
+      const { retentionAlerts } = await import('../../drizzle/schema');
+      
+      const id = uuidv4();
+      await db.insert(retentionAlerts).values({
+        id,
+        tenantId,
+        agentName: input.agentName,
+        riskLevel: input.riskLevel,
+        dealChangePercent: String(input.dealChangePercent),
+        volumeChangePercent: String(input.volumeChangePercent),
+        alertStatus: 'active',
+        retentionAction: input.retentionAction,
+        emailRecipients: input.emailRecipients ? JSON.stringify(input.emailRecipients) : undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      return { id, success: true };
+    }),
+
+  /**
+   * Get retention alerts
+   */
+  getRetentionAlerts: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['active', 'acknowledged', 'resolved', 'dismissed']).optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const tenantId = ctx.user?.tenantId;
+      if (!tenantId) throw new Error('No tenant context');
+
+      const db = await getDbInstance();
+      const { retentionAlerts } = await import('../../drizzle/schema');
+      
+      const alerts = await db
+        .select()
+        .from(retentionAlerts)
+        .where(
+          input.status
+            ? and(
+                eq(retentionAlerts.tenantId, tenantId),
+                eq(retentionAlerts.alertStatus, input.status)
+              )
+            : eq(retentionAlerts.tenantId, tenantId)
+        )
+        .orderBy(desc(retentionAlerts.createdAt));
+      return alerts;
+    }),
+
+  /**
+   * Acknowledge retention alert
+   */
+  acknowledgeRetentionAlert: protectedProcedure
+    .input(z.object({ alertId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = ctx.user?.tenantId;
+      const userId = ctx.user?.id;
+      if (!tenantId || !userId) throw new Error('No tenant or user context');
+
+      const db = await getDbInstance();
+      const { retentionAlerts } = await import('../../drizzle/schema');
+      
+      await db
+        .update(retentionAlerts)
+        .set({
+          alertStatus: 'acknowledged',
+          acknowledgedBy: userId,
+          acknowledgedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(retentionAlerts.id, input.alertId));
+
+      return { success: true };
+    }),
 });

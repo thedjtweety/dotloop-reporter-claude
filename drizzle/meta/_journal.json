@@ -1,26 +1,12 @@
 {
-  "version": "7",
+  "version": "5",
   "dialect": "mysql",
   "entries": [
     {
       "idx": 0,
       "version": "5",
       "when": 1776905432331,
-      "tag": "0000_majestic_slyde",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1776973093388,
-      "tag": "0001_moaning_black_tarantula",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1776973549855,
-      "tag": "0002_overrated_phalanx",
+      "tag": "0004_rapid_zaladane",
       "breakpoints": true
     }
   ]

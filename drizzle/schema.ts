@@ -679,3 +679,69 @@ export const recruitingImportHistory = mysqlTable("recruiting_import_history", {
 	index("import_history_type_idx").on(table.importType),
 	index("import_history_imported_at_idx").on(table.importedAt),
 ]);
+
+export const prospectActivity = mysqlTable("prospect_activity", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	prospectId: varchar({ length: 64 }).notNull(),
+	activityType: mysqlEnum(['note', 'call', 'email', 'meeting', 'offer', 'status_change']).notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	description: text(),
+	notes: text(),
+	
+	// Contact details
+	contactMethod: mysqlEnum(['phone', 'email', 'in_person', 'video_call']),
+	contactDate: timestamp({ mode: 'string' }),
+	duration: int(), // in minutes
+	
+	// Offer details (if applicable)
+	offerAmount: decimal({ precision: 12, scale: 2 }),
+	offerStatus: mysqlEnum(['pending', 'accepted', 'rejected', 'negotiating']),
+	
+	// Status tracking
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("activity_tenant_idx").on(table.tenantId),
+	index("activity_prospect_idx").on(table.prospectId),
+	index("activity_type_idx").on(table.activityType),
+	index("activity_created_at_idx").on(table.createdAt),
+	index("activity_tenant_prospect_idx").on(table.tenantId, table.prospectId),
+]);
+
+export const retentionAlerts = mysqlTable("retention_alerts", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	agentName: varchar({ length: 255 }).notNull(),
+	riskLevel: mysqlEnum(['low', 'medium', 'high']).notNull(),
+	dealChangePercent: decimal({ precision: 6, scale: 2 }).notNull(),
+	volumeChangePercent: decimal({ precision: 6, scale: 2 }).notNull(),
+	
+	// Alert status
+	alertStatus: mysqlEnum(['active', 'acknowledged', 'resolved', 'dismissed']).default('active').notNull(),
+	acknowledgedBy: int(),
+	acknowledgedAt: timestamp({ mode: 'string' }),
+	
+	// Email notification
+	emailSent: int().default(0).notNull(),
+	emailSentAt: timestamp({ mode: 'string' }),
+	emailRecipients: text(), // JSON array of emails
+	
+	// Retention action
+	retentionAction: text(), // Recommended action
+	actionTaken: text(), // What was actually done
+	
+	// Tracking
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("alert_tenant_idx").on(table.tenantId),
+	index("alert_agent_idx").on(table.agentName),
+	index("alert_risk_level_idx").on(table.riskLevel),
+	index("alert_status_idx").on(table.alertStatus),
+	index("alert_tenant_status_idx").on(table.tenantId, table.alertStatus),
+	index("alert_created_at_idx").on(table.createdAt),
+]);
