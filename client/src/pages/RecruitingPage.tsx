@@ -9,6 +9,9 @@ import { parseMarketViewBrokerCSV, validateMarketViewBrokerCSV } from '@/lib/mar
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import ProspectDetailModal from '@/components/ProspectDetailModal';
+import CSVUploadValidator from '@/components/CSVUploadValidator';
+import { exportProspectsToCSV, exportProspectsToPDF } from '@/lib/prospectExporter';
+import RetentionActionTemplates from '@/components/RetentionActionTemplates';
 
 export default function RecruitingPage() {
   const [activeTab, setActiveTab] = useState('pipeline');
@@ -17,6 +20,9 @@ export default function RecruitingPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isValidatorOpen, setIsValidatorOpen] = useState(false);
+  const [validatorData, setValidatorData] = useState<{ headers: string[]; data: any[] }>({ headers: [], data: [] });
+  const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries - public access
@@ -33,6 +39,55 @@ export default function RecruitingPage() {
     const file = e.target.files?.[0];
     if (file) {
       setCsvFile(file);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        const lines = text.split('\n').filter(l => l.trim());
+        const headers = lines[0].split(',').map(h => h.trim());
+        const data = lines.slice(1, 6).map(line => {
+          const values = line.split(',');
+          const row: any = {};
+          headers.forEach((h, i) => {
+            row[h] = values[i]?.trim() || '';
+          });
+          return row;
+        });
+        setValidatorData({ headers, data });
+        setIsValidatorOpen(true);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const handleValidatorConfirm = async (file: File, mappings: Record<string, string>) => {
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const { prospects: parsed } = parseMarketViewBrokerCSV(text);
+      
+      const mappedProspects = parsed.map((prospect: any) => {
+        const mapped: any = { ...prospect };
+        Object.entries(mappings).forEach(([key, csvCol]) => {
+          if (csvCol && prospect[csvCol]) {
+            mapped[key] = prospect[csvCol];
+          }
+        });
+        return mapped;
+      });
+
+      await importProspects.mutateAsync({
+        prospects: mappedProspects,
+        fileName: file.name,
+      });
+
+      setCsvFile(null);
+      setIsValidatorOpen(false);
+      prospects.refetch();
+      pipelineStats.refetch();
+    } catch (error) {
+      console.error('Import failed:', error);
+    } finally {
+      setIsImporting(false);
     }
   };
 
