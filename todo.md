@@ -4549,3 +4549,43 @@
 - [x] ConnectionStatusIndicator: Real-time polling, manual refresh, disconnect/reconnect
 - [x] SyncHistoryAndLogs: Display sync history with detailed logs and statistics
 - [x] TypeScript: Zero compilation errors
+
+## Commission Calculator Feature - COMPLETED
+- [x] Design commission calculator data model and backend procedures
+- [x] Create backend procedures for commission calculations (commissionCalculatorAdvanced.ts)
+- [x] Build interactive commission calculator UI component (InteractiveCommissionCalculator.tsx)
+- [x] Create dedicated Commission Calculator page (CommissionCalculatorPage.tsx)
+- [x] Integrate with transaction data context
+- [x] Add to sidebar navigation
+- [x] Implement real-time commission calculations and comparisons
+- [x] Add plan templates (Standard, Conservative, Aggressive, Team)
+- [x] Add comparison tab with summary cards and agent-level breakdown
+- [x] Add configuration tab with sliders for plan parameters
+- [x] Add agent details tab with individual breakdowns
+- [x] Implement PDF export functionality
+- [x] Implement CSV export functionality
+- [x] Write comprehensive tests for commission calculations (21 tests passing)
+- [x] Test with sample data and verify calculations
+- [x] Optimize performance for large datasets
+
+### Features Implemented:
+1. **Interactive Commission Calculator UI** - Test different commission structures against historical data
+2. **Plan Configuration** - Adjust split percentages, caps, deductions with sliders
+3. **Side-by-Side Comparison** - Compare current vs simulated commission impact
+4. **Agent-Level Breakdown** - See how each agent is affected by different plans
+5. **Export & Reporting** - Save comparison reports as PDF or CSV
+6. **Plan Templates** - Quick-select templates for common commission structures
+7. **Real-Time Calculations** - Instant recalculation as parameters change
+8. **Comprehensive Testing** - 21 unit tests covering all calculation scenarios
+
+### Backend Procedures:
+- `compareCommissionPlans` - Compare two commission plans against transactions
+- `calculatePlanImpact` - Calculate impact of a specific plan
+- `getAgentCommissionSummary` - Get detailed summary for a specific agent
+- `generateComparisonReport` - Generate detailed comparison report with optional transaction details
+- `analyzeMultipleScenarios` - Analyze commission impact across multiple scenarios
+
+### UI Components:
+- `InteractiveCommissionCalculator` - Main calculator component with tabs for comparison, configuration, and details
+- `CommissionCalculatorPage` - Dedicated page with help text and usage tips
+- Integrated into sidebar navigation under "Commission Calc"
