@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Users, Clock, TrendingUp, Search, Upload, AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertCircle, Users, Clock, TrendingUp, Search, Upload, AlertTriangle, Loader2, GripVertical } from 'lucide-react';
 import { parseMarketViewBrokerCSV, validateMarketViewBrokerCSV } from '@/lib/marketViewBrokerParser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,59 @@ import ProspectDetailModal from '@/components/ProspectDetailModal';
 import CSVUploadValidator from '@/components/CSVUploadValidator';
 import { exportProspectsToCSV, exportProspectsToPDF } from '@/lib/prospectExporter';
 import RetentionActionTemplates from '@/components/RetentionActionTemplates';
+import {
+  DndContext,
+  closestCorners,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Draggable prospect card component
+function DraggableProspectCard({ prospect }: { prospect: any }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: prospect.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-3 bg-muted rounded text-sm hover:bg-muted/80 transition cursor-move border border-transparent hover:border-primary/50 ${
+        isDragging ? 'shadow-lg bg-muted/50' : ''
+      }`}
+    >
+      <div className="flex items-start gap-2">
+        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" {...attributes} {...listeners} />
+        <div className="flex-1 min-w-0">
+          <p className="font-medium truncate">{prospect.firstName} {prospect.lastName}</p>
+          <p className="text-xs text-muted-foreground truncate">{prospect.email}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function RecruitingPage() {
   const [activeTab, setActiveTab] = useState('pipeline');
@@ -26,6 +79,14 @@ export default function RecruitingPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [draggedProspect, setDraggedProspect] = useState<any>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Queries - public access
   const pipelineStats = trpc.recruiting.getPipelineStats.useQuery();
@@ -36,6 +97,30 @@ export default function RecruitingPage() {
   // Mutations
   const importProspects = trpc.recruiting.importProspects.useMutation();
   const updateProspectStatus = trpc.recruiting.updateProspectStatus.useMutation();
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const prospectId = active.id as string;
+    const newStatus = over.id as 'lead' | 'contacted' | 'interviewing' | 'offer_extended' | 'onboarding' | 'hired' | 'declined';
+
+    const prospect = prospects.data?.find((p: any) => p.id === prospectId);
+    if (prospect && prospect.pipelineStatus !== newStatus) {
+      updateProspectStatus.mutate(
+        { prospectId, newStatus },
+        {
+          onSuccess: () => {
+            prospects.refetch();
+            pipelineStats.refetch();
+            conversionFunnel.refetch();
+          },
+        }
+      );
+    }
+    setDraggedProspect(null);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -275,31 +360,53 @@ export default function RecruitingPage() {
               </div>
             </Card>
 
-            {/* Pipeline Prospects by Stage */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map(stage => (
-                <Card key={stage} className="p-4">
-                  <h4 className="font-semibold mb-4 capitalize text-sm">{stage.replace('_', ' ')}</h4>
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {prospects.data
-                      ?.filter((p: any) => p.pipelineStatus === stage)
-                      .map((prospect: any) => (
+            {/* Pipeline Prospects by Stage - Drag and Drop */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map(stage => {
+                  const stageProspects = prospects.data?.filter((p: any) => p.pipelineStatus === stage) || [];
+                  return (
+                    <Card key={stage} className="p-4 bg-card/50 border-2 border-border/50 hover:border-primary/30 transition">
+                      <h4 className="font-semibold mb-4 capitalize text-sm flex items-center justify-between">
+                        <span>{stage.replace('_', ' ')}</span>
+                        <Badge variant="secondary" className="text-xs">{stageProspects.length}</Badge>
+                      </h4>
+                      <SortableContext
+                        items={stageProspects.map((p: any) => p.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
                         <div
-                          key={prospect.id}
-                          className="p-2 bg-muted rounded text-sm hover:bg-muted/80 transition cursor-pointer"
-                          onClick={() => {
-                            setSelectedProspect(prospect);
-                            setIsDetailModalOpen(true);
-                          }}
+                          className="space-y-2 max-h-96 overflow-y-auto min-h-32 p-2 rounded border-2 border-dashed border-transparent hover:border-primary/20 transition"
+                          data-status={stage}
                         >
-                          <p className="font-medium">{prospect.firstName} {prospect.lastName}</p>
-                          <p className="text-xs text-muted-foreground truncate">{prospect.email}</p>
+                          {stageProspects.length > 0 ? (
+                            stageProspects.map((prospect: any) => (
+                              <div
+                                key={prospect.id}
+                                onClick={() => {
+                                  setSelectedProspect(prospect);
+                                  setIsDetailModalOpen(true);
+                                }}
+                              >
+                                <DraggableProspectCard prospect={prospect} />
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-center py-8 text-muted-foreground text-xs">
+                              <p>Drop prospects here</p>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                  </div>
-                </Card>
-              ))}
-            </div>
+                      </SortableContext>
+                    </Card>
+                  );
+                })}
+              </div>
+            </DndContext>
           </TabsContent>
 
           {/* Prospects Tab */}
