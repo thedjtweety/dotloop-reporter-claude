@@ -172,37 +172,60 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
   if (variant === 'card') {
     return (
       <>
-        <Card className="p-8 border-dashed border-2 border-border bg-card/50 hover:bg-card/80 transition-colors">
-          <div className="flex flex-col items-center justify-center text-center space-y-6">
-            <div className="w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Link2 className="w-8 h-8 text-primary" />
+        <Card className="relative overflow-hidden p-0 border-dashed border-2 border-border bg-gradient-to-br from-blue-950 via-blue-900 to-cyan-900 hover:border-border/80 transition-all duration-300">
+          {/* Gradient background with overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-emerald-500/10 pointer-events-none" />
+          
+          {/* Animated accent elements */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-emerald-500/20 to-transparent rounded-full blur-3xl -ml-36 -mb-36 pointer-events-none" />
+
+          {/* Content */}
+          <div className="relative z-10 p-8 flex flex-col items-center justify-center text-center space-y-6 min-h-[600px]">
+            {/* Icon */}
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+              <Link2 className="w-10 h-10 text-white" />
             </div>
-            <div className="space-y-3">
-              <h3 className="text-2xl font-bold text-foreground">
+
+            {/* Heading */}
+            <div className="space-y-2">
+              <h3 className="text-3xl font-bold bg-gradient-to-r from-cyan-200 via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
                 Connect to Dotloop
               </h3>
-              <p className="text-foreground/70 text-base max-w-sm">
+              <p className="text-cyan-100/80 text-base max-w-sm leading-relaxed">
                 Automatically sync your transaction data in real-time. No more manual CSV uploads—your reports update automatically every night.
               </p>
             </div>
-            <div className="w-full space-y-3 py-4">
-              <div className="flex items-center justify-center gap-3 text-sm">
-                <CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0" />
-                <span className="text-foreground">Automatic sync every night</span>
+
+            {/* Features */}
+            <div className="w-full space-y-4 py-6">
+              <div className="flex items-center justify-center gap-3 text-sm group">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                </div>
+                <span className="text-cyan-100">Automatic sync every night</span>
               </div>
-              <div className="flex items-center justify-center gap-3 text-sm">
-                <Shield className="w-5 h-5 text-accent flex-shrink-0" />
-                <span className="text-foreground">Secure read-only access</span>
+
+              <div className="flex items-center justify-center gap-3 text-sm group">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
+                  <Shield className="w-5 h-5 text-cyan-300" />
+                </div>
+                <span className="text-cyan-100">Secure read-only access</span>
               </div>
-              <div className="flex items-center justify-center gap-3 text-sm">
-                <Zap className="w-5 h-5 text-accent flex-shrink-0" />
-                <span className="text-foreground">Real-time updates</span>
+
+              <div className="flex items-center justify-center gap-3 text-sm group">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
+                  <Zap className="w-5 h-5 text-emerald-300" />
+                </div>
+                <span className="text-cyan-100">Real-time transaction updates</span>
               </div>
             </div>
+
+            {/* CTA Button */}
             <Button 
               onClick={handleOpenDialog}
               size="lg" 
-              className="w-full"
+              className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -217,6 +240,11 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
                 </>
               )}
             </Button>
+
+            {/* Trust indicator */}
+            <p className="text-xs text-cyan-200/60 pt-2">
+              🔒 Your credentials are encrypted and never stored in plain text
+            </p>
           </div>
         </Card>
 
