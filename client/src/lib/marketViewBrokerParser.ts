@@ -198,8 +198,15 @@ export function validateMarketViewBrokerCSV(csvText: string): { valid: boolean; 
   }
 
   // Check for expected header patterns
+  // Line 2 has main headers, Line 3 has sub-headers
   const headerLine = lines[2]?.toLowerCase() || '';
-  if (!headerLine.includes('first name') || !headerLine.includes('last name')) {
+  const subHeaderLine = lines[3]?.toLowerCase() || '';
+  
+  // Check for Market View Broker patterns
+  const hasMainHeaders = headerLine.includes('agent') || headerLine.includes('office') || headerLine.includes('list side') || headerLine.includes('sales side');
+  const hasSubHeaders = subHeaderLine.includes('first name') && subHeaderLine.includes('last name');
+  
+  if (!hasMainHeaders || !hasSubHeaders) {
     errors.push('CSV does not appear to be a valid Market View Broker export');
     return { valid: false, errors };
   }
