@@ -35,6 +35,7 @@ import { teamManagementRouter } from './routers/teamManagementRouter';
 import { dotloopApiIntegrationRouter } from './routers/dotloopApiIntegrationRouter';
 import { performanceOptimizationRouter } from './routers/performanceOptimizationRouter';
 import { securityHardeningRouter } from './routers/securityHardeningRouter';
+import { settingsRouter } from './routers/settingsRouter';
 import {
   createUpload,
   getUserUploads,
@@ -257,6 +258,7 @@ export const appRouter = router({
   dotloopIntegration: dotloopApiIntegrationRouter,
   performance: performanceOptimizationRouter,
   security: securityHardeningRouter,
+  settings: settingsRouter,
   dotloopOAuth: dotloopOAuthRouter,
   dotloopApi: dotloopApiRouter,
   dotloopConnections: dotloopOAuthRouter, // Alias for backward compatibility
