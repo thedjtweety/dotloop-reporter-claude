@@ -8,11 +8,11 @@
 
 import { Router, Request, Response } from 'express';
 import { getDb } from '../db';
-import { oauthTokens } from '../../drizzle/schema';
+import { oauthTokens, users } from '../../drizzle/schema';
 import { tokenEncryption } from '../lib/token-encryption';
 import { getTenantId } from '../lib/tenant-context';
 import { getSessionCookieOptions } from '../_core/cookies';
-import { sdk } from '../_core/sdk';
+import { SignJWT } from 'jose';
 
 const DOTLOOP_TOKEN_URL = 'https://auth.dotloop.com/oauth/token';
 const DOTLOOP_API_BASE = 'https://api-gateway.dotloop.com/public/v2';
@@ -43,6 +43,25 @@ function getDotloopCredentials() {
   }
 
   return { clientId, clientSecret, redirectUri };
+}
+
+/**
+ * Create a simple JWT session token for Dotloop
+ */
+async function createSessionToken(userId: number, email: string): Promise<string> {
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret');
+  
+  const token = await new SignJWT({
+    userId,
+    email,
+    provider: 'dotloop',
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime('365d')
+    .sign(secret);
+
+  return token;
 }
 
 export const dotloopOAuthCallbackRouter = Router();
@@ -136,6 +155,23 @@ dotloopOAuthCallbackRouter.get('/callback', async (req: Request, res: Response) 
 
     const tenantId = await getTenantId();
 
+    // Get or create user
+    const existingUsers = await db.select().from(users).limit(1);
+    let userId = existingUsers[0]?.id || 1;
+
+    if (existingUsers.length === 0) {
+      // Create new user - use 'agent' role which is a valid enum value
+      await db.insert(users).values({
+        tenantId,
+        email: userEmail,
+        name: userName,
+        role: 'agent',
+      });
+      // Get the newly created user
+      const newUser = await db.select().from(users).limit(1);
+      userId = newUser[0]?.id || 1;
+    }
+
     // Encrypt tokens before storage
     const encryptedAccessToken = tokenEncryption.encrypt(tokenData.access_token);
     const encryptedRefreshToken = tokenEncryption.encrypt(tokenData.refresh_token);
@@ -145,9 +181,9 @@ dotloopOAuthCallbackRouter.get('/callback', async (req: Request, res: Response) 
     const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
 
     // Store Dotloop OAuth token
-    const insertResult = await db.insert(oauthTokens).values({
+    await db.insert(oauthTokens).values({
       tenantId,
-      userId: 0, // Will be set after user creation
+      userId,
       provider: 'dotloop',
       encryptedAccessToken,
       encryptedRefreshToken,
@@ -160,14 +196,10 @@ dotloopOAuthCallbackRouter.get('/callback', async (req: Request, res: Response) 
       isActive: 1,
     });
 
-    // Step 4: Create Manus session for user
-    console.log('[Dotloop OAuth] Creating Manus session...');
+    // Step 4: Create session token
+    console.log('[Dotloop OAuth] Creating session token...');
 
-    // Create a session token via Manus SDK
-    const sessionToken = await sdk.createSessionToken(userEmail, {
-      name: userName,
-      expiresInMs: ONE_YEAR_MS,
-    });
+    const sessionToken = await createSessionToken(userId, userEmail);
 
     // Set session cookie
     const cookieOptions = getSessionCookieOptions(req);
@@ -178,8 +210,9 @@ dotloopOAuthCallbackRouter.get('/callback', async (req: Request, res: Response) 
 
     console.log('[Dotloop OAuth] OAuth flow completed successfully');
 
-    // Redirect to dashboard
-    res.redirect(302, '/');
+    // Redirect to dashboard on dotloopreport.com
+    const redirectUrl = process.env.DOTLOOP_REDIRECT_URI?.replace('/api/dotloop-oauth/callback', '') || '/';
+    res.redirect(302, redirectUrl);
   } catch (error) {
     console.error('[Dotloop OAuth] Callback error:', error);
 
