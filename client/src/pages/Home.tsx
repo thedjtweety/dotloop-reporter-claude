@@ -826,12 +826,12 @@ function HomeContent() {
             {/* Onboarding Checklist */}
             <OnboardingChecklist />
 
-            {/* Dual-column layout: CSV Upload (left) and Data Quality Tips (right) */}
+            {/* Dual-column layout: CSV Upload (left) and Dotloop OAuth (right) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column: CSV Upload */}
               <div className="space-y-4">
                 <div className="text-center lg:text-left">
-                  <h3 className="text-xl font-semibold mb-2">Upload CSV File</h3>
+                  <h3 className="text-xl font-semibold mb-2">📄 Upload CSV File</h3>
                   <p className="text-sm text-foreground/70 mb-4">
                     Upload a Dotloop export CSV file to analyze your data
                   </p>
@@ -841,9 +841,17 @@ function HomeContent() {
                 </Card>
               </div>
 
-              {/* Right Column: Data Quality Tips */}
-              <div>
-                <DataQualityGuide onOpenGuide={() => setShowCSVGuide(true)} />
+              {/* Right Column: Dotloop OAuth Login */}
+              <div className="space-y-4">
+                <div className="text-center lg:text-left">
+                  <h3 className="text-xl font-semibold mb-2">🔗 Connect to Dotloop</h3>
+                  <p className="text-sm text-foreground/70 mb-4">
+                    Login to your Dotloop workspace for real-time data sync
+                  </p>
+                </div>
+                <Card className="p-8 border-2 border-border bg-gradient-to-br from-primary/5 to-primary/10 hover:border-primary/50 transition-colors">
+                  <ConnectDotloop />
+                </Card>
               </div>
             </div>
 
