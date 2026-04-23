@@ -146,7 +146,10 @@ export const dotloopOAuthRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const { clientId, redirectUri } = getDotloopCredentials();
+        let { clientId, redirectUri } = getDotloopCredentials();
+        // TEMPORARY: Use Replit callback for demonstration
+        redirectUri = 'https://dotloopreport.replit.app/api/dotloop-oauth/callback';
+        console.log('[dotloopOAuth.getAuthorizationUrl] Using Replit callback for demo:', redirectUri);
       
         // Generate CSRF state token if not provided
         const state = input.state || tokenEncryption.hashToken(
