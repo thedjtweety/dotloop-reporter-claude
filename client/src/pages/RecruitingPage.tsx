@@ -23,6 +23,8 @@ export default function RecruitingPage() {
   const [isValidatorOpen, setIsValidatorOpen] = useState(false);
   const [validatorData, setValidatorData] = useState<{ headers: string[]; data: any[] }>({ headers: [], data: [] });
   const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries - public access
@@ -364,55 +366,174 @@ export default function RecruitingPage() {
 
             {/* Prospects List */}
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Imported Prospects</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Imported Prospects</h3>
+                {selectedProspects.size > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{selectedProspects.size} selected</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedProspects(new Set())}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                )}
+              </div>
 
               {prospects.isLoading ? (
                 <p className="text-muted-foreground">Loading prospects...</p>
               ) : prospects.data && prospects.data.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-semibold">Name</th>
-                        <th className="text-left py-3 px-4 font-semibold">Email</th>
-                        <th className="text-left py-3 px-4 font-semibold">Office</th>
-                        <th className="text-left py-3 px-4 font-semibold">Volume</th>
-                        <th className="text-left py-3 px-4 font-semibold">Status</th>
-                        <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {prospects.data.map((prospect: any) => (
-                        <tr key={prospect.id} className="border-b hover:bg-muted/50 transition">
-                          <td className="py-3 px-4 font-medium">{prospect.firstName} {prospect.lastName}</td>
-                          <td className="py-3 px-4 text-xs">{prospect.email}</td>
-                          <td className="py-3 px-4">{prospect.office || '-'}</td>
-                          <td className="py-3 px-4">${(parseFloat(prospect.totalVolume) || 0).toLocaleString()}</td>
-                          <td className="py-3 px-4">
-                            <Badge className={getStatusColor(prospect.pipelineStatus)}>
-                              {prospect.pipelineStatus.replace('_', ' ')}
-                            </Badge>
-                          </td>
-                          <td className="py-3 px-4">
-                            <select
-                              value={prospect.pipelineStatus}
-                              onChange={(e) => handleStatusChange(prospect.id, e.target.value)}
-                              className="text-xs border rounded px-2 py-1 bg-background"
-                            >
-                              <option value="lead">Lead</option>
-                              <option value="contacted">Contacted</option>
-                              <option value="interviewing">Interviewing</option>
-                              <option value="offer_extended">Offer Extended</option>
-                              <option value="onboarding">Onboarding</option>
-                              <option value="hired">Hired</option>
-                              <option value="declined">Declined</option>
-                            </select>
-                          </td>
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b">
+                        <tr>
+                          <th className="text-left py-3 px-4 font-semibold w-8">
+                            <input
+                              type="checkbox"
+                              checked={prospects.data.length > 0 && prospects.data.every((p: any) => selectedProspects.has(p.id))}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const newSelected = new Set(selectedProspects);
+                                  prospects.data.forEach((p: any) => newSelected.add(p.id));
+                                  setSelectedProspects(newSelected);
+                                } else {
+                                  setSelectedProspects(new Set());
+                                }
+                              }}
+                              className="cursor-pointer"
+                            />
+                          </th>
+                          <th className="text-left py-3 px-4 font-semibold">Name</th>
+                          <th className="text-left py-3 px-4 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold">Office</th>
+                          <th className="text-left py-3 px-4 font-semibold">Volume</th>
+                          <th className="text-left py-3 px-4 font-semibold">Status</th>
+                          <th className="text-left py-3 px-4 font-semibold">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {prospects.data
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((prospect: any) => (
+                            <tr key={prospect.id} className="border-b hover:bg-muted/50 transition">
+                              <td className="py-3 px-4">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedProspects.has(prospect.id)}
+                                  onChange={(e) => {
+                                    const newSelected = new Set(selectedProspects);
+                                    if (e.target.checked) {
+                                      newSelected.add(prospect.id);
+                                    } else {
+                                      newSelected.delete(prospect.id);
+                                    }
+                                    setSelectedProspects(newSelected);
+                                  }}
+                                  className="cursor-pointer"
+                                />
+                              </td>
+                              <td className="py-3 px-4 font-medium">{prospect.firstName} {prospect.lastName}</td>
+                              <td className="py-3 px-4 text-xs">{prospect.email}</td>
+                              <td className="py-3 px-4">{prospect.office || '-'}</td>
+                              <td className="py-3 px-4">${(parseFloat(prospect.totalVolume) || 0).toLocaleString()}</td>
+                              <td className="py-3 px-4">
+                                <Badge className={getStatusColor(prospect.pipelineStatus)}>
+                                  {prospect.pipelineStatus.replace('_', ' ')}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4">
+                                <select
+                                  value={prospect.pipelineStatus}
+                                  onChange={(e) => handleStatusChange(prospect.id, e.target.value)}
+                                  className="text-xs border rounded px-2 py-1 bg-background"
+                                >
+                                  <option value="lead">Lead</option>
+                                  <option value="contacted">Contacted</option>
+                                  <option value="interviewing">Interviewing</option>
+                                  <option value="offer_extended">Offer Extended</option>
+                                  <option value="onboarding">Onboarding</option>
+                                  <option value="hired">Hired</option>
+                                  <option value="declined">Declined</option>
+                                </select>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Bulk Actions & Pagination */}
+                  <div className="mt-6 pt-4 border-t space-y-4">
+                    {selectedProspects.size > 0 && (
+                      <div className="flex gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <span className="text-sm font-medium text-blue-900 flex-1">
+                          {selectedProspects.size} prospect{selectedProspects.size !== 1 ? 's' : ''} selected
+                        </span>
+                        <Button
+                          size="sm"
+                          className="bg-blue-600 hover:bg-blue-700"
+                          onClick={async () => {
+                            const selectedIds = Array.from(selectedProspects);
+                            try {
+                              for (const prospectId of selectedIds) {
+                                await updateProspectStatus.mutateAsync({
+                                  prospectId,
+                                  newStatus: 'lead',
+                                });
+                              }
+                              setSelectedProspects(new Set());
+                              prospects.refetch();
+                              pipelineStats.refetch();
+                            } catch (error) {
+                              console.error('Failed to add to pipeline:', error);
+                            }
+                          }}
+                        >
+                          Add to Pipeline
+                        </Button>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {Math.min((currentPage - 1) * itemsPerPage + 1, prospects.data.length)} to {Math.min(currentPage * itemsPerPage, prospects.data.length)} of {prospects.data.length}
+                      </div>
+                      <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.ceil(prospects.data.length / itemsPerPage) }).map((_, i) => (
+                          <Button
+                            key={i + 1}
+                            variant={currentPage === i + 1 ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setCurrentPage(i + 1)}
+                            className="w-8 h-8 p-0"
+                          >
+                            {i + 1}
+                          </Button>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(Math.ceil(prospects.data.length / itemsPerPage), currentPage + 1))}
+                        disabled={currentPage === Math.ceil(prospects.data.length / itemsPerPage)}
+                      >
+                        Next
+                      </Button>
+                      </div>
+                    </div>
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-12">
                   <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
