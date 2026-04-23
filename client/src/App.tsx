@@ -39,6 +39,7 @@ import SettingsPage from "./pages/SettingsPage";
 import TeamManagementComplete from "./pages/TeamManagementComplete";
 import SettingsComplete from "./pages/SettingsComplete";
 import ReportingComplete from "./pages/ReportingComplete";
+import DotloopOAuthCallback from "./pages/DotloopOAuthCallback";
 import { CDAProvider } from "./contexts/CDAContext";
 import { useTransactionData } from "./contexts/TransactionDataContext";
 
@@ -93,6 +94,7 @@ function Router() {
 
       {/* Routes without sidebar */}
       <Route path="/api/dotloop/callback" component={OAuthCallback} />
+      <Route path="/dotloop/callback" component={DotloopOAuthCallback} />
       <Route path="/privacy" component={Privacy} />
       <Route path="/faq" component={FAQ} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
