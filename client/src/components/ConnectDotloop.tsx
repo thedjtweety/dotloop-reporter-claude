@@ -172,16 +172,16 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
   if (variant === 'card') {
     return (
       <>
-        <Card className="relative overflow-hidden p-0 border-dashed border-2 border-border bg-gradient-to-br from-blue-950 via-blue-900 to-cyan-900 hover:border-border/80 transition-all duration-300">
-          {/* Gradient background with overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-emerald-500/10 pointer-events-none" />
-          
-          {/* Animated accent elements */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-cyan-500/20 to-transparent rounded-full blur-3xl -mr-48 -mt-48 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-emerald-500/20 to-transparent rounded-full blur-3xl -ml-36 -mb-36 pointer-events-none" />
+        <Card className="relative overflow-hidden p-0 border-dashed border-2 border-border hover:border-border/80 transition-all duration-300" style={{
+          backgroundImage: 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663283621115/gtMbYvvduSqhsHRvj39YWw/dotloop-office-bg-fVKzMWLQvtaL58mYpAMTqq.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}>
+          {/* Frosted glass overlay */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-md pointer-events-none" />
 
           {/* Content */}
-          <div className="relative z-10 p-8 flex flex-col items-center justify-center text-center space-y-6 min-h-[600px]">
+          <div className="relative z-10 p-8 flex flex-col items-center justify-center text-center space-y-6 min-h-[600px] text-white">
             {/* Icon */}
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20">
               <Link2 className="w-10 h-10 text-white" />
@@ -189,10 +189,10 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
 
             {/* Heading */}
             <div className="space-y-2">
-              <h3 className="text-3xl font-bold bg-gradient-to-r from-cyan-200 via-emerald-200 to-cyan-200 bg-clip-text text-transparent">
+              <h3 className="text-3xl font-bold text-white">
                 Connect to Dotloop
               </h3>
-              <p className="text-cyan-100/80 text-base max-w-sm leading-relaxed">
+              <p className="text-white/90 text-base max-w-sm leading-relaxed">
                 Automatically sync your transaction data in real-time. No more manual CSV uploads—your reports update automatically every night.
               </p>
             </div>
@@ -200,24 +200,24 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
             {/* Features */}
             <div className="w-full space-y-4 py-6">
               <div className="flex items-center justify-center gap-3 text-sm group">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-400/30 flex items-center justify-center group-hover:bg-emerald-400/50 transition-colors">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-200" />
                 </div>
-                <span className="text-cyan-100">Automatic sync every night</span>
+                <span className="text-white/90">Automatic sync every night</span>
               </div>
 
               <div className="flex items-center justify-center gap-3 text-sm group">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 transition-colors">
-                  <Shield className="w-5 h-5 text-cyan-300" />
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-cyan-400/30 flex items-center justify-center group-hover:bg-cyan-400/50 transition-colors">
+                  <Shield className="w-5 h-5 text-cyan-200" />
                 </div>
-                <span className="text-cyan-100">Secure read-only access</span>
+                <span className="text-white/90">Secure read-only access</span>
               </div>
 
               <div className="flex items-center justify-center gap-3 text-sm group">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
-                  <Zap className="w-5 h-5 text-emerald-300" />
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-emerald-400/30 flex items-center justify-center group-hover:bg-emerald-400/50 transition-colors">
+                  <Zap className="w-5 h-5 text-emerald-200" />
                 </div>
-                <span className="text-cyan-100">Real-time transaction updates</span>
+                <span className="text-white/90">Real-time transaction updates</span>
               </div>
             </div>
 
@@ -225,7 +225,7 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
             <Button 
               onClick={handleOpenDialog}
               size="lg" 
-              className="w-full bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600 text-white font-semibold shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
+              className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-500 hover:to-emerald-500 text-white font-semibold shadow-lg transition-all duration-300"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -242,7 +242,7 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
             </Button>
 
             {/* Trust indicator */}
-            <p className="text-xs text-cyan-200/60 pt-2">
+            <p className="text-xs text-white/60 pt-2">
               🔒 Your credentials are encrypted and never stored in plain text
             </p>
           </div>
