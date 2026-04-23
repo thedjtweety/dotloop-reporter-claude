@@ -571,3 +571,111 @@ export const cdaDocuments = mysqlTable("cda_documents", {
 	index("cda_documents_transaction_idx").on(table.transactionId),
 	index("cda_documents_created_at_idx").on(table.createdAt),
 ]);
+
+
+// ============================================
+// RECRUITING MODULE TABLES
+// ============================================
+
+export const recruitingProspects = mysqlTable("recruiting_prospects", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	firstName: varchar({ length: 255 }).notNull(),
+	lastName: varchar({ length: 255 }).notNull(),
+	email: varchar({ length: 320 }).notNull(),
+	primaryPhone: varchar({ length: 20 }),
+	mobilePhone: varchar({ length: 20 }),
+	office: varchar({ length: 255 }),
+	agentAddress: text(),
+	officeLocation: varchar({ length: 255 }),
+	mlsId: varchar({ length: 64 }),
+	
+	// Production metrics (from Market View Broker)
+	listSideUnits: decimal({ precision: 10, scale: 1 }),
+	listSideVolume: decimal({ precision: 15, scale: 2 }),
+	salesSideUnits: decimal({ precision: 10, scale: 1 }),
+	salesSideVolume: decimal({ precision: 15, scale: 2 }),
+	totalUnits: decimal({ precision: 10, scale: 1 }),
+	totalVolume: decimal({ precision: 15, scale: 2 }),
+	
+	// Pipeline status
+	pipelineStatus: mysqlEnum(['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding', 'hired', 'declined']).default('lead').notNull(),
+	
+	// Tracking
+	sourceType: mysqlEnum(['market_view_broker', 'manual_entry']).default('market_view_broker').notNull(),
+	importedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	lastUpdated: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	notes: text(),
+	isActive: int().default(1).notNull(),
+},
+(table) => [
+	index("recruiting_prospects_tenant_idx").on(table.tenantId),
+	index("recruiting_prospects_email_idx").on(table.email),
+	index("recruiting_prospects_status_idx").on(table.pipelineStatus),
+	index("recruiting_prospects_active_idx").on(table.isActive),
+	index("recruiting_prospects_tenant_status_idx").on(table.tenantId, table.pipelineStatus),
+]);
+
+export const recruitingPipelineActivity = mysqlTable("recruiting_pipeline_activity", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	prospectId: varchar({ length: 64 }).notNull(),
+	activityType: mysqlEnum(['status_change', 'note_added', 'call_logged', 'email_sent', 'meeting_scheduled', 'offer_sent']).notNull(),
+	previousStatus: mysqlEnum(['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding', 'hired', 'declined']),
+	newStatus: mysqlEnum(['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding', 'hired', 'declined']),
+	details: text(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("recruiting_activity_tenant_idx").on(table.tenantId),
+	index("recruiting_activity_prospect_idx").on(table.prospectId),
+	index("recruiting_activity_type_idx").on(table.activityType),
+	index("recruiting_activity_created_at_idx").on(table.createdAt),
+]);
+
+export const recruitingRetentionRisk = mysqlTable("recruiting_retention_risk", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	agentName: varchar({ length: 255 }).notNull(),
+	
+	// Prior 90-day metrics
+	priorDeals: int().default(0).notNull(),
+	priorVolume: decimal({ precision: 15, scale: 2 }).default('0').notNull(),
+	
+	// Recent 90-day metrics
+	recentDeals: int().default(0).notNull(),
+	recentVolume: decimal({ precision: 15, scale: 2 }).default('0').notNull(),
+	
+	// Calculated risk
+	dealChangePercent: decimal({ precision: 6, scale: 2 }),
+	volumeChangePercent: decimal({ precision: 6, scale: 2 }),
+	riskLevel: mysqlEnum(['low', 'medium', 'high']).default('low').notNull(),
+	
+	// Tracking
+	lastCalculated: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("retention_risk_tenant_idx").on(table.tenantId),
+	index("retention_risk_agent_idx").on(table.agentName),
+	index("retention_risk_level_idx").on(table.riskLevel),
+	index("retention_risk_tenant_risk_idx").on(table.tenantId, table.riskLevel),
+]);
+
+export const recruitingImportHistory = mysqlTable("recruiting_import_history", {
+	id: varchar({ length: 64 }).primaryKey(),
+	tenantId: int().notNull(),
+	fileName: varchar({ length: 255 }).notNull(),
+	importType: mysqlEnum(['market_view_broker', 'retention_data']).notNull(),
+	recordsImported: int().notNull(),
+	recordsSkipped: int().default(0).notNull(),
+	importedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	importedBy: int().notNull(),
+	status: mysqlEnum(['success', 'partial', 'failed']).default('success').notNull(),
+	errorDetails: text(),
+},
+(table) => [
+	index("import_history_tenant_idx").on(table.tenantId),
+	index("import_history_type_idx").on(table.importType),
+	index("import_history_imported_at_idx").on(table.importedAt),
+]);

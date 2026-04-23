@@ -1,0 +1,2 @@
+ALTER TABLE `recruiting_retention_risk` MODIFY COLUMN `priorVolume` decimal(15,2) NOT NULL DEFAULT '0';--> statement-breakpoint
+ALTER TABLE `recruiting_retention_risk` MODIFY COLUMN `recentVolume` decimal(15,2) NOT NULL DEFAULT '0';

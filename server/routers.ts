@@ -47,6 +47,7 @@ import { dataValidationRouter } from './routers/dataValidationProcedures';
 import { settingsRouter } from './routers/settingsRouter';
 import { commissionProceduresRouter } from './routers/commissionProcedures';
 import { reportingProceduresRouter } from './routers/reportingProcedures';
+import { recruitingRouter } from './routers/recruiting';
 import {
   createUpload,
   getUserUploads,
@@ -276,6 +277,7 @@ export const appRouter = router({
   tenantSettings: tenantSettingsRouter,
   commissionRecalculation: commissionRecalculationRouter,
   // tierHistory: tierHistoryRouter, // Removed: tierHistory table was dropped in migration
+  recruiting: recruitingRouter,
   cda: cdaRouter,
   cdaSimple: cdaSimpleRouter,
   cdaFixed: cdaFixedRouter,
