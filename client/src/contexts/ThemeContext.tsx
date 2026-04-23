@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark" | "contrast" | "system";
 
 interface ThemeContextType {
   theme: Theme;
@@ -40,17 +40,23 @@ export function ThemeProvider({
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
       effectiveTheme = systemTheme;
+    } else if (theme === "contrast") {
+      effectiveTheme = "dark";
     } else {
       effectiveTheme = theme;
     }
 
     setResolvedTheme(effectiveTheme);
 
-    if (effectiveTheme === "dark") {
+    // Remove all theme classes first
+    root.classList.remove("dark", "light", "contrast");
+    
+    // Add appropriate classes
+    if (theme === "contrast") {
+      root.classList.add("contrast");
+    } else if (effectiveTheme === "dark") {
       root.classList.add("dark");
-      root.classList.remove("light");
     } else {
-      root.classList.remove("dark");
       root.classList.add("light");
     }
 
@@ -68,11 +74,10 @@ export function ThemeProvider({
       const systemTheme = e.matches ? "dark" : "light";
       setResolvedTheme(systemTheme);
       const root = document.documentElement;
+      root.classList.remove("dark", "light", "contrast");
       if (systemTheme === "dark") {
         root.classList.add("dark");
-        root.classList.remove("light");
       } else {
-        root.classList.remove("dark");
         root.classList.add("light");
       }
     };
@@ -84,7 +89,8 @@ export function ThemeProvider({
   const toggleTheme = switchable
     ? () => {
         setTheme(prev => {
-          if (prev === "light") return "dark";
+          if (prev === "light") return "contrast";
+          if (prev === "contrast") return "dark";
           if (prev === "dark") return "system";
           return "light";
         });
