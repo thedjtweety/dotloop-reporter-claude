@@ -36,6 +36,9 @@ import RecruitingPage from "./pages/RecruitingPage";
 import MarketPage from "./pages/MarketPage";
 import TimelinePage from "./pages/TimelinePage";
 import SettingsPage from "./pages/SettingsPage";
+import TeamManagementComplete from "./pages/TeamManagementComplete";
+import SettingsComplete from "./pages/SettingsComplete";
+import ReportingComplete from "./pages/ReportingComplete";
 import { CDAProvider } from "./contexts/CDAContext";
 import { useTransactionData } from "./contexts/TransactionDataContext";
 
@@ -50,6 +53,7 @@ const SIDEBAR_ROUTES = [
   { path: "/compare", component: ComparePage },
   { path: "/comparison", component: ComparisonPage },
   { path: "/teams", component: TeamsPage },
+  { path: "/team-management", component: TeamManagementComplete },
   { path: "/goals", component: GoalsPage },
   { path: "/trends", component: TrendsPage },
   { path: "/contests", component: ContestsPage },
@@ -58,7 +62,8 @@ const SIDEBAR_ROUTES = [
   { path: "/market", component: MarketPage },
   { path: "/timeline", component: TimelinePage },
   { path: "/audit-log", component: AuditLog },
-  { path: "/settings", component: SettingsPage },
+  { path: "/settings", component: SettingsComplete },
+  { path: "/reporting", component: ReportingComplete },
 ];
 
 function Router() {
