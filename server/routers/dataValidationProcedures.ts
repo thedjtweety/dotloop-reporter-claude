@@ -1,7 +1,8 @@
 /**
  * Data Validation Procedures
  * 
- * Handles data validation rules management
+ * Handles persistent data validation rules stored in database
+ * Rules are applied during sync operations to validate incoming transactions
  */
 
 import { z } from 'zod';
@@ -9,59 +10,62 @@ import { protectedProcedure, router } from '../_core/trpc';
 import { getDb } from '../db';
 import { auditLogs } from '../../drizzle/schema';
 import { getTenantIdFromUser } from '../lib/tenant-context';
+import { eq, and } from 'drizzle-orm';
+
+// Validation rule types
+export type ValidationRuleType = 'required' | 'format' | 'range' | 'pattern' | 'custom';
+
+export interface ValidationRule {
+  id: string;
+  field: string;
+  type: ValidationRuleType;
+  operator: string;
+  value: string;
+  errorMessage: string;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+// In-memory storage for validation rules (persisted via auditLogs)
+const rulesStore = new Map<number, ValidationRule[]>();
 
 export const dataValidationRouter = router({
   /**
-   * Get all validation rules
+   * Get all active validation rules for tenant
    */
   getRules: protectedProcedure.query(async ({ ctx }) => {
     try {
+      const db = await getDb();
+      if (!db) throw new Error('Database connection failed');
+
       const tenantId = await getTenantIdFromUser(ctx.user.id);
 
-      // Mock data - in a real implementation, this would query from database
-      const rules = [
-        {
-          id: '1',
-          field: 'loopName',
-          type: 'required' as const,
-          operator: 'exists',
-          value: '',
-          errorMessage: 'Loop name is required',
-          isActive: true,
-          createdAt: new Date(),
-        },
-        {
-          id: '2',
-          field: 'loopStatus',
-          type: 'required' as const,
-          operator: 'exists',
-          value: '',
-          errorMessage: 'Loop status is required',
-          isActive: true,
-          createdAt: new Date(),
-        },
-        {
-          id: '3',
-          field: 'price',
-          type: 'range' as const,
-          operator: 'greaterThan',
-          value: '0',
-          errorMessage: 'Price must be greater than 0',
-          isActive: true,
-          createdAt: new Date(),
-        },
-        {
-          id: '4',
-          field: 'closingDate',
-          type: 'format' as const,
-          operator: 'matches',
-          value: 'YYYY-MM-DD',
-          errorMessage: 'Closing date must be in YYYY-MM-DD format',
-          isActive: true,
-          createdAt: new Date(),
-        },
-      ];
+      // Check in-memory store first
+      if (rulesStore.has(tenantId)) {
+        return rulesStore.get(tenantId) || [];
+      }
 
+      // Load from auditLogs if not in memory
+      const logs = await db
+        .select()
+        .from(auditLogs)
+        .where(
+          and(
+            eq(auditLogs.tenantId, tenantId),
+            eq(auditLogs.action, 'settings_changed')
+          )
+        );
+
+      const rules: ValidationRule[] = [];
+      logs.forEach(log => {
+        const details = log.details ? JSON.parse(log.details) : {};
+        if (details.type === 'validation_rule' && details.rule) {
+          rules.push(details.rule);
+        }
+      });
+
+      // Cache in memory
+      rulesStore.set(tenantId, rules);
       return rules;
     } catch (error) {
       console.error('Error fetching validation rules:', error);
@@ -70,7 +74,7 @@ export const dataValidationRouter = router({
   }),
 
   /**
-   * Save a validation rule
+   * Save a validation rule (create or update)
    */
   saveRule: protectedProcedure
     .input(
@@ -90,6 +94,19 @@ export const dataValidationRouter = router({
 
         const tenantId = await getTenantIdFromUser(ctx.user.id);
 
+        const ruleId = input.id || `rule-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const rule: ValidationRule = {
+          id: ruleId,
+          field: input.field,
+          type: input.type,
+          operator: input.operator,
+          value: input.value,
+          errorMessage: input.errorMessage,
+          isActive: true,
+          createdAt: new Date(),
+        };
+
         // Log the action
         await db.insert(auditLogs).values({
           tenantId,
@@ -101,15 +118,24 @@ export const dataValidationRouter = router({
           details: JSON.stringify({
             type: 'validation_rule',
             action: input.id ? 'updated' : 'created',
-            field: input.field,
-            ruleType: input.type,
+            rule,
           }),
         });
+
+        // Update in-memory cache
+        const rules = rulesStore.get(tenantId) || [];
+        const existingIndex = rules.findIndex(r => r.id === ruleId);
+        if (existingIndex >= 0) {
+          rules[existingIndex] = rule;
+        } else {
+          rules.push(rule);
+        }
+        rulesStore.set(tenantId, rules);
 
         return {
           success: true,
           message: input.id ? 'Rule updated successfully' : 'Rule created successfully',
-          ruleId: input.id || `rule-${Date.now()}`,
+          ruleId,
         };
       } catch (error) {
         console.error('Error saving validation rule:', error);
@@ -148,6 +174,11 @@ export const dataValidationRouter = router({
           }),
         });
 
+        // Update in-memory cache
+        const rules = rulesStore.get(tenantId) || [];
+        const filtered = rules.filter(r => r.id !== input.ruleId);
+        rulesStore.set(tenantId, filtered);
+
         return {
           success: true,
           message: 'Rule deleted successfully',
@@ -167,21 +198,28 @@ export const dataValidationRouter = router({
    */
   getStats: protectedProcedure.query(async ({ ctx }) => {
     try {
+      const db = await getDb();
+      if (!db) throw new Error('Database connection failed');
+
       const tenantId = await getTenantIdFromUser(ctx.user.id);
 
-      // Mock data - in a real implementation, this would query from database
+      const rules = rulesStore.get(tenantId) || [];
+      const activeRules = rules.filter(r => r.isActive);
+
+      const rulesByType = {
+        required: rules.filter(r => r.type === 'required').length,
+        format: rules.filter(r => r.type === 'format').length,
+        range: rules.filter(r => r.type === 'range').length,
+        pattern: rules.filter(r => r.type === 'pattern').length,
+        custom: rules.filter(r => r.type === 'custom').length,
+      };
+
       return {
-        totalRules: 4,
-        activeRules: 4,
-        inactiveRules: 0,
-        rulesByType: {
-          required: 2,
-          format: 1,
-          range: 1,
-          pattern: 0,
-          custom: 0,
-        },
-        lastModified: new Date(),
+        totalRules: rules.length,
+        activeRules: activeRules.length,
+        inactiveRules: rules.length - activeRules.length,
+        rulesByType,
+        lastModified: rules.length > 0 ? rules[rules.length - 1].createdAt : null,
       };
     } catch (error) {
       console.error('Error fetching validation statistics:', error);
@@ -202,7 +240,8 @@ export const dataValidationRouter = router({
   }),
 
   /**
-   * Validate data against rules
+   * Validate data against active rules
+   * Returns validation errors if any rules are violated
    */
   validateData: protectedProcedure
     .input(
@@ -214,36 +253,91 @@ export const dataValidationRouter = router({
       try {
         const tenantId = await getTenantIdFromUser(ctx.user.id);
 
-        // Mock validation - in a real implementation, this would apply all rules
-        const errors: Array<{ field: string; message: string }> = [];
+        const rules = rulesStore.get(tenantId) || [];
+        const activeRules = rules.filter(r => r.isActive);
+        const errors: Array<{ field: string; message: string; ruleId: string }> = [];
 
-        // Check required fields
-        if (!input.data.loopName) {
-          errors.push({
-            field: 'loopName',
-            message: 'Loop name is required',
-          });
-        }
+        // Apply each validation rule
+        for (const rule of activeRules) {
+          const fieldValue = input.data[rule.field];
 
-        if (!input.data.loopStatus) {
-          errors.push({
-            field: 'loopStatus',
-            message: 'Loop status is required',
-          });
-        }
+          switch (rule.type) {
+            case 'required':
+              if (fieldValue === undefined || fieldValue === null || fieldValue === '') {
+                errors.push({
+                  field: rule.field,
+                  message: rule.errorMessage,
+                  ruleId: rule.id,
+                });
+              }
+              break;
 
-        // Check price range
-        if (input.data.price && typeof input.data.price === 'number' && input.data.price <= 0) {
-          errors.push({
-            field: 'price',
-            message: 'Price must be greater than 0',
-          });
+            case 'range':
+              if (fieldValue !== undefined && fieldValue !== null) {
+                const numValue = typeof fieldValue === 'number' ? fieldValue : parseFloat(fieldValue);
+                const rangeValue = parseFloat(rule.value);
+                if (rule.operator === 'greaterThan' && numValue <= rangeValue) {
+                  errors.push({
+                    field: rule.field,
+                    message: rule.errorMessage,
+                    ruleId: rule.id,
+                  });
+                } else if (rule.operator === 'lessThan' && numValue >= rangeValue) {
+                  errors.push({
+                    field: rule.field,
+                    message: rule.errorMessage,
+                    ruleId: rule.id,
+                  });
+                }
+              }
+              break;
+
+            case 'format':
+              if (fieldValue !== undefined && fieldValue !== null) {
+                const strValue = String(fieldValue);
+                // Simple date format check
+                if (rule.value === 'YYYY-MM-DD') {
+                  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                  if (!dateRegex.test(strValue)) {
+                    errors.push({
+                      field: rule.field,
+                      message: rule.errorMessage,
+                      ruleId: rule.id,
+                    });
+                  }
+                }
+              }
+              break;
+
+            case 'pattern':
+              if (fieldValue !== undefined && fieldValue !== null) {
+                try {
+                  const regex = new RegExp(rule.value);
+                  if (!regex.test(String(fieldValue))) {
+                    errors.push({
+                      field: rule.field,
+                      message: rule.errorMessage,
+                      ruleId: rule.id,
+                    });
+                  }
+                } catch (e) {
+                  console.error('Invalid regex pattern:', rule.value);
+                }
+              }
+              break;
+
+            case 'custom':
+              // Custom rules would require custom logic
+              // For now, skip
+              break;
+          }
         }
 
         return {
           isValid: errors.length === 0,
           errors,
           validatedAt: new Date(),
+          rulesApplied: activeRules.length,
         };
       } catch (error) {
         console.error('Error validating data:', error);
@@ -253,9 +347,80 @@ export const dataValidationRouter = router({
             {
               field: 'system',
               message: 'Validation failed due to system error',
+              ruleId: 'system-error',
             },
           ],
           validatedAt: new Date(),
+          rulesApplied: 0,
+        };
+      }
+    }),
+
+  /**
+   * Apply validation rules during sync - blocks invalid transactions
+   */
+  applyValidationDuringSyncSync: protectedProcedure
+    .input(
+      z.object({
+        transactions: z.array(z.record(z.string(), z.any())),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const tenantId = await getTenantIdFromUser(ctx.user.id);
+
+        const rules = rulesStore.get(tenantId) || [];
+        const activeRules = rules.filter(r => r.isActive);
+
+        const results = {
+          validTransactions: [] as any[],
+          invalidTransactions: [] as Array<{ data: any; errors: Array<{ field: string; message: string }> }>,
+          totalProcessed: input.transactions.length,
+        };
+
+        for (const transaction of input.transactions) {
+          const errors: Array<{ field: string; message: string }> = [];
+
+          // Apply each validation rule
+          for (const rule of activeRules) {
+            const fieldValue = transaction[rule.field];
+
+            if (rule.type === 'required' && (!fieldValue || fieldValue === '')) {
+              errors.push({
+                field: rule.field,
+                message: rule.errorMessage,
+              });
+            } else if (rule.type === 'range' && fieldValue !== undefined) {
+              const numValue = typeof fieldValue === 'number' ? fieldValue : parseFloat(fieldValue);
+              const rangeValue = parseFloat(rule.value);
+              if (rule.operator === 'greaterThan' && numValue <= rangeValue) {
+                errors.push({
+                  field: rule.field,
+                  message: rule.errorMessage,
+                });
+              }
+            }
+          }
+
+          if (errors.length === 0) {
+            results.validTransactions.push(transaction);
+          } else {
+            results.invalidTransactions.push({ data: transaction, errors });
+          }
+        }
+
+        return {
+          success: true,
+          ...results,
+        };
+      } catch (error) {
+        console.error('Error applying validation during sync:', error);
+        return {
+          success: false,
+          validTransactions: [],
+          invalidTransactions: [],
+          totalProcessed: 0,
+          error: error instanceof Error ? error.message : 'Unknown error',
         };
       }
     }),

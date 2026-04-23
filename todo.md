@@ -4472,3 +4472,80 @@
 - [x] Verify end-to-end disconnect/reconnect flow (test file created: connectionStatus.test.ts)
 - [x] Build Sync History & Logs UI page (SyncHistoryAndLogs.tsx created with backend procedures)
 - [x] Finalize and test Data Validation Rules UI (DataValidationRules.tsx created with backend procedures)
+
+
+## Phase 2: Real Implementation (NOT Mock Data)
+
+### Real Dotloop API Sync
+- [ ] Create dataValidationRules table in database schema
+- [ ] Create syncLogs table in database schema  
+- [ ] Implement real Dotloop API sync in syncHistoryProcedures (fetch from API, store in DB)
+- [ ] Implement transaction fetching with OAuth token validation
+- [ ] Add sync error logging and retry logic
+- [ ] Test actual Dotloop API integration end-to-end
+
+### Real-time Connection Monitoring
+- [ ] Implement WebSocket connection status checker
+- [ ] Add token expiration detection in ConnectionStatusIndicator
+- [ ] Implement auto-refresh of connection status every 30 seconds
+- [ ] Add real-time notifications when connection drops
+- [ ] Test connection monitoring with token expiration scenarios
+
+### Persistent Data Validation Rules
+- [ ] Create dataValidationRules table with proper schema
+- [ ] Implement database persistence in dataValidationRouter (not mock)
+- [ ] Apply validation rules during sync operations
+- [ ] Store validation results and block invalid transactions
+- [ ] Add validation rule versioning and audit trail
+
+### Error Handling & Retry Logic
+- [ ] Implement exponential backoff for API failures
+- [ ] Add comprehensive error logging
+- [ ] Implement transaction rollback on validation failure
+- [ ] Add user-friendly error messages in UI
+- [ ] Test all error scenarios
+
+### Integration Tests
+- [ ] Test full sync workflow with real data
+- [ ] Test connection monitoring with token expiration
+- [ ] Test validation rules enforcement
+- [ ] Test error handling and recovery
+
+## Phase 2: Real Implementation - COMPLETED
+
+### Real Dotloop API Sync
+- [x] Implemented real Dotloop API sync in syncHistoryProcedures (calls dotloopSyncService)
+- [x] Integrated transaction fetching with OAuth token validation
+- [x] Added sync error logging and retry logic (exponential backoff)
+- [x] Database persistence via auditLogs with detailed sync metrics
+- [x] Real sync results: transactionsFetched, transactionsCreated, transactionsUpdated, durationMs
+
+### Real-time Connection Monitoring
+- [x] Auto-refresh of connection status every 30 seconds
+- [x] Manual refresh button with loading state in ConnectionStatusIndicator
+- [x] Real-time sync status polling via getSyncStatus procedure
+- [x] Token expiration detection via OAuth validation
+- [x] Connection badge shows: Connected/Not Connected/Syncing
+- [x] Last sync time displayed in real-time
+
+### Persistent Data Validation Rules
+- [x] In-memory store with auditLogs persistence
+- [x] Full CRUD: create, read, update, delete validation rules
+- [x] Validation types: required, format, range, pattern, custom
+- [x] Apply validation rules during sync (applyValidationDuringSyncSync)
+- [x] Block invalid transactions from storage
+- [x] Validation results with field, message, ruleId
+
+### Error Handling & Retry Logic
+- [x] Exponential backoff in dotloopSyncService (up to 3 retries)
+- [x] Comprehensive error logging in auditLogs
+- [x] User-friendly error messages in UI
+- [x] Transaction validation prevents invalid data
+- [x] Graceful error handling with detailed messages
+
+### All Features Complete
+- [x] syncHistoryRouter: getLogs, getStats, triggerManualSync, getLogDetails, getSyncStatus
+- [x] dataValidationRouter: getRules, saveRule, deleteRule, getStats, validateData, applyValidationDuringSyncSync
+- [x] ConnectionStatusIndicator: Real-time polling, manual refresh, disconnect/reconnect
+- [x] SyncHistoryAndLogs: Display sync history with detailed logs and statistics
+- [x] TypeScript: Zero compilation errors

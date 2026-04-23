@@ -18,14 +18,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Link2, Unlink2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Link2, Unlink2, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export function ConnectionStatusIndicator() {
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
   const [showReconnectDialog, setShowReconnectDialog] = useState(false);
 
-  // Get connection status
-  const { data: status, isLoading, refetch } = trpc.connectionStatus.getStatus.useQuery();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Get connection status with real-time auto-refresh every 30 seconds
+  const { data: status, isLoading, refetch } = trpc.connectionStatus.getStatus.useQuery(undefined, {
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 10000, // Consider data stale after 10 seconds
+  });
+
+  // Get sync status for additional context
+  const { data: syncStatus } = trpc.syncHistory.getSyncStatus.useQuery(undefined, {
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
 
   // Disconnect mutation
   const disconnectMutation = trpc.connectionStatus.disconnect.useMutation({
@@ -46,6 +56,12 @@ export function ConnectionStatusIndicator() {
     if (reconnectData?.url) {
       window.location.href = reconnectData.url;
     }
+  };
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
   };
 
   if (isLoading) {
@@ -72,6 +88,16 @@ export function ConnectionStatusIndicator() {
                 Connected
               </Badge>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              title="Refresh connection status"
+              className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -102,6 +128,19 @@ export function ConnectionStatusIndicator() {
           </>
         )}
       </div>
+
+      {/* Connection Status Info */}
+      {status.isConnected && syncStatus && (
+        <div className="text-xs text-muted-foreground mt-2">
+          {syncStatus.lastSyncTime ? (
+            <>
+              Last sync: {new Date(syncStatus.lastSyncTime).toLocaleString()}
+            </>
+          ) : (
+            'Never synced'
+          )}
+        </div>
+      )}
 
       {/* Disconnect Confirmation Dialog */}
       <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>

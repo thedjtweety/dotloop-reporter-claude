@@ -34,8 +34,9 @@ interface SyncLog {
   transactionsFetched: number;
   transactionsCreated: number;
   transactionsUpdated: number;
-  duration: number;
-  error?: string;
+  durationMs: number;
+  errorMessage?: string | null;
+  errors?: string[];
   details?: string | null;
 }
 
@@ -256,7 +257,7 @@ export default function SyncHistoryAndLogs() {
                         {log.transactionsUpdated}
                       </TableCell>
                       <TableCell className="text-right text-foreground">
-                        {formatDuration(log.duration)}
+                        {formatDuration(log.durationMs)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
@@ -300,7 +301,7 @@ export default function SyncHistoryAndLogs() {
                 </div>
                 <div>
                   <p className="text-sm text-foreground/70 mb-1">Duration</p>
-                  <p className="font-medium text-foreground">{formatDuration(selectedLog.duration)}</p>
+                  <p className="font-medium text-foreground">{formatDuration(selectedLog.durationMs)}</p>
                 </div>
               </div>
 
@@ -330,12 +331,12 @@ export default function SyncHistoryAndLogs() {
               </div>
 
               {/* Error Details */}
-              {selectedLog.error && (
+              {selectedLog.errorMessage && (
                 <div className="space-y-3">
                   <h4 className="font-medium text-foreground">Error Details</h4>
                   <div className="p-3 bg-red-50 rounded-lg border border-red-200 dark:bg-red-950 dark:border-red-800">
                     <p className="text-sm text-red-700 dark:text-red-300 font-mono">
-                      {selectedLog.error}
+                      {selectedLog.errorMessage}
                     </p>
                   </div>
                 </div>
@@ -362,11 +363,11 @@ export default function SyncHistoryAndLogs() {
                       ['Sync Operation Details'],
                       ['Timestamp', new Date(selectedLog.timestamp).toLocaleString()],
                       ['Status', selectedLog.status],
-                      ['Duration', formatDuration(selectedLog.duration)],
+                      ['Duration', formatDuration(selectedLog.durationMs)],
                       ['Transactions Fetched', selectedLog.transactionsFetched],
                       ['Transactions Created', selectedLog.transactionsCreated],
                       ['Transactions Updated', selectedLog.transactionsUpdated],
-                      selectedLog.error ? ['Error', selectedLog.error] : null,
+                      selectedLog.errorMessage ? ['Error', selectedLog.errorMessage] : null,
                     ]
                       .filter(Boolean)
                       .map(row => (row as string[]).join(','))
