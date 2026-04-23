@@ -8,12 +8,15 @@ import { AlertCircle, Users, Clock, TrendingUp, Search, Upload, AlertTriangle } 
 import { parseMarketViewBrokerCSV, validateMarketViewBrokerCSV } from '@/lib/marketViewBrokerParser';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import ProspectDetailModal from '@/components/ProspectDetailModal';
 
 export default function RecruitingPage() {
   const [activeTab, setActiveTab] = useState('pipeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [selectedProspect, setSelectedProspect] = useState<any>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Queries
@@ -224,7 +227,14 @@ export default function RecruitingPage() {
                     {prospects.data
                       ?.filter((p: any) => p.pipelineStatus === stage)
                       .map((prospect: any) => (
-                        <div key={prospect.id} className="p-2 bg-muted rounded text-sm hover:bg-muted/80 transition">
+                        <div
+                          key={prospect.id}
+                          className="p-2 bg-muted rounded text-sm hover:bg-muted/80 transition cursor-pointer"
+                          onClick={() => {
+                            setSelectedProspect(prospect);
+                            setIsDetailModalOpen(true);
+                          }}
+                        >
                           <p className="font-medium">{prospect.firstName} {prospect.lastName}</p>
                           <p className="text-xs text-muted-foreground truncate">{prospect.email}</p>
                         </div>
@@ -416,6 +426,23 @@ export default function RecruitingPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Prospect Detail Modal */}
+        <ProspectDetailModal
+          prospect={selectedProspect}
+          isOpen={isDetailModalOpen}
+          onClose={() => {
+            setIsDetailModalOpen(false);
+            setSelectedProspect(null);
+          }}
+          onStatusChange={async (prospectId: string, newStatus: string) => {
+            await updateProspectStatus.mutateAsync({
+              prospectId,
+              newStatus: newStatus as 'lead' | 'contacted' | 'interviewing' | 'offer_extended' | 'onboarding' | 'hired' | 'declined',
+            });
+            prospects.refetch();
+          }}
+        />
       </div>
     </div>
   );
