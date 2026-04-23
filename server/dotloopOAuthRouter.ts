@@ -140,7 +140,7 @@ export const dotloopOAuthRouter = router({
    * Get authorization URL for OAuth flow
    * Returns the URL to redirect the user to for authorization
    */
-  getAuthorizationUrl: protectedProcedure
+  getAuthorizationUrl: publicProcedure
     .input(z.object({
       state: z.string().optional(),
     }))
