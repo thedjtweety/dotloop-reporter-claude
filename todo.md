@@ -4331,3 +4331,137 @@
 - [ ] Write deployment guide
 - [ ] Run full system testing
 - [ ] Verify all features working
+
+
+---
+
+## FEATURE PARITY ROADMAP - Replit vs Manus (NEW INITIATIVE)
+
+### Phase 1: Critical Foundation - Dotloop OAuth Integration (2-3 weeks)
+- [ ] Add oauth_tokens table to store encrypted Dotloop tokens
+- [ ] Add sync_status table to track sync progress
+- [ ] Implement Dotloop OAuth 2.0 flow handler
+- [ ] Create token refresh mechanism with auto-refresh on expiry
+- [ ] Build periodic sync scheduler (every 30 minutes)
+- [ ] Implement real-time WebSocket updates for sync events
+- [ ] Create sync status monitoring dashboard
+- [ ] Add error handling and retry logic
+- [ ] Write E2E tests for OAuth flow
+- [ ] Document OAuth integration setup
+
+### Phase 2: Critical Foundation - Multi-Tenancy Architecture (3-4 weeks)
+- [ ] Add tenant_id to all existing tables
+- [ ] Create tenants table with metadata
+- [ ] Create user_roles and role_permissions tables
+- [ ] Implement tenant isolation middleware
+- [ ] Add RBAC system (Admin, Broker, Member, Agent roles)
+- [ ] Update all queries to filter by tenant_id
+- [ ] Create tenant-level settings UI
+- [ ] Implement role-based access control in frontend
+- [ ] Write tests for multi-tenant isolation
+- [ ] Create migration scripts for existing data
+
+### Phase 3: Advanced Commission Engine (2 weeks)
+- [ ] Extend commission_plans table with cap/post-cap fields
+- [ ] Create plan_tiers table for tiered structures
+- [ ] Create commission_deductions table
+- [ ] Create commission_statements table
+- [ ] Implement tiered GCI-based commission calculations
+- [ ] Add caps and post-cap rate logic
+- [ ] Implement deductions and royalties
+- [ ] Create automated recalculation on data changes
+- [ ] Build commission audit trail
+- [ ] Add variance detection alerts
+
+### Phase 4: Comprehensive Reporting System (2-3 weeks)
+- [ ] Create report_templates table
+- [ ] Create scheduled_reports table
+- [ ] Create report_recipients table
+- [ ] Create report_history table
+- [ ] Implement PDF generation with branding
+- [ ] Build scheduled report delivery via email
+- [ ] Create CDA (Commission Disbursement Authorization) builder
+- [ ] Implement report sharing with external stakeholders
+- [ ] Add report history and archival
+- [ ] Create report scheduling UI
+
+### Phase 5: Advanced Analytics & Trends (3-4 weeks)
+- [ ] Create dashboard_widgets table
+- [ ] Create saved_views table
+- [ ] Create chart_annotations table
+- [ ] Create ai_insights_cache table
+- [ ] Build revenue timeline chart
+- [ ] Build commission breakdown charts
+- [ ] Build transaction type analysis
+- [ ] Build property type distribution
+- [ ] Build agent mix analysis
+- [ ] Build lead source attribution
+- [ ] Build pipeline funnel analysis
+- [ ] Build conversion trend analysis
+- [ ] Build multi-year trend analysis
+- [ ] Build period-over-period comparisons
+
+### Phase 6: Team & Office Management (1-2 weeks)
+- [ ] Extend teams table with hierarchy support
+- [ ] Create team_members table
+- [ ] Create team_kpis table for caching
+- [ ] Implement team creation and management
+- [ ] Build agent-to-team assignment
+- [ ] Create team-level KPI aggregation
+- [ ] Build team leaderboards
+- [ ] Implement team-level drill-down analytics
+
+### Phase 7: Goal Tracking & Contests (2-3 weeks)
+- [ ] Create goals table
+- [ ] Create goal_progress table
+- [ ] Create contests table
+- [ ] Create contest_leaderboards table
+- [ ] Create contest_history table
+- [ ] Implement goal creation (GCI, volume, deals, close rate)
+- [ ] Build YTD progress visualization
+- [ ] Create agent self-service goal dashboard
+- [ ] Implement contest creation and management
+- [ ] Build live leaderboards with trend indicators
+- [ ] Add automated notifications
+
+### Phase 8: Forecasting & AI Integration (2-3 weeks)
+- [ ] Create forecasts table
+- [ ] Create forecast_scenarios table
+- [ ] Implement pipeline forecasting (1-12 months)
+- [ ] Build conversion rate analysis
+- [ ] Create scenario modeling (optimistic/pessimistic)
+- [ ] Integrate LLM for AI-powered insights
+- [ ] Build personalized agent coaching
+- [ ] Create forecast accuracy tracking
+
+### Phase 9: Admin Panel, Webhooks & Integrations (2-3 weeks)
+- [ ] Create alert_rules table
+- [ ] Create alert_history table
+- [ ] Create webhooks table
+- [ ] Create webhook_deliveries table
+- [ ] Create data_change_log table (field-level tracking)
+- [ ] Build admin user management interface
+- [ ] Build upload monitoring dashboard
+- [ ] Implement complete audit trail viewer
+- [ ] Create webhook configuration UI
+- [ ] Implement configurable alert rules
+- [ ] Add SSRF protection and retry logic
+- [ ] Build delivery logging
+
+### Phase 10: Polish, Mobile App & Extended Features (3-4 weeks)
+- [ ] Create recruiting_candidates table
+- [ ] Create candidate_scores table
+- [ ] Create upload_validations table
+- [ ] Create data_quality_scores table
+- [ ] Implement white-label branding (logo, colors, name)
+- [ ] Build React Native mobile app with Expo
+- [ ] Implement mobile home screen KPIs
+- [ ] Build mobile leaderboards
+- [ ] Add push notifications
+- [ ] Implement agent comparison tool
+- [ ] Build market insights & timeline analysis
+- [ ] Create deep-link integration for Dotloop
+- [ ] Implement saved views & custom reports
+- [ ] Add data quality validation system
+- [ ] Build recruiting pipeline management
+- [ ] Create MarketView CSV import

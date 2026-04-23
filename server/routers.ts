@@ -35,7 +35,14 @@ import { teamManagementRouter } from './routers/teamManagementRouter';
 import { dotloopApiIntegrationRouter } from './routers/dotloopApiIntegrationRouter';
 import { performanceOptimizationRouter } from './routers/performanceOptimizationRouter';
 import { securityHardeningRouter } from './routers/securityHardeningRouter';
+import { analyticsProceduresRouter } from './routers/analyticsProcedures';
+import { teamManagementProceduresRouter } from './routers/teamManagementProcedures';
+import { goalsForecastingProceduresRouter } from './routers/goalsForecastingProcedures';
+import { adminWebhooksProceduresRouter } from './routers/adminWebhooksProcedures';
+import { dataQualityAlertsProceduresRouter } from './routers/dataQualityAlertsProcedures';
 import { settingsRouter } from './routers/settingsRouter';
+import { commissionProceduresRouter } from './routers/commissionProcedures';
+import { reportingProceduresRouter } from './routers/reportingProcedures';
 import {
   createUpload,
   getUserUploads,
@@ -274,6 +281,13 @@ export const appRouter = router({
   health: healthRouter,
   branding: brandingRouter,
   cdaBuilder: cdaBuilderRouter,
+  commissionProcedures: commissionProceduresRouter,
+  reportingProcedures: reportingProceduresRouter,
+  analyticsProcedures: analyticsProceduresRouter,
+  teamManagementProcedures: teamManagementProceduresRouter,
+  goalsForecastingProcedures: goalsForecastingProceduresRouter,
+  adminWebhooksProcedures: adminWebhooksProceduresRouter,
+  dataQualityAlertsProcedures: dataQualityAlertsProceduresRouter,
 });
 
 export type AppRouter = typeof appRouter;

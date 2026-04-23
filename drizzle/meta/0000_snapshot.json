@@ -1,99 +1,3138 @@
 {
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
   "version": "5",
   "dialect": "mysql",
-  "id": "54b03288-d4ad-4328-bd15-510d11211f5f",
-  "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "users": {
-      "name": "users",
+    "agent_assignments": {
+      "name": "agent_assignments",
       "columns": {
         "id": {
+          "autoincrement": false,
           "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": true
+          "notNull": true
         },
-        "openId": {
-          "name": "openId",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "email": {
-          "name": "email",
-          "type": "varchar(320)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "loginMethod": {
-          "name": "loginMethod",
-          "type": "varchar(64)",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "role": {
-          "name": "role",
-          "type": "enum('user','admin')",
-          "primaryKey": false,
-          "notNull": true,
+        "agentName": {
           "autoincrement": false,
-          "default": "'user'"
+          "name": "agentName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "planId": {
+          "autoincrement": false,
+          "name": "planId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "teamId": {
+          "autoincrement": false,
+          "name": "teamId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anniversaryDate": {
+          "autoincrement": false,
+          "name": "anniversaryDate",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "startDate": {
+          "autoincrement": false,
+          "name": "startDate",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "isActive",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
         },
         "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
           "name": "createdAt",
           "type": "timestamp",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
+          "notNull": true
         },
         "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
           "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "onUpdate": true,
-          "default": "(now())"
+          "onUpdate": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "agent_assignments_tenant_agent_unique": {
+          "name": "agent_assignments_tenant_agent_unique",
+          "columns": [
+            "tenantId",
+            "agentName"
+          ],
+          "isUnique": false
         },
-        "lastSignedIn": {
-          "name": "lastSignedIn",
+        "agent_assignments_tenant_idx": {
+          "name": "agent_assignments_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "agent_assignments_agent_idx": {
+          "name": "agent_assignments_agent_idx",
+          "columns": [
+            "agentName"
+          ],
+          "isUnique": false
+        },
+        "agent_assignments_plan_idx": {
+          "name": "agent_assignments_plan_idx",
+          "columns": [
+            "planId"
+          ],
+          "isUnique": false
+        },
+        "agent_assignments_team_idx": {
+          "name": "agent_assignments_team_idx",
+          "columns": [
+            "teamId"
+          ],
+          "isUnique": false
+        },
+        "agent_assignments_active_idx": {
+          "name": "agent_assignments_active_idx",
+          "columns": [
+            "isActive"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "audit_logs": {
+      "name": "audit_logs",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adminId": {
+          "autoincrement": false,
+          "name": "adminId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adminName": {
+          "autoincrement": false,
+          "name": "adminName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adminEmail": {
+          "autoincrement": false,
+          "name": "adminEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "autoincrement": false,
+          "name": "action",
+          "type": "enum('user_created','user_deleted','user_role_changed','upload_deleted','upload_viewed','settings_changed','data_exported','tenant_settings_changed','oauth_connected','oauth_disconnected')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "targetType": {
+          "autoincrement": false,
+          "name": "targetType",
+          "type": "enum('user','upload','system','tenant')",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "targetId": {
+          "autoincrement": false,
+          "name": "targetId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "targetName": {
+          "autoincrement": false,
+          "name": "targetName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "autoincrement": false,
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ipAddress": {
+          "autoincrement": false,
+          "name": "ipAddress",
+          "type": "varchar(45)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "userAgent": {
+          "autoincrement": false,
+          "name": "userAgent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP(3)'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp(3)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "action_idx": {
+          "name": "action_idx",
+          "columns": [
+            "action"
+          ],
+          "isUnique": false
+        },
+        "adminId_idx": {
+          "name": "adminId_idx",
+          "columns": [
+            "adminId"
+          ],
+          "isUnique": false
+        },
+        "tenant_createdAt_idx": {
+          "name": "tenant_createdAt_idx",
+          "columns": [
+            "tenantId",
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "adminId_createdAt_idx": {
+          "name": "adminId_createdAt_idx",
+          "columns": [
+            "adminId",
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "targetType_targetId_idx": {
+          "name": "targetType_targetId_idx",
+          "columns": [
+            "targetType",
+            "targetId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "cda_field_mappings": {
+      "name": "cda_field_mappings",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "templateId": {
+          "autoincrement": false,
+          "name": "templateId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "csvColumn": {
+          "autoincrement": false,
+          "name": "csvColumn",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cdaField": {
+          "autoincrement": false,
+          "name": "cdaField",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transformFunction": {
+          "autoincrement": false,
+          "name": "transformFunction",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "defaultValue": {
+          "autoincrement": false,
+          "name": "defaultValue",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(now())"
+          "onUpdate": true
         }
       },
-      "indexes": {},
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "cda_field_mappings_template_idx": {
+          "name": "cda_field_mappings_template_idx",
+          "columns": [
+            "templateId"
+          ],
+          "isUnique": false
+        },
+        "cda_field_mappings_cda_field_idx": {
+          "name": "cda_field_mappings_cda_field_idx",
+          "columns": [
+            "cdaField"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "users_id": {
-          "name": "users_id",
-          "columns": [
-            "id"
-          ]
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "cda_generated": {
+      "name": "cda_generated",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "templateId": {
+          "autoincrement": false,
+          "name": "templateId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transactionId": {
+          "autoincrement": false,
+          "name": "transactionId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "propertyAddress": {
+          "autoincrement": false,
+          "name": "propertyAddress",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mlsNumber": {
+          "autoincrement": false,
+          "name": "mlsNumber",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "salePrice": {
+          "autoincrement": false,
+          "name": "salePrice",
+          "type": "decimal(12,2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closingDate": {
+          "autoincrement": false,
+          "name": "closingDate",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grossCommission": {
+          "autoincrement": false,
+          "name": "grossCommission",
+          "type": "decimal(12,2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commissionRate": {
+          "autoincrement": false,
+          "name": "commissionRate",
+          "type": "decimal(5,2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pdfPath": {
+          "autoincrement": false,
+          "name": "pdfPath",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pdfFileName": {
+          "autoincrement": false,
+          "name": "pdfFileName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "default": "'draft'",
+          "autoincrement": false,
+          "name": "status",
+          "type": "enum('draft','pending_approval','approved','sent','completed')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "generatedBy": {
+          "autoincrement": false,
+          "name": "generatedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "generatedAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "generatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "approvedBy": {
+          "autoincrement": false,
+          "name": "approvedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "approvedAt": {
+          "autoincrement": false,
+          "name": "approvedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sentAt": {
+          "autoincrement": false,
+          "name": "sentAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calculationData": {
+          "autoincrement": false,
+          "name": "calculationData",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "autoincrement": false,
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
-      "uniqueConstraints": {
-        "users_openId_unique": {
-          "name": "users_openId_unique",
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "cda_generated_tenant_idx": {
+          "name": "cda_generated_tenant_idx",
           "columns": [
-            "openId"
-          ]
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "cda_generated_template_idx": {
+          "name": "cda_generated_template_idx",
+          "columns": [
+            "templateId"
+          ],
+          "isUnique": false
+        },
+        "cda_generated_transaction_idx": {
+          "name": "cda_generated_transaction_idx",
+          "columns": [
+            "transactionId"
+          ],
+          "isUnique": false
+        },
+        "cda_generated_status_idx": {
+          "name": "cda_generated_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "cda_generated_generated_by_idx": {
+          "name": "cda_generated_generated_by_idx",
+          "columns": [
+            "generatedBy"
+          ],
+          "isUnique": false
+        },
+        "cda_generated_generated_at_idx": {
+          "name": "cda_generated_generated_at_idx",
+          "columns": [
+            "generatedAt"
+          ],
+          "isUnique": false
         }
       },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "cda_templates": {
+      "name": "cda_templates",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brokerageName": {
+          "autoincrement": false,
+          "name": "brokerageName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brokerageAddress": {
+          "autoincrement": false,
+          "name": "brokerageAddress",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brokerageLogo": {
+          "autoincrement": false,
+          "name": "brokerageLogo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brokerName": {
+          "autoincrement": false,
+          "name": "brokerName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brokerEmail": {
+          "autoincrement": false,
+          "name": "brokerEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brokerPhone": {
+          "autoincrement": false,
+          "name": "brokerPhone",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "defaultSettings": {
+          "autoincrement": false,
+          "name": "defaultSettings",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "isActive",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdBy": {
+          "autoincrement": false,
+          "name": "createdBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "cda_templates_tenant_idx": {
+          "name": "cda_templates_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "cda_templates_active_idx": {
+          "name": "cda_templates_active_idx",
+          "columns": [
+            "isActive"
+          ],
+          "isUnique": false
+        },
+        "cda_templates_created_by_idx": {
+          "name": "cda_templates_created_by_idx",
+          "columns": [
+            "createdBy"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "commission_calculations": {
+      "name": "commission_calculations",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadId": {
+          "autoincrement": false,
+          "name": "uploadId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "calculationDate": {
+          "autoincrement": false,
+          "name": "calculationDate",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "breakdowns": {
+          "autoincrement": false,
+          "name": "breakdowns",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ytdSummaries": {
+          "autoincrement": false,
+          "name": "ytdSummaries",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transactionCount": {
+          "autoincrement": false,
+          "name": "transactionCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agentCount": {
+          "autoincrement": false,
+          "name": "agentCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "totalCompanyDollar": {
+          "autoincrement": false,
+          "name": "totalCompanyDollar",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "totalGrossCommission": {
+          "autoincrement": false,
+          "name": "totalGrossCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdBy": {
+          "autoincrement": false,
+          "name": "createdBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "commission_calculations_tenant_idx": {
+          "name": "commission_calculations_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "commission_calculations_date_idx": {
+          "name": "commission_calculations_date_idx",
+          "columns": [
+            "calculationDate"
+          ],
+          "isUnique": false
+        },
+        "commission_calculations_upload_idx": {
+          "name": "commission_calculations_upload_idx",
+          "columns": [
+            "uploadId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "commission_plans": {
+      "name": "commission_plans",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "splitPercentage": {
+          "autoincrement": false,
+          "name": "splitPercentage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capAmount": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "capAmount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "postCapSplit": {
+          "default": 100,
+          "autoincrement": false,
+          "name": "postCapSplit",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deductions": {
+          "autoincrement": false,
+          "name": "deductions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "royaltyPercentage": {
+          "autoincrement": false,
+          "name": "royaltyPercentage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "royaltyCap": {
+          "autoincrement": false,
+          "name": "royaltyCap",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "isActive",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        },
+        "useSliding": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "useSliding",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tiers": {
+          "autoincrement": false,
+          "name": "tiers",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "commission_plans_tenant_idx": {
+          "name": "commission_plans_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "commission_plans_active_idx": {
+          "name": "commission_plans_active_idx",
+          "columns": [
+            "isActive"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "oauth_tokens": {
+      "name": "oauth_tokens",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "default": "'dotloop'",
+          "autoincrement": false,
+          "name": "provider",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "encryptedAccessToken": {
+          "autoincrement": false,
+          "name": "encryptedAccessToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "encryptedRefreshToken": {
+          "autoincrement": false,
+          "name": "encryptedRefreshToken",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tokenExpiresAt": {
+          "autoincrement": false,
+          "name": "tokenExpiresAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "encryptionKeyVersion": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "encryptionKeyVersion",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tokenHash": {
+          "autoincrement": false,
+          "name": "tokenHash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ipAddress": {
+          "autoincrement": false,
+          "name": "ipAddress",
+          "type": "varchar(45)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "userAgent": {
+          "autoincrement": false,
+          "name": "userAgent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deviceFingerprint": {
+          "autoincrement": false,
+          "name": "deviceFingerprint",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        },
+        "lastUsedAt": {
+          "autoincrement": false,
+          "name": "lastUsedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lastRefreshedAt": {
+          "autoincrement": false,
+          "name": "lastRefreshedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dotloopAccountId": {
+          "autoincrement": false,
+          "name": "dotloopAccountId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dotloopProfileId": {
+          "autoincrement": false,
+          "name": "dotloopProfileId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dotloopDefaultProfileId": {
+          "autoincrement": false,
+          "name": "dotloopDefaultProfileId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dotloopProfileIds": {
+          "autoincrement": false,
+          "name": "dotloopProfileIds",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connectionName": {
+          "autoincrement": false,
+          "name": "connectionName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "isActive",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "isPrimary": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "isPrimary",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dotloopAccountEmail": {
+          "autoincrement": false,
+          "name": "dotloopAccountEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dotloopAccountName": {
+          "autoincrement": false,
+          "name": "dotloopAccountName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "oauth_tokens_tokenHash_unique": {
+          "name": "oauth_tokens_tokenHash_unique",
+          "columns": [
+            "tokenHash"
+          ],
+          "isUnique": false
+        },
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "user_idx": {
+          "name": "user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "tokenHash_idx": {
+          "name": "tokenHash_idx",
+          "columns": [
+            "tokenHash"
+          ],
+          "isUnique": false
+        },
+        "expires_idx": {
+          "name": "expires_idx",
+          "columns": [
+            "tokenExpiresAt"
+          ],
+          "isUnique": false
+        },
+        "tenant_provider_idx": {
+          "name": "tenant_provider_idx",
+          "columns": [
+            "tenantId",
+            "provider"
+          ],
+          "isUnique": false
+        },
+        "tenant_user_provider_idx": {
+          "name": "tenant_user_provider_idx",
+          "columns": [
+            "tenantId",
+            "userId",
+            "provider"
+          ],
+          "isUnique": false
+        },
+        "oauth_tokens_primary_idx": {
+          "name": "oauth_tokens_primary_idx",
+          "columns": [
+            "userId",
+            "isPrimary"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "platform_admin_logs": {
+      "name": "platform_admin_logs",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "adminUserId": {
+          "autoincrement": false,
+          "name": "adminUserId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "autoincrement": false,
+          "name": "action",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "autoincrement": false,
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "details": {
+          "autoincrement": false,
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ipAddress": {
+          "autoincrement": false,
+          "name": "ipAddress",
+          "type": "varchar(45)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userAgent": {
+          "autoincrement": false,
+          "name": "userAgent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "admin_idx": {
+          "name": "admin_idx",
+          "columns": [
+            "adminUserId"
+          ],
+          "isUnique": false
+        },
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "time_idx": {
+          "name": "time_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "admin_time_idx": {
+          "name": "admin_time_idx",
+          "columns": [
+            "adminUserId",
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "tenant_time_idx": {
+          "name": "tenant_time_idx",
+          "columns": [
+            "tenantId",
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "teams": {
+      "name": "teams",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "leadAgent": {
+          "autoincrement": false,
+          "name": "leadAgent",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "teamSplitPercentage": {
+          "autoincrement": false,
+          "name": "teamSplitPercentage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "isActive",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "teams_tenant_idx": {
+          "name": "teams_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "teams_active_idx": {
+          "name": "teams_active_idx",
+          "columns": [
+            "isActive"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "tenant_members": {
+      "name": "tenant_members",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "autoincrement": false,
+          "name": "role",
+          "type": "enum('admin','broker','member','agent')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "joinedAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "joinedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invitedBy": {
+          "autoincrement": false,
+          "name": "invitedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "invitedAt": {
+          "autoincrement": false,
+          "name": "invitedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "default": "'active'",
+          "autoincrement": false,
+          "name": "status",
+          "type": "enum('active','invited','inactive')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "permissions": {
+          "autoincrement": false,
+          "name": "permissions",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tenant_members_tenant_idx": {
+          "name": "tenant_members_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "tenant_members_user_idx": {
+          "name": "tenant_members_user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "tenant_members_tenant_user_unique": {
+          "name": "tenant_members_tenant_user_unique",
+          "columns": [
+            "tenantId",
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "tenant_members_role_idx": {
+          "name": "tenant_members_role_idx",
+          "columns": [
+            "role"
+          ],
+          "isUnique": false
+        },
+        "tenant_members_status_idx": {
+          "name": "tenant_members_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "tenants": {
+      "name": "tenants",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subdomain": {
+          "autoincrement": false,
+          "name": "subdomain",
+          "type": "varchar(63)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "customDomain": {
+          "autoincrement": false,
+          "name": "customDomain",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "default": "'active'",
+          "autoincrement": false,
+          "name": "status",
+          "type": "enum('active','suspended','deleted')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscriptionTier": {
+          "default": "'free'",
+          "autoincrement": false,
+          "name": "subscriptionTier",
+          "type": "enum('free','basic','professional','enterprise')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "settings": {
+          "autoincrement": false,
+          "name": "settings",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tenants_subdomain_unique": {
+          "name": "tenants_subdomain_unique",
+          "columns": [
+            "subdomain"
+          ],
+          "isUnique": false
+        },
+        "tenants_customDomain_unique": {
+          "name": "tenants_customDomain_unique",
+          "columns": [
+            "customDomain"
+          ],
+          "isUnique": false
+        },
+        "subdomain_idx": {
+          "name": "subdomain_idx",
+          "columns": [
+            "subdomain"
+          ],
+          "isUnique": false
+        },
+        "customDomain_idx": {
+          "name": "customDomain_idx",
+          "columns": [
+            "customDomain"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "tier_history": {
+      "name": "tier_history",
+      "columns": {
+        "id": {
+          "autoincrement": false,
+          "name": "id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agentName": {
+          "autoincrement": false,
+          "name": "agentName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "planId": {
+          "autoincrement": false,
+          "name": "planId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "previousTierIndex": {
+          "autoincrement": false,
+          "name": "previousTierIndex",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previousTierThreshold": {
+          "autoincrement": false,
+          "name": "previousTierThreshold",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previousSplitPercentage": {
+          "autoincrement": false,
+          "name": "previousSplitPercentage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "newTierIndex": {
+          "autoincrement": false,
+          "name": "newTierIndex",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "newTierThreshold": {
+          "autoincrement": false,
+          "name": "newTierThreshold",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "newSplitPercentage": {
+          "autoincrement": false,
+          "name": "newSplitPercentage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ytdAmount": {
+          "autoincrement": false,
+          "name": "ytdAmount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transactionId": {
+          "autoincrement": false,
+          "name": "transactionId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transactionDate": {
+          "autoincrement": false,
+          "name": "transactionDate",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tier_history_tenant_idx": {
+          "name": "tier_history_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "tier_history_agent_idx": {
+          "name": "tier_history_agent_idx",
+          "columns": [
+            "agentName"
+          ],
+          "isUnique": false
+        },
+        "tier_history_plan_idx": {
+          "name": "tier_history_plan_idx",
+          "columns": [
+            "planId"
+          ],
+          "isUnique": false
+        },
+        "tier_history_tenant_agent_idx": {
+          "name": "tier_history_tenant_agent_idx",
+          "columns": [
+            "tenantId",
+            "agentName"
+          ],
+          "isUnique": false
+        },
+        "tier_history_created_idx": {
+          "name": "tier_history_created_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "token_audit_logs": {
+      "name": "token_audit_logs",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tokenId": {
+          "autoincrement": false,
+          "name": "tokenId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "autoincrement": false,
+          "name": "action",
+          "type": "enum('token_created','token_refreshed','token_used','token_revoked','token_decryption_failed','suspicious_access','rate_limit_exceeded','security_alert')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "autoincrement": false,
+          "name": "status",
+          "type": "enum('success','failure','warning')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "errorMessage": {
+          "autoincrement": false,
+          "name": "errorMessage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ipAddress": {
+          "autoincrement": false,
+          "name": "ipAddress",
+          "type": "varchar(45)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userAgent": {
+          "autoincrement": false,
+          "name": "userAgent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requestId": {
+          "autoincrement": false,
+          "name": "requestId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "autoincrement": false,
+          "name": "metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tenant_time_idx": {
+          "name": "tenant_time_idx",
+          "columns": [
+            "tenantId",
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "action_idx": {
+          "name": "action_idx",
+          "columns": [
+            "action",
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "suspicious_idx": {
+          "name": "suspicious_idx",
+          "columns": [
+            "tenantId",
+            "createdAt",
+            "action"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "transactions": {
+      "name": "transactions",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadId": {
+          "autoincrement": false,
+          "name": "uploadId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "loopId": {
+          "autoincrement": false,
+          "name": "loopId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loopViewUrl": {
+          "autoincrement": false,
+          "name": "loopViewUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loopName": {
+          "autoincrement": false,
+          "name": "loopName",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loopStatus": {
+          "autoincrement": false,
+          "name": "loopStatus",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdDate": {
+          "autoincrement": false,
+          "name": "createdDate",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closingDate": {
+          "autoincrement": false,
+          "name": "closingDate",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "listingDate": {
+          "autoincrement": false,
+          "name": "listingDate",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "offerDate": {
+          "autoincrement": false,
+          "name": "offerDate",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "address": {
+          "autoincrement": false,
+          "name": "address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "price": {
+          "autoincrement": false,
+          "name": "price",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "propertyType": {
+          "autoincrement": false,
+          "name": "propertyType",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bedrooms": {
+          "autoincrement": false,
+          "name": "bedrooms",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bathrooms": {
+          "autoincrement": false,
+          "name": "bathrooms",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "squareFootage": {
+          "autoincrement": false,
+          "name": "squareFootage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "autoincrement": false,
+          "name": "city",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "state": {
+          "autoincrement": false,
+          "name": "state",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "county": {
+          "autoincrement": false,
+          "name": "county",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "leadSource": {
+          "autoincrement": false,
+          "name": "leadSource",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "agents": {
+          "autoincrement": false,
+          "name": "agents",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdBy": {
+          "autoincrement": false,
+          "name": "createdBy",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "earnestMoney": {
+          "autoincrement": false,
+          "name": "earnestMoney",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "salePrice": {
+          "autoincrement": false,
+          "name": "salePrice",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commissionRate": {
+          "autoincrement": false,
+          "name": "commissionRate",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "commissionTotal": {
+          "autoincrement": false,
+          "name": "commissionTotal",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "buySideCommission": {
+          "autoincrement": false,
+          "name": "buySideCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sellSideCommission": {
+          "autoincrement": false,
+          "name": "sellSideCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "companyDollar": {
+          "autoincrement": false,
+          "name": "companyDollar",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referralSource": {
+          "autoincrement": false,
+          "name": "referralSource",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "referralPercentage": {
+          "autoincrement": false,
+          "name": "referralPercentage",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "complianceStatus": {
+          "autoincrement": false,
+          "name": "complianceStatus",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tags": {
+          "autoincrement": false,
+          "name": "tags",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "originalPrice": {
+          "autoincrement": false,
+          "name": "originalPrice",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "yearBuilt": {
+          "autoincrement": false,
+          "name": "yearBuilt",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lotSize": {
+          "autoincrement": false,
+          "name": "lotSize",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "subdivision": {
+          "autoincrement": false,
+          "name": "subdivision",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "loopId_tenant_unique": {
+          "name": "loopId_tenant_unique",
+          "columns": [
+            "loopId",
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "upload_idx": {
+          "name": "upload_idx",
+          "columns": [
+            "uploadId"
+          ],
+          "isUnique": false
+        },
+        "user_idx": {
+          "name": "user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "uploadId_user_idx": {
+          "name": "uploadId_user_idx",
+          "columns": [
+            "uploadId",
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "user_createdAt_idx": {
+          "name": "user_createdAt_idx",
+          "columns": [
+            "userId",
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "tenant_createdAt_idx": {
+          "name": "tenant_createdAt_idx",
+          "columns": [
+            "tenantId",
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "upload_activity_log": {
+      "name": "upload_activity_log",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadId": {
+          "autoincrement": false,
+          "name": "uploadId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userTeamId": {
+          "autoincrement": false,
+          "name": "userTeamId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "autoincrement": false,
+          "name": "action",
+          "type": "enum('shared','viewed','downloaded','deleted')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "autoincrement": false,
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "upload_idx": {
+          "name": "upload_idx",
+          "columns": [
+            "uploadId"
+          ],
+          "isUnique": false
+        },
+        "user_team_idx": {
+          "name": "user_team_idx",
+          "columns": [
+            "userTeamId"
+          ],
+          "isUnique": false
+        },
+        "user_idx": {
+          "name": "user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "created_at_idx": {
+          "name": "created_at_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "upload_sharing": {
+      "name": "upload_sharing",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadId": {
+          "autoincrement": false,
+          "name": "uploadId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userTeamId": {
+          "autoincrement": false,
+          "name": "userTeamId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sharedAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "sharedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sharedBy": {
+          "autoincrement": false,
+          "name": "sharedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "upload_idx": {
+          "name": "upload_idx",
+          "columns": [
+            "uploadId"
+          ],
+          "isUnique": false
+        },
+        "user_team_idx": {
+          "name": "user_team_idx",
+          "columns": [
+            "userTeamId"
+          ],
+          "isUnique": false
+        },
+        "upload_user_team_unique": {
+          "name": "upload_user_team_unique",
+          "columns": [
+            "uploadId",
+            "userTeamId"
+          ],
+          "isUnique": false
+        },
+        "shared_at_idx": {
+          "name": "shared_at_idx",
+          "columns": [
+            "sharedAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "upload_snapshots": {
+      "name": "upload_snapshots",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadId": {
+          "autoincrement": false,
+          "name": "uploadId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fileName": {
+          "autoincrement": false,
+          "name": "fileName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadedAt": {
+          "autoincrement": false,
+          "name": "uploadedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "totalTransactions": {
+          "autoincrement": false,
+          "name": "totalTransactions",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "totalSalesVolume": {
+          "autoincrement": false,
+          "name": "totalSalesVolume",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "averagePrice": {
+          "autoincrement": false,
+          "name": "averagePrice",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "totalCommission": {
+          "autoincrement": false,
+          "name": "totalCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "closingRate": {
+          "autoincrement": false,
+          "name": "closingRate",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avgDaysToClose": {
+          "autoincrement": false,
+          "name": "avgDaysToClose",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activeListings": {
+          "autoincrement": false,
+          "name": "activeListings",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "underContract": {
+          "autoincrement": false,
+          "name": "underContract",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "closedDeals": {
+          "autoincrement": false,
+          "name": "closedDeals",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archivedDeals": {
+          "autoincrement": false,
+          "name": "archivedDeals",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "totalCompanyDollar": {
+          "autoincrement": false,
+          "name": "totalCompanyDollar",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buySideCommission": {
+          "autoincrement": false,
+          "name": "buySideCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sellSideCommission": {
+          "autoincrement": false,
+          "name": "sellSideCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metricsJson": {
+          "autoincrement": false,
+          "name": "metricsJson",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "upload_snapshots_tenant_idx": {
+          "name": "upload_snapshots_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "upload_snapshots_upload_idx": {
+          "name": "upload_snapshots_upload_idx",
+          "columns": [
+            "uploadId"
+          ],
+          "isUnique": false
+        },
+        "upload_snapshots_tenant_uploadedAt_idx": {
+          "name": "upload_snapshots_tenant_uploadedAt_idx",
+          "columns": [
+            "tenantId",
+            "uploadedAt"
+          ],
+          "isUnique": false
+        },
+        "upload_snapshots_createdAt_idx": {
+          "name": "upload_snapshots_createdAt_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "uploads": {
+      "name": "uploads",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fileName": {
+          "autoincrement": false,
+          "name": "fileName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recordCount": {
+          "autoincrement": false,
+          "name": "recordCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uploadedAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "uploadedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fileSize": {
+          "autoincrement": false,
+          "name": "fileSize",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "validationTimeMs": {
+          "autoincrement": false,
+          "name": "validationTimeMs",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parsingTimeMs": {
+          "autoincrement": false,
+          "name": "parsingTimeMs",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "uploadTimeMs": {
+          "autoincrement": false,
+          "name": "uploadTimeMs",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "totalTimeMs": {
+          "autoincrement": false,
+          "name": "totalTimeMs",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "default": "'success'",
+          "autoincrement": false,
+          "name": "status",
+          "type": "enum('success','failed','partial')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "errorMessage": {
+          "autoincrement": false,
+          "name": "errorMessage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "user_idx": {
+          "name": "user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "user_uploadedAt_idx": {
+          "name": "user_uploadedAt_idx",
+          "columns": [
+            "userId",
+            "uploadedAt"
+          ],
+          "isUnique": false
+        },
+        "tenant_uploadedAt_idx": {
+          "name": "tenant_uploadedAt_idx",
+          "columns": [
+            "tenantId",
+            "uploadedAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "user_preferences": {
+      "name": "user_preferences",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activeOAuthTokenId": {
+          "autoincrement": false,
+          "name": "activeOAuthTokenId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "defaultUploadView": {
+          "default": "'dashboard'",
+          "autoincrement": false,
+          "name": "defaultUploadView",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "theme": {
+          "default": "'light'",
+          "autoincrement": false,
+          "name": "theme",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "onUpdate": true
+        },
+        "commissionVisibility": {
+          "default": "'admin_only'",
+          "autoincrement": false,
+          "name": "commissionVisibility",
+          "type": "enum('public','team','admin_only','private')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allowOthersViewMyCommission": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "allowOthersViewMyCommission",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allowOthersViewMyTransactions": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "allowOthersViewMyTransactions",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "showInLeaderboard": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "showInLeaderboard",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "user_preferences_user_unique": {
+          "name": "user_preferences_user_unique",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "user_preferences_tenant_idx": {
+          "name": "user_preferences_tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "user_team_members": {
+      "name": "user_team_members",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userTeamId": {
+          "autoincrement": false,
+          "name": "userTeamId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "userId": {
+          "autoincrement": false,
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "default": "'viewer'",
+          "autoincrement": false,
+          "name": "role",
+          "type": "enum('owner','editor','viewer')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "addedAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "addedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "addedBy": {
+          "autoincrement": false,
+          "name": "addedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "user_team_idx": {
+          "name": "user_team_idx",
+          "columns": [
+            "userTeamId"
+          ],
+          "isUnique": false
+        },
+        "user_idx": {
+          "name": "user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "user_team_user_unique": {
+          "name": "user_team_user_unique",
+          "columns": [
+            "userTeamId",
+            "userId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "user_teams": {
+      "name": "user_teams",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ownerId": {
+          "autoincrement": false,
+          "name": "ownerId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "autoincrement": false,
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "owner_idx": {
+          "name": "owner_idx",
+          "columns": [
+            "ownerId"
+          ],
+          "isUnique": false
+        },
+        "tenant_owner_idx": {
+          "name": "tenant_owner_idx",
+          "columns": [
+            "tenantId",
+            "ownerId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "users": {
+      "name": "users",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tenantId": {
+          "autoincrement": false,
+          "name": "tenantId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "openId": {
+          "autoincrement": false,
+          "name": "openId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dotloopUserId": {
+          "autoincrement": false,
+          "name": "dotloopUserId",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "name": {
+          "autoincrement": false,
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "autoincrement": false,
+          "name": "email",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "loginMethod": {
+          "autoincrement": false,
+          "name": "loginMethod",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "default": "'viewer'",
+          "autoincrement": false,
+          "name": "role",
+          "type": "enum('admin','broker','agent','viewer')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "default": "'active'",
+          "autoincrement": false,
+          "name": "status",
+          "type": "enum('active','inactive','suspended')",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updatedAt": {
+          "default": "(CURRENT_TIMESTAMP)",
+          "autoincrement": false,
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "onUpdate": true
+        },
+        "lastSignedIn": {
+          "default": "'CURRENT_TIMESTAMP'",
+          "autoincrement": false,
+          "name": "lastSignedIn",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {
+        "openId_tenant_unique": {
+          "name": "openId_tenant_unique",
+          "columns": [
+            "openId",
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "email_tenant_unique": {
+          "name": "email_tenant_unique",
+          "columns": [
+            "email",
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "tenant_idx": {
+          "name": "tenant_idx",
+          "columns": [
+            "tenantId"
+          ],
+          "isUnique": false
+        },
+        "dotloopUserId_unique": {
+          "name": "dotloopUserId_unique",
+          "columns": [
+            "dotloopUserId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "uniqueConstraints": {},
       "checkConstraint": {}
     }
   },
@@ -104,7 +3143,85 @@
     "columns": {}
   },
   "internal": {
-    "tables": {},
+    "tables": {
+      "agent_assignments": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "cda_field_mappings": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "cda_templates": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "commission_plans": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "oauth_tokens": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "teams": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "tenant_members": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "tenants": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "user_preferences": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "user_teams": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      },
+      "users": {
+        "columns": {
+          "updatedAt": {
+            "isDefaultAnExpression": true
+          }
+        }
+      }
+    },
     "indexes": {}
   }
 }

@@ -35,7 +35,7 @@ export const auditLogs = mysqlTable("audit_logs", {
 	details: text(),
 	ipAddress: varchar({ length: 45 }),
 	userAgent: text(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ fsp: 3, mode: 'string' }).default('CURRENT_TIMESTAMP(3)').notNull(),
 },
 (table) => [
 	index("tenant_idx").on(table.tenantId),
@@ -44,6 +44,74 @@ export const auditLogs = mysqlTable("audit_logs", {
 	index("tenant_createdAt_idx").on(table.tenantId, table.createdAt),
 	index("adminId_createdAt_idx").on(table.adminId, table.createdAt),
 	index("targetType_targetId_idx").on(table.targetType, table.targetId),
+]);
+
+export const cdaFieldMappings = mysqlTable("cda_field_mappings", {
+	id: int().autoincrement().notNull(),
+	templateId: varchar({ length: 64 }).notNull(),
+	csvColumn: varchar({ length: 255 }),
+	cdaField: varchar({ length: 255 }).notNull(),
+	transformFunction: varchar({ length: 100 }),
+	defaultValue: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("cda_field_mappings_template_idx").on(table.templateId),
+	index("cda_field_mappings_cda_field_idx").on(table.cdaField),
+]);
+
+export const cdaGenerated = mysqlTable("cda_generated", {
+	id: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	templateId: varchar({ length: 64 }).notNull(),
+	transactionId: varchar({ length: 64 }),
+	propertyAddress: varchar({ length: 500 }),
+	mlsNumber: varchar({ length: 100 }),
+	salePrice: decimal({ precision: 12, scale: 2 }),
+	closingDate: varchar({ length: 10 }),
+	grossCommission: decimal({ precision: 12, scale: 2 }),
+	commissionRate: decimal({ precision: 5, scale: 2 }),
+	pdfPath: text(),
+	pdfFileName: varchar({ length: 255 }),
+	status: mysqlEnum(['draft','pending_approval','approved','sent','completed']).default('draft').notNull(),
+	generatedBy: int().notNull(),
+	generatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	approvedBy: int(),
+	approvedAt: timestamp({ mode: 'string' }),
+	sentAt: timestamp({ mode: 'string' }),
+	calculationData: text(),
+	notes: text(),
+},
+(table) => [
+	index("cda_generated_tenant_idx").on(table.tenantId),
+	index("cda_generated_template_idx").on(table.templateId),
+	index("cda_generated_transaction_idx").on(table.transactionId),
+	index("cda_generated_status_idx").on(table.status),
+	index("cda_generated_generated_by_idx").on(table.generatedBy),
+	index("cda_generated_generated_at_idx").on(table.generatedAt),
+]);
+
+export const cdaTemplates = mysqlTable("cda_templates", {
+	id: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	brokerageName: varchar({ length: 255 }).notNull(),
+	brokerageAddress: text(),
+	brokerageLogo: text(),
+	brokerName: varchar({ length: 255 }),
+	brokerEmail: varchar({ length: 320 }),
+	brokerPhone: varchar({ length: 50 }),
+	defaultSettings: text(),
+	isActive: int().default(1).notNull(),
+	createdBy: int().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("cda_templates_tenant_idx").on(table.tenantId),
+	index("cda_templates_active_idx").on(table.isActive),
+	index("cda_templates_created_by_idx").on(table.createdBy),
 ]);
 
 export const commissionCalculations = mysqlTable("commission_calculations", {
@@ -78,10 +146,10 @@ export const commissionPlans = mysqlTable("commission_plans", {
 	royaltyCap: int(),
 	description: text(),
 	isActive: int().default(1).notNull(),
-	useSliding: int().default(0).notNull(),
-	tiers: text(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	useSliding: int().default(0).notNull(),
+	tiers: text(),
 },
 (table) => [
 	index("commission_plans_tenant_idx").on(table.tenantId),
@@ -105,18 +173,15 @@ export const oauthTokens = mysqlTable("oauth_tokens", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	lastUsedAt: timestamp({ mode: 'string' }),
 	lastRefreshedAt: timestamp({ mode: 'string' }),
-	// Multi-connection support
-	connectionName: varchar({ length: 255 }),
-	isActive: int().default(1).notNull(),
-	isPrimary: int().default(0).notNull(),
-	
-	// Dotloop account info
 	dotloopAccountId: int(),
-	dotloopAccountEmail: varchar({ length: 320 }),
-	dotloopAccountName: varchar({ length: 255 }),
 	dotloopProfileId: int(),
 	dotloopDefaultProfileId: int(),
 	dotloopProfileIds: text(),
+	connectionName: varchar({ length: 255 }),
+	isActive: int().default(1).notNull(),
+	isPrimary: int().default(0).notNull(),
+	dotloopAccountEmail: varchar({ length: 320 }),
+	dotloopAccountName: varchar({ length: 255 }),
 },
 (table) => [
 	index("oauth_tokens_tokenHash_unique").on(table.tokenHash),
@@ -164,6 +229,27 @@ export const teams = mysqlTable("teams", {
 	index("teams_active_idx").on(table.isActive),
 ]);
 
+export const tenantMembers = mysqlTable("tenant_members", {
+	id: int().autoincrement().notNull(),
+	tenantId: int().notNull(),
+	userId: int().notNull(),
+	role: mysqlEnum(['admin','broker','member','agent']).notNull(),
+	joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	invitedBy: int(),
+	invitedAt: timestamp({ mode: 'string' }),
+	status: mysqlEnum(['active','invited','inactive']).default('active').notNull(),
+	permissions: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("tenant_members_tenant_idx").on(table.tenantId),
+	index("tenant_members_user_idx").on(table.userId),
+	index("tenant_members_tenant_user_unique").on(table.tenantId, table.userId),
+	index("tenant_members_role_idx").on(table.role),
+	index("tenant_members_status_idx").on(table.status),
+]);
+
 export const tenants = mysqlTable("tenants", {
 	id: int().autoincrement().notNull(),
 	name: varchar({ length: 255 }).notNull(),
@@ -180,6 +266,30 @@ export const tenants = mysqlTable("tenants", {
 	index("tenants_customDomain_unique").on(table.customDomain),
 	index("subdomain_idx").on(table.subdomain),
 	index("customDomain_idx").on(table.customDomain),
+]);
+
+export const tierHistory = mysqlTable("tier_history", {
+	id: varchar({ length: 64 }).notNull(),
+	tenantId: int().notNull(),
+	agentName: varchar({ length: 255 }).notNull(),
+	planId: varchar({ length: 64 }).notNull(),
+	previousTierIndex: int(),
+	previousTierThreshold: int(),
+	previousSplitPercentage: int(),
+	newTierIndex: int().notNull(),
+	newTierThreshold: int().notNull(),
+	newSplitPercentage: int().notNull(),
+	ytdAmount: int().notNull(),
+	transactionId: varchar({ length: 255 }),
+	transactionDate: varchar({ length: 50 }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("tier_history_tenant_idx").on(table.tenantId),
+	index("tier_history_agent_idx").on(table.agentName),
+	index("tier_history_plan_idx").on(table.planId),
+	index("tier_history_tenant_agent_idx").on(table.tenantId, table.agentName),
+	index("tier_history_created_idx").on(table.createdAt),
 ]);
 
 export const tokenAuditLogs = mysqlTable("token_audit_logs", {
@@ -254,6 +364,65 @@ export const transactions = mysqlTable("transactions", {
 	index("tenant_createdAt_idx").on(table.tenantId, table.createdAt),
 ]);
 
+export const uploadActivityLog = mysqlTable("upload_activity_log", {
+	id: int().autoincrement().notNull(),
+	uploadId: int().notNull(),
+	userTeamId: int().notNull(),
+	userId: int().notNull(),
+	action: mysqlEnum(['shared','viewed','downloaded','deleted']).notNull(),
+	details: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("upload_idx").on(table.uploadId),
+	index("user_team_idx").on(table.userTeamId),
+	index("user_idx").on(table.userId),
+	index("created_at_idx").on(table.createdAt),
+]);
+
+export const uploadSharing = mysqlTable("upload_sharing", {
+	id: int().autoincrement().notNull(),
+	uploadId: int().notNull(),
+	userTeamId: int().notNull(),
+	sharedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	sharedBy: int().notNull(),
+},
+(table) => [
+	index("upload_idx").on(table.uploadId),
+	index("user_team_idx").on(table.userTeamId),
+	index("upload_user_team_unique").on(table.uploadId, table.userTeamId),
+	index("shared_at_idx").on(table.sharedAt),
+]);
+
+export const uploadSnapshots = mysqlTable("upload_snapshots", {
+	id: int().autoincrement().notNull(),
+	tenantId: int().notNull(),
+	uploadId: int().notNull(),
+	fileName: varchar({ length: 255 }).notNull(),
+	uploadedAt: timestamp({ mode: 'string' }).notNull(),
+	totalTransactions: int().notNull(),
+	totalSalesVolume: int().notNull(),
+	averagePrice: int().notNull(),
+	totalCommission: int().notNull(),
+	closingRate: int().notNull(),
+	avgDaysToClose: int().notNull(),
+	activeListings: int().notNull(),
+	underContract: int().notNull(),
+	closedDeals: int().notNull(),
+	archivedDeals: int().notNull(),
+	totalCompanyDollar: int().notNull(),
+	buySideCommission: int().notNull(),
+	sellSideCommission: int().notNull(),
+	metricsJson: text().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("upload_snapshots_tenant_idx").on(table.tenantId),
+	index("upload_snapshots_upload_idx").on(table.uploadId),
+	index("upload_snapshots_tenant_uploadedAt_idx").on(table.tenantId, table.uploadedAt),
+	index("upload_snapshots_createdAt_idx").on(table.createdAt),
+]);
+
 export const uploads = mysqlTable("uploads", {
 	id: int().autoincrement().notNull(),
 	tenantId: int().notNull(),
@@ -276,98 +445,58 @@ export const uploads = mysqlTable("uploads", {
 	index("tenant_uploadedAt_idx").on(table.tenantId, table.uploadedAt),
 ]);
 
-	export const uploadSnapshots = mysqlTable("upload_snapshots", {
-		id: int().autoincrement().notNull(),
-		tenantId: int().notNull(),
-		uploadId: int().notNull(),
-		fileName: varchar({ length: 255 }).notNull(),
-		uploadedAt: timestamp({ mode: 'string' }).notNull(),
-		totalTransactions: int().notNull(),
-		totalSalesVolume: int().notNull(),
-		averagePrice: int().notNull(),
-		totalCommission: int().notNull(),
-		closingRate: int().notNull(),
-		avgDaysToClose: int().notNull(),
-		activeListings: int().notNull(),
-		underContract: int().notNull(),
-		closedDeals: int().notNull(),
-		archivedDeals: int().notNull(),
-		totalCompanyDollar: int().notNull(),
-		buySideCommission: int().notNull(),
-		sellSideCommission: int().notNull(),
-		metricsJson: text().notNull(),
-		createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	},
-	(table) => [
-		index("upload_snapshots_tenant_idx").on(table.tenantId),
-		index("upload_snapshots_upload_idx").on(table.uploadId),
-		index("upload_snapshots_tenant_uploadedAt_idx").on(table.tenantId, table.uploadedAt),
-		index("upload_snapshots_createdAt_idx").on(table.createdAt),
-	]);
+export const userPreferences = mysqlTable("user_preferences", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull(),
+	tenantId: int().notNull(),
+	activeOauthTokenId: int(),
+	defaultUploadView: varchar({ length: 50 }).default('dashboard'),
+	theme: varchar({ length: 20 }).default('light'),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow(),
+	commissionVisibility: mysqlEnum(['public','team','admin_only','private']).default('admin_only').notNull(),
+	allowOthersViewMyCommission: int().default(0).notNull(),
+	allowOthersViewMyTransactions: int().default(1).notNull(),
+	showInLeaderboard: int().default(1).notNull(),
+},
+(table) => [
+	index("user_preferences_user_unique").on(table.userId),
+	index("user_preferences_tenant_idx").on(table.tenantId),
+]);
 
-	export const userTeams = mysqlTable("user_teams", {
-		id: int().autoincrement().notNull(),
-		tenantId: int().notNull(),
-		ownerId: int().notNull(),
-		name: varchar({ length: 255 }).notNull(),
-		description: text(),
-		createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-		updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-	},
-	(table) => [
-		index("tenant_idx").on(table.tenantId),
-		index("owner_idx").on(table.ownerId),
-		index("tenant_owner_idx").on(table.tenantId, table.ownerId),
-	]);
+export const userTeamMembers = mysqlTable("user_team_members", {
+	id: int().autoincrement().notNull(),
+	userTeamId: int().notNull(),
+	userId: int().notNull(),
+	role: mysqlEnum(['owner','editor','viewer']).default('viewer').notNull(),
+	addedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	addedBy: int().notNull(),
+},
+(table) => [
+	index("user_team_idx").on(table.userTeamId),
+	index("user_idx").on(table.userId),
+	index("user_team_user_unique").on(table.userTeamId, table.userId),
+]);
 
-	export const userTeamMembers = mysqlTable("user_team_members", {
-		id: int().autoincrement().notNull(),
-		userTeamId: int().notNull(),
-		userId: int().notNull(),
-		role: mysqlEnum(['owner','editor','viewer']).default('viewer').notNull(),
-		addedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-		addedBy: int().notNull(),
-	},
-	(table) => [
-		index("user_team_idx").on(table.userTeamId),
-		index("user_idx").on(table.userId),
-		index("user_team_user_unique").on(table.userTeamId, table.userId),
-	]);
-
-	export const uploadSharing = mysqlTable("upload_sharing", {
-		id: int().autoincrement().notNull(),
-		uploadId: int().notNull(),
-		userTeamId: int().notNull(),
-		sharedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-		sharedBy: int().notNull(),
-	},
-	(table) => [
-		index("upload_idx").on(table.uploadId),
-		index("user_team_idx").on(table.userTeamId),
-		index("upload_user_team_unique").on(table.uploadId, table.userTeamId),
-		index("shared_at_idx").on(table.sharedAt),
-	]);
-
-	export const uploadActivityLog = mysqlTable("upload_activity_log", {
-		id: int().autoincrement().notNull(),
-		uploadId: int().notNull(),
-		userTeamId: int().notNull(),
-		userId: int().notNull(),
-		action: mysqlEnum(['shared','viewed','downloaded','deleted']).notNull(),
-		details: text(),
-		createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	},
-	(table) => [
-		index("upload_idx").on(table.uploadId),
-		index("user_team_idx").on(table.userTeamId),
-		index("user_idx").on(table.userId),
-		index("created_at_idx").on(table.createdAt),
-	]);
-
-	export const users = mysqlTable("users", {
+export const userTeams = mysqlTable("user_teams", {
 	id: int().autoincrement().notNull(),
 	tenantId: int().notNull(),
-	openId: varchar({ length: 64 }).notNull(),
+	ownerId: int().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	description: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("tenant_idx").on(table.tenantId),
+	index("owner_idx").on(table.ownerId),
+	index("tenant_owner_idx").on(table.tenantId, table.ownerId),
+]);
+
+export const users = mysqlTable("users", {
+	id: int().autoincrement().notNull(),
+	tenantId: int().notNull(),
+	openId: varchar({ length: 64 }),
+	dotloopUserId: varchar({ length: 64 }),
 	name: text(),
 	email: varchar({ length: 320 }),
 	loginMethod: varchar({ length: 64 }),
@@ -381,147 +510,22 @@ export const uploads = mysqlTable("uploads", {
 	index("openId_tenant_unique").on(table.openId, table.tenantId),
 	index("email_tenant_unique").on(table.email, table.tenantId),
 	index("tenant_idx").on(table.tenantId),
-	]);
-
-export const userPreferences = mysqlTable("user_preferences", {
-	id: int().autoincrement().notNull(),
-	userId: int().notNull(),
-	tenantId: int().notNull(),
-	
-	// Current active Dotloop connection
-	activeOAuthTokenId: int(),
-	
-	// Other preferences
-	defaultUploadView: varchar({ length: 50 }).default('dashboard'),
-	theme: varchar({ length: 20 }).default('light'),
-	
-	// Privacy & Access Control Settings
-	commissionVisibility: mysqlEnum(['public','team','admin_only','private']).default('admin_only').notNull(),
-	allowOthersViewMyCommission: int().default(0).notNull(),
-	allowOthersViewMyTransactions: int().default(1).notNull(),
-	showInLeaderboard: int().default(1).notNull(),
-	
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("user_preferences_user_unique").on(table.userId),
-	index("user_preferences_tenant_idx").on(table.tenantId),
+	index("dotloopUserId_unique").on(table.dotloopUserId),
 ]);
 
-
-// CDA (Commission Disbursement Authorization) Tables
-
-export const cdaTemplates = mysqlTable("cda_templates", {
-	id: varchar({ length: 64 }).notNull().primaryKey(),
-	tenantId: int().notNull(),
-	name: varchar({ length: 255 }).notNull(),
-	
-	// Brokerage Information
-	brokerageName: varchar({ length: 255 }).notNull(),
-	brokerageAddress: text(),
-	brokerageLogo: text(), // URL or base64
-	brokerName: varchar({ length: 255 }),
-	brokerEmail: varchar({ length: 320 }),
-	brokerPhone: varchar({ length: 50 }),
-	
-	// Default Settings (JSON)
-	defaultSettings: text(), // JSON: { defaultCommissionRate, defaultSplit, etc. }
-	
-	// Metadata
-	isActive: int().default(1).notNull(),
-	createdBy: int().notNull(),
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("cda_templates_tenant_idx").on(table.tenantId),
-	index("cda_templates_active_idx").on(table.isActive),
-	index("cda_templates_created_by_idx").on(table.createdBy),
-]);
-
-export const cdaGenerated = mysqlTable("cda_generated", {
-	id: varchar({ length: 64 }).notNull().primaryKey(),
-	tenantId: int().notNull(),
-	templateId: varchar({ length: 64 }).notNull(),
-	transactionId: varchar({ length: 64 }), // Reference to transaction/loop
-	
-	// Transaction Data (snapshot at generation time)
-	propertyAddress: varchar({ length: 500 }),
-	mlsNumber: varchar({ length: 100 }),
-	salePrice: decimal({ precision: 12, scale: 2 }),
-	closingDate: varchar({ length: 10 }),
-	
-	// Commission Data (snapshot)
-	grossCommission: decimal({ precision: 12, scale: 2 }),
-	commissionRate: decimal({ precision: 5, scale: 2 }),
-	
-	// PDF Storage
-	pdfPath: text(), // S3 URL or file path
-	pdfFileName: varchar({ length: 255 }),
-	
-	// Status
-	status: mysqlEnum(['draft','pending_approval','approved','sent','completed']).default('draft').notNull(),
-	
-	// Metadata
-	generatedBy: int().notNull(),
-	generatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	approvedBy: int(),
-	approvedAt: timestamp({ mode: 'string' }),
-	sentAt: timestamp({ mode: 'string' }),
-	
-	// Additional Data (JSON)
-	calculationData: text(), // JSON: full breakdown of all calculations
-	notes: text(),
-},
-(table) => [
-	index("cda_generated_tenant_idx").on(table.tenantId),
-	index("cda_generated_template_idx").on(table.templateId),
-	index("cda_generated_transaction_idx").on(table.transactionId),
-	index("cda_generated_status_idx").on(table.status),
-	index("cda_generated_generated_by_idx").on(table.generatedBy),
-	index("cda_generated_generated_at_idx").on(table.generatedAt),
-]);
-
-export const cdaFieldMappings = mysqlTable("cda_field_mappings", {
-	id: int().autoincrement().notNull().primaryKey(),
-	templateId: varchar({ length: 64 }).notNull(),
-	
-	// Mapping Configuration
-	csvColumn: varchar({ length: 255 }), // Source column name
-	cdaField: varchar({ length: 255 }).notNull(), // Target CDA field
-	transformFunction: varchar({ length: 100 }), // Optional: 'uppercase', 'currency', 'date', etc.
-	defaultValue: text(), // Fallback if CSV column is empty
-	
-	// Metadata
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("cda_field_mappings_template_idx").on(table.templateId),
-	index("cda_field_mappings_cda_field_idx").on(table.cdaField),
-]);
-
-
-// Brokerage Branding & White Label
 export const brokerageBranding = mysqlTable("brokerage_branding", {
-	id: int().autoincrement().notNull().primaryKey(),
+	id: int().autoincrement().notNull(),
 	tenantId: int().notNull().unique(),
 	brokerageName: varchar({ length: 255 }).notNull(),
 	tagline: text(),
 	address: text(),
 	phone: varchar({ length: 20 }),
 	licenseNumber: varchar({ length: 100 }),
-	
-	// Branding Colors
-	primaryColor: varchar({ length: 7 }).default('#10b981').notNull(), // Hex color
+	primaryColor: varchar({ length: 7 }).default('#10b981').notNull(),
 	secondaryColor: varchar({ length: 7 }).default('#3b82f6').notNull(),
 	accentColor: varchar({ length: 7 }).default('#8b5cf6').notNull(),
-	
-	// Logo
-	logoUrl: text(), // S3 URL
+	logoUrl: text(),
 	logoFileName: varchar({ length: 255 }),
-	
-	// Metadata
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 },
@@ -529,27 +533,18 @@ export const brokerageBranding = mysqlTable("brokerage_branding", {
 	index("brokerage_branding_tenant_idx").on(table.tenantId),
 ]);
 
-// CDA Documents (Archive/History)
 export const cdaDocuments = mysqlTable("cda_documents", {
-	id: varchar({ length: 64 }).notNull().primaryKey(),
+	id: varchar({ length: 64 }).notNull(),
 	tenantId: int().notNull(),
-	
-	// Document Info
 	documentName: varchar({ length: 255 }).notNull(),
 	description: text(),
-	
-	// Transaction Reference
 	transactionId: varchar({ length: 255 }),
 	loopName: varchar({ length: 255 }),
-	
-	// Parties Involved
 	closingCompany: varchar({ length: 255 }),
 	closingOfficer: varchar({ length: 255 }),
 	propertyAddress: text(),
 	salePrice: decimal({ precision: 15, scale: 2 }),
 	closingDate: varchar({ length: 10 }),
-	
-	// Commission Details
 	totalCommissionRate: decimal({ precision: 5, scale: 2 }),
 	listingSide: decimal({ precision: 5, scale: 2 }),
 	buyingSide: decimal({ precision: 5, scale: 2 }),
@@ -557,24 +552,12 @@ export const cdaDocuments = mysqlTable("cda_documents", {
 	franchiseFee: decimal({ precision: 5, scale: 2 }),
 	listingAgentSplit: decimal({ precision: 5, scale: 2 }),
 	buyingAgentSplit: decimal({ precision: 5, scale: 2 }),
-	
-	// Agents & Brokers
-	agentsData: text().notNull(), // JSON array of agent/broker details
-	
-	// Deductions
-	deductions: text(), // JSON array of flat-fee deductions
-	
-	// Disbursement Instructions
+	agentsData: text().notNull(),
+	deductions: text(),
 	disbursementInstructions: text(),
-	
-	// PDF & Storage
-	pdfUrl: text(), // S3 URL
+	pdfUrl: text(),
 	pdfFileName: varchar({ length: 255 }),
-	
-	// Status & Workflow
 	status: mysqlEnum(['draft','generated','approved','archived']).default('draft').notNull(),
-	
-	// Metadata
 	createdBy: int().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
@@ -587,31 +570,4 @@ export const cdaDocuments = mysqlTable("cda_documents", {
 	index("cda_documents_created_by_idx").on(table.createdBy),
 	index("cda_documents_transaction_idx").on(table.transactionId),
 	index("cda_documents_created_at_idx").on(table.createdAt),
-]);
-
-
-/**
- * Tenant Members Table
- * Maps users to tenants with their role within that tenant
- * Enables multi-tenant architecture with role-based access control
- */
-export const tenantMembers = mysqlTable("tenant_members", {
-	id: int().autoincrement().notNull().primaryKey(),
-	tenantId: int().notNull(),
-	userId: int().notNull(),
-	role: mysqlEnum(['admin', 'broker', 'member', 'agent']).notNull(),
-	joinedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	invitedBy: int(),
-	invitedAt: timestamp({ mode: 'string' }),
-	status: mysqlEnum(['active', 'invited', 'inactive']).default('active').notNull(),
-	permissions: text(), // JSON array of additional permissions
-	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("tenant_members_tenant_idx").on(table.tenantId),
-	index("tenant_members_user_idx").on(table.userId),
-	index("tenant_members_tenant_user_unique").on(table.tenantId, table.userId),
-	index("tenant_members_role_idx").on(table.role),
-	index("tenant_members_status_idx").on(table.status),
 ]);
