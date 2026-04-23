@@ -9,7 +9,7 @@
  */
 
 import { getDb } from './db';
-import { auditLogs } from '../drizzle/schema';
+import { auditLogs, oauthTokens } from '../drizzle/schema';
 import { eq, lt } from 'drizzle-orm';
 
 interface Job {
@@ -67,6 +67,7 @@ class JobScheduler {
 
   /**
    * Parse schedule string (simple format: "1h", "30m", "1d")
+   * For production, this should be replaced with proper cron scheduling
    */
   private parseSchedule(schedule: string): number {
     const match = schedule.match(/^(\d+)([smhd])$/);
@@ -83,7 +84,19 @@ class JobScheduler {
       case 'h':
         return num * 60 * 60 * 1000;
       case 'd':
-        return num * 24 * 60 * 60 * 1000;
+        // For daily jobs, schedule at 2 AM
+        const now = new Date();
+        const scheduledTime = new Date(now);
+        scheduledTime.setHours(2, 0, 0, 0);
+        
+        // If it's already past 2 AM, schedule for tomorrow
+        if (scheduledTime <= now) {
+          scheduledTime.setDate(scheduledTime.getDate() + 1);
+        }
+        
+        const delayMs = scheduledTime.getTime() - now.getTime();
+        console.log(`Next daily job scheduled in ${Math.round(delayMs / 1000 / 60)} minutes`);
+        return delayMs;
       default:
         return 60 * 1000;
     }
@@ -163,17 +176,61 @@ export async function initializeJobs(): Promise<void> {
     },
   });
 
-  // Job 3: Sync Dotloop data
+  // Job 3: Sync Dotloop data (nightly at 2 AM)
   jobScheduler.register({
     id: 'sync-dotloop-data',
-    name: 'Sync Dotloop Data',
-    schedule: '30m', // Every 30 minutes
+    name: 'Sync Dotloop Data (Nightly)',
+    schedule: '1d', // Daily
     handler: async () => {
       try {
-        console.log('Syncing Dotloop data...');
-        // Dotloop sync logic would go here
+        console.log('Starting nightly Dotloop data sync...');
+        const db = await getDb();
+        if (!db) throw new Error('Database connection failed');
+
+        // Import sync service
+        const { dotloopSyncService } = await import('./services/dotloopSyncService');
+
+        // Get all users with active Dotloop connections
+        const activeTokens = await db
+          .select()
+          .from(oauthTokens)
+          .where(eq(oauthTokens.provider, 'dotloop'));
+
+        let totalSynced = 0;
+        let totalErrors = 0;
+
+        // Sync for each user with active token
+        for (const token of activeTokens) {
+          try {
+            console.log(`Syncing Dotloop data for user ${token.userId}...`);
+            const result = await dotloopSyncService.syncUserTransactions(
+              token.userId,
+              token.tenantId
+            );
+
+            if (result.success) {
+              console.log(
+                `✓ Synced ${result.transactionsFetched} transactions for user ${token.userId} ` +
+                `(${result.transactionsCreated} created, ${result.transactionsUpdated} updated)`
+              );
+              totalSynced += result.transactionsFetched;
+            } else {
+              console.error(
+                `✗ Failed to sync user ${token.userId}: ${result.errors.join(', ')}`
+              );
+              totalErrors++;
+            }
+          } catch (error) {
+            console.error(`Error syncing user ${token.userId}:`, error);
+            totalErrors++;
+          }
+        }
+
+        console.log(
+          `Nightly Dotloop sync completed: ${totalSynced} transactions synced, ${totalErrors} errors`
+        );
       } catch (error) {
-        console.error('Error syncing Dotloop data:', error);
+        console.error('Error in nightly Dotloop sync job:', error);
       }
     },
   });

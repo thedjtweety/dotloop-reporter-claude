@@ -4465,3 +4465,10 @@
 - [ ] Add data quality validation system
 - [ ] Build recruiting pipeline management
 - [ ] Create MarketView CSV import
+
+
+## Current Sprint: Connection Status & Sync Features
+- [x] Integrate ConnectionStatusIndicator into DashboardLayout header (mobile & desktop)
+- [x] Verify end-to-end disconnect/reconnect flow (test file created: connectionStatus.test.ts)
+- [x] Build Sync History & Logs UI page (SyncHistoryAndLogs.tsx created with backend procedures)
+- [x] Finalize and test Data Validation Rules UI (DataValidationRules.tsx created with backend procedures)
