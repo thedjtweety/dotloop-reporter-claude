@@ -113,7 +113,7 @@ function App() {
         <CDAProvider>
         <ModalProvider>
           <ThemeProvider
-            defaultTheme="dark"
+            defaultTheme="contrast"
             switchable={true}
           >
             <TooltipProvider>
