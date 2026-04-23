@@ -5,6 +5,7 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
+import { dotloopOAuthCallbackRouter } from "../routes/dotloop-oauth-callback";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import cdaRoutes from "../routes/cda";
@@ -61,6 +62,9 @@ async function startServer() {
   
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Dotloop OAuth callback
+  app.use('/api/dotloop-oauth', dotloopOAuthCallbackRouter);
   
   // CDA routes
   app.use("/api/cda", cdaRoutes);
