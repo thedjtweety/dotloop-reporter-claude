@@ -223,7 +223,7 @@ export default function ConnectDotloop({ variant = 'button', onConnect, onSucces
 
             {/* CTA Button */}
             <Button 
-              onClick={handleOpenDialog}
+              onClick={handleConnect}
               size="lg" 
               className="w-full bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-500 hover:to-emerald-500 text-white font-semibold shadow-lg transition-all duration-300"
               disabled={isLoading}

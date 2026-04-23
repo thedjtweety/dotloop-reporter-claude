@@ -829,27 +829,29 @@ function HomeContent() {
             {/* Dual-column layout: CSV Upload (left) and Dotloop OAuth (right) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Left Column: CSV Upload */}
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col">
                 <div className="text-center lg:text-left">
                   <h3 className="text-xl font-semibold mb-2">📄 Upload CSV File</h3>
                   <p className="text-sm text-foreground/70 mb-4">
                     Upload a Dotloop export CSV file to analyze your data
                   </p>
                 </div>
-                <Card className="p-8 border-dashed border-2 border-border bg-card/50 hover:bg-card/80 transition-colors" data-tour="upload-zone">
+                <Card className="p-8 border-dashed border-2 border-border bg-card/50 hover:bg-card/80 transition-colors flex-1" data-tour="upload-zone">
                   <UploadZone onFileUpload={handleFileUpload} isLoading={isLoading} />
                 </Card>
               </div>
 
               {/* Right Column: Dotloop OAuth Login */}
-              <div className="space-y-4">
+              <div className="space-y-4 flex flex-col">
                 <div className="text-center lg:text-left">
                   <h3 className="text-xl font-semibold mb-2">🔗 Connect to Dotloop</h3>
                   <p className="text-sm text-foreground/70 mb-4">
                     Login to your Dotloop workspace for real-time data sync
                   </p>
                 </div>
-                <ConnectDotloop variant="card" />
+                <div className="flex-1">
+                  <ConnectDotloop variant="card" />
+                </div>
               </div>
             </div>
 
