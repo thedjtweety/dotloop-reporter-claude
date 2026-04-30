@@ -1,13 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@400;700;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Lora:wght@400;500;600&family=Crimson+Text:wght@400;600&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'IBM Plex Mono', system-ui, monospace;
-  --font-display: 'Orbitron', system-ui, monospace;
-  --font-mono: 'Space Mono', monospace;
+  --font-sans: 'Lora', system-ui, serif;
+  --font-display: 'Playfair Display', system-ui, serif;
+  --font-mono: 'Crimson Text', serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -48,94 +48,94 @@
 
 :root {
   /* ============================================
-     DATA STORYTELLING DESIGN SYSTEM
-     Electric Blue + Neon Cyan + Sci-Fi Aesthetic
+     REAL ESTATE LUXURY DESIGN SYSTEM
+     Emerald Green + Warm Gold + Marble Textures
      ============================================ */
   
-  /* Primary: Electric Blue - Power, Technology, Trust */
-  --primary: #0066ff;
+  /* Primary: Emerald Green - Trust, Stability, Wealth */
+  --primary: #10b981;
   --primary-foreground: #ffffff;
-  --sidebar-primary: #0066ff;
+  --sidebar-primary: #10b981;
   --sidebar-primary-foreground: #ffffff;
   
-  /* Secondary: Neon Cyan - Energy, Innovation, Highlight */
-  --secondary: #00d9ff;
-  --secondary-foreground: #000000;
+  /* Secondary: Warm Gold - Prestige, Elegance, Premium */
+  --secondary: #d4af37;
+  --secondary-foreground: #1a1a1a;
   
-  /* Accent: Neon Magenta - Excitement, Action */
-  --accent: #ff00ff;
+  /* Accent: Deep Emerald - Sophistication, Luxury */
+  --accent: #047857;
   --accent-foreground: #ffffff;
   
-  /* Chart Palette - Data Storytelling Colors */
-  --chart-1: #0066ff; /* Electric Blue - Primary Data */
-  --chart-2: #00d9ff; /* Neon Cyan - Secondary Data */
-  --chart-3: #ff00ff; /* Neon Magenta - Tertiary Data */
-  --chart-4: #00ff88; /* Neon Green - Positive Data */
-  --chart-5: #ff6600; /* Neon Orange - Warning Data */
+  /* Chart Palette - Real Estate Luxury Colors */
+  --chart-1: #10b981; /* Emerald Green - Primary Data */
+  --chart-2: #d4af37; /* Warm Gold - Secondary Data */
+  --chart-3: #047857; /* Deep Emerald - Tertiary Data */
+  --chart-4: #6ee7b7; /* Light Emerald - Positive Data */
+  --chart-5: #f59e0b; /* Amber - Warning Data */
 
-  --radius: 0.5rem; /* Sharp, tech-forward corners */
+  --radius: 0.75rem; /* Elegant, slightly rounded corners */
 
-  /* Dark Mode Base (Deep Space Black) */
-  --background: #0a0e27;
-  --foreground: #ffffff;
-  
-  --card: #1a1f3a;
-  --card-foreground: #ffffff;
-  
-  --popover: #1a1f3a;
-  --popover-foreground: #ffffff;
-  
-  --muted: #2d3456;
-  --muted-foreground: #00d9ff;
-  
-  --destructive: #ff0033;
-  --destructive-foreground: #ffffff;
-  
-  --border: rgba(0, 217, 255, 0.2);
-  --input: rgba(0, 217, 255, 0.15);
-  --ring: #00d9ff;
-  
-  --sidebar: #0f1429;
-  --sidebar-foreground: #ffffff;
-  --sidebar-accent: #1a1f3a;
-  --sidebar-accent-foreground: #00d9ff;
-  --sidebar-border: rgba(0, 217, 255, 0.15);
-  --sidebar-ring: #00d9ff;
-}
-
-.light {
-  /* Light Mode (Bright Tech) */
-  --background: #f5f7ff;
-  --foreground: #0a0e27;
+  /* Dark Mode Base (Sophisticated Cream/Off-White) */
+  --background: #f8f6f1;
+  --foreground: #1a1a1a;
   
   --card: #ffffff;
-  --card-foreground: #0a0e27;
+  --card-foreground: #1a1a1a;
   
   --popover: #ffffff;
-  --popover-foreground: #0a0e27;
+  --popover-foreground: #1a1a1a;
   
-  --secondary: #0066ff;
-  --secondary-foreground: #ffffff;
+  --muted: #e8e4dc;
+  --muted-foreground: #10b981;
   
-  --muted: #e8ecff;
-  --muted-foreground: #0066ff;
-  
-  --accent: #ff00ff;
-  --accent-foreground: #ffffff;
-  
-  --destructive: #ff0033;
+  --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   
-  --border: rgba(0, 102, 255, 0.2);
-  --input: rgba(0, 102, 255, 0.15);
-  --ring: #0066ff;
+  --border: rgba(16, 185, 129, 0.15);
+  --input: rgba(16, 185, 129, 0.1);
+  --ring: #10b981;
   
-  --sidebar: #f5f7ff;
-  --sidebar-foreground: #0a0e27;
-  --sidebar-accent: #e8ecff;
-  --sidebar-accent-foreground: #0066ff;
-  --sidebar-border: rgba(0, 102, 255, 0.15);
-  --sidebar-ring: #0066ff;
+  --sidebar: #f8f6f1;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-accent: #f0ebe2;
+  --sidebar-accent-foreground: #10b981;
+  --sidebar-border: rgba(16, 185, 129, 0.1);
+  --sidebar-ring: #10b981;
+}
+
+.dark {
+  /* Dark Mode (Deep Emerald Background) */
+  --background: #0f2e2a;
+  --foreground: #f8f6f1;
+  
+  --card: #1a3d38;
+  --card-foreground: #f8f6f1;
+  
+  --popover: #1a3d38;
+  --popover-foreground: #f8f6f1;
+  
+  --secondary: #d4af37;
+  --secondary-foreground: #0f2e2a;
+  
+  --muted: #2a5450;
+  --muted-foreground: #d4af37;
+  
+  --accent: #6ee7b7;
+  --accent-foreground: #0f2e2a;
+  
+  --destructive: #f87171;
+  --destructive-foreground: #0f2e2a;
+  
+  --border: rgba(212, 175, 55, 0.2);
+  --input: rgba(212, 175, 55, 0.15);
+  --ring: #d4af37;
+  
+  --sidebar: #0f2e2a;
+  --sidebar-foreground: #f8f6f1;
+  --sidebar-accent: #1a3d38;
+  --sidebar-accent-foreground: #d4af37;
+  --sidebar-border: rgba(212, 175, 55, 0.15);
+  --sidebar-ring: #d4af37;
 }
 
 @layer base {
@@ -146,7 +146,7 @@
     @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+    @apply font-display font-semibold;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -191,28 +191,30 @@
   }
 
   /* ============================================
-     NEON GLOW METRIC CARDS
+     LUXURY METRIC CARDS
      ============================================ */
   .metric-card {
-    @apply relative overflow-hidden rounded-lg p-6 border-2 transition-all duration-300;
-    background: linear-gradient(135deg, rgba(0, 102, 255, 0.05) 0%, rgba(0, 217, 255, 0.05) 100%);
-    border-color: rgba(0, 217, 255, 0.3);
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2), inset 0 0 20px rgba(0, 102, 255, 0.1);
+    @apply relative overflow-hidden rounded-lg p-6 border transition-all duration-300;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 246, 241, 0.6) 100%);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
   }
 
   .metric-card::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(255, 0, 255, 0.05) 100%);
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="marble" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><rect fill="%23f8f6f1" width="100" height="100"/><path d="M0,0 Q25,25 50,20 T100,30 L100,0 Z" fill="%23f0ebe2" opacity="0.3"/><path d="M0,50 Q25,60 50,55 T100,65 L100,50 Z" fill="%23e8e4dc" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23marble)"/></svg>') no-repeat center/cover;
+    opacity: 0.3;
     pointer-events: none;
   }
 
   .metric-card:hover {
     @apply shadow-2xl;
-    border-color: rgba(0, 217, 255, 0.6);
-    box-shadow: 0 0 40px rgba(0, 217, 255, 0.4), inset 0 0 30px rgba(0, 102, 255, 0.15);
-    transform: translateY(-2px);
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 16px 48px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transform: translateY(-4px);
   }
 
   .metric-card-header {
@@ -220,104 +222,99 @@
   }
 
   .metric-card-title {
-    @apply text-xs font-bold text-foreground/70 uppercase tracking-widest;
+    @apply text-xs font-semibold text-foreground/60 uppercase tracking-widest;
   }
 
   .metric-card-value {
     @apply text-5xl font-display font-bold text-foreground mt-3 relative z-10;
-    background: linear-gradient(90deg, #0066ff 0%, #00d9ff 50%, #ff00ff 100%);
+    background: linear-gradient(90deg, #10b981 0%, #047857 50%, #d4af37 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
   }
 
   .metric-card-trend {
-    @apply text-xs font-bold flex items-center gap-1 mt-3 relative z-10;
+    @apply text-xs font-semibold flex items-center gap-1 mt-3 relative z-10;
   }
 
   .metric-card-trend.positive {
-    @apply text-emerald-400;
+    @apply text-emerald-600;
   }
 
   .metric-card-trend.negative {
-    @apply text-red-400;
+    @apply text-red-600;
   }
 
   /* ============================================
-     NEON STATUS BADGES
+     LUXURY STATUS BADGES
      ============================================ */
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-bold transition-all duration-300;
-    background: rgba(0, 217, 255, 0.15);
-    border: 1px solid rgba(0, 217, 255, 0.4);
-    color: #00d9ff;
-    box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-300;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
   }
 
   .status-badge:hover {
-    background: rgba(0, 217, 255, 0.25);
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.5);
   }
 
   .status-badge-active {
-    @apply bg-emerald-500/20 text-emerald-300 border border-emerald-400/50;
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    @apply bg-emerald-50 text-emerald-700 border border-emerald-300;
   }
 
   .status-badge-pending {
-    @apply bg-amber-500/20 text-amber-300 border border-amber-400/50;
-    box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
+    @apply bg-amber-50 text-amber-700 border border-amber-300;
   }
 
   .status-badge-closed {
-    @apply bg-blue-500/20 text-blue-300 border border-blue-400/50;
-    box-shadow: 0 0 10px rgba(0, 102, 255, 0.2);
+    @apply bg-blue-50 text-blue-700 border border-blue-300;
   }
 
   .status-badge-archived {
-    @apply bg-slate-500/20 text-slate-300 border border-slate-400/50;
-    box-shadow: 0 0 10px rgba(100, 116, 139, 0.2);
+    @apply bg-slate-50 text-slate-700 border border-slate-300;
   }
 
   /* ============================================
-     NEON GRADIENTS
+     LUXURY GRADIENTS
      ============================================ */
   .gradient-closed {
-    background: linear-gradient(135deg, #0066ff 0%, #00d9ff 100%);
+    background: linear-gradient(135deg, #10b981 0%, #6ee7b7 100%);
   }
 
   .gradient-active {
-    background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
+    background: linear-gradient(135deg, #047857 0%, #10b981 100%);
   }
 
   .gradient-contract {
-    background: linear-gradient(135deg, #ff00ff 0%, #ff6600 100%);
+    background: linear-gradient(135deg, #d4af37 0%, #f59e0b 100%);
   }
 
   .gradient-archived {
-    background: linear-gradient(135deg, #0066ff 0%, #ff00ff 100%);
+    background: linear-gradient(135deg, #10b981 0%, #d4af37 100%);
   }
 
   /* ============================================
-     NEON PIPELINE CARDS
+     LUXURY PIPELINE CARDS
      ============================================ */
   .pipeline-card {
     @apply relative overflow-hidden rounded-lg p-4 transition-all duration-300 cursor-grab active:cursor-grabbing border;
-    background: linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 217, 255, 0.08) 100%);
-    border-color: rgba(0, 217, 255, 0.3);
-    box-shadow: 0 0 15px rgba(0, 217, 255, 0.15), inset 0 0 15px rgba(0, 102, 255, 0.05);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(248, 246, 241, 0.5) 100%);
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
   }
 
   .pipeline-card:hover {
     @apply shadow-lg;
-    border-color: rgba(0, 217, 255, 0.6);
-    box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 102, 255, 0.1);
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7);
     transform: translateY(-3px);
   }
 
   .pipeline-card-name {
-    @apply text-sm font-bold text-foreground;
+    @apply text-sm font-semibold text-foreground;
   }
 
   .pipeline-card-email {
@@ -329,31 +326,28 @@
      ============================================ */
   .property-icon {
     @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold transition-all duration-300;
-    background: linear-gradient(135deg, #0066ff 0%, #00d9ff 100%);
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
     color: #ffffff;
-    box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
   }
 
   /* ============================================
      MARKET BADGE
      ============================================ */
   .market-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-bold border transition-all duration-300;
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all duration-300;
   }
 
   .market-badge-success {
-    @apply bg-emerald-500/15 text-emerald-300 border-emerald-400/50;
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+    @apply bg-emerald-50 text-emerald-700 border-emerald-300;
   }
 
   .market-badge-warning {
-    @apply bg-amber-500/15 text-amber-300 border-amber-400/50;
-    box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
+    @apply bg-amber-50 text-amber-700 border-amber-300;
   }
 
   .market-badge-info {
-    @apply bg-blue-500/15 text-blue-300 border-blue-400/50;
-    box-shadow: 0 0 10px rgba(0, 102, 255, 0.2);
+    @apply bg-blue-50 text-blue-700 border-blue-300;
   }
 
   /* ============================================
@@ -361,14 +355,14 @@
      ============================================ */
   .fab {
     @apply fixed bottom-8 right-8 w-14 h-14 rounded-lg text-primary-foreground shadow-lg transition-all duration-300 flex items-center justify-center cursor-pointer;
-    background: linear-gradient(135deg, #0066ff 0%, #00d9ff 100%);
-    box-shadow: 0 0 30px rgba(0, 217, 255, 0.4);
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
   }
 
   .fab:hover {
     @apply shadow-2xl;
-    transform: scale(1.15);
-    box-shadow: 0 0 50px rgba(0, 217, 255, 0.6);
+    transform: scale(1.1);
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
   }
 
   /* ============================================
@@ -380,21 +374,21 @@
 
   .data-table thead {
     @apply bg-card/50 border-b-2;
-    border-color: rgba(0, 217, 255, 0.3);
+    border-color: rgba(16, 185, 129, 0.2);
   }
 
   .data-table th {
-    @apply px-4 py-3 text-left text-xs font-bold text-foreground uppercase tracking-widest;
+    @apply px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-widest;
   }
 
   .data-table tbody tr {
     @apply border-b transition-colors duration-300;
-    border-color: rgba(0, 217, 255, 0.15);
+    border-color: rgba(16, 185, 129, 0.1);
   }
 
   .data-table tbody tr:hover {
-    @apply bg-card/50;
-    box-shadow: inset 0 0 20px rgba(0, 217, 255, 0.1);
+    @apply bg-card/30;
+    box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.05);
   }
 
   .data-table td {
@@ -403,55 +397,41 @@
 }
 
 /* ============================================
-   KEYFRAME ANIMATIONS - KINETIC & GLOWING
+   KEYFRAME ANIMATIONS - ELEGANT & SMOOTH
    ============================================ */
 
-/* Neon glow pulse */
-@keyframes neon-glow {
+/* Subtle luxury glow */
+@keyframes luxury-glow {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 102, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
   50% {
-    box-shadow: 0 0 40px rgba(0, 217, 255, 0.6), inset 0 0 30px rgba(0, 102, 255, 0.2);
+    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 }
 
-.animate-neon-glow {
-  animation: neon-glow 3s ease-in-out infinite;
+.animate-luxury-glow {
+  animation: luxury-glow 3s ease-in-out infinite;
 }
 
-/* Kinetic text animation */
-@keyframes kinetic-text {
+/* Elegant text animation */
+@keyframes elegant-text {
   0% {
-    opacity: 0.8;
+    opacity: 0.9;
     transform: translateY(0);
   }
   50% {
     opacity: 1;
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
   100% {
-    opacity: 0.8;
+    opacity: 0.9;
     transform: translateY(0);
   }
 }
 
-.animate-kinetic-text {
-  animation: kinetic-text 2s ease-in-out infinite;
-}
-
-/* Sci-fi scan line */
-@keyframes scan-line {
-  0% {
-    transform: translateY(-100%);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-.animate-scan-line {
-  animation: scan-line 3s linear infinite;
+.animate-elegant-text {
+  animation: elegant-text 2.5s ease-in-out infinite;
 }
 
 /* Smooth card entrance */
@@ -519,10 +499,10 @@
 /* Pulse metric effect */
 @keyframes pulse-metric {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 15px rgba(0, 217, 255, 0);
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
   }
 }
 
@@ -530,67 +510,30 @@
   animation: pulse-metric 2s infinite;
 }
 
-/* Neon flicker */
-@keyframes neon-flicker {
+/* Gold accent shimmer */
+@keyframes gold-shimmer {
   0%, 100% {
-    text-shadow: 0 0 10px rgba(0, 217, 255, 0.8), 0 0 20px rgba(0, 102, 255, 0.6);
+    text-shadow: 0 0 0 rgba(212, 175, 55, 0);
   }
   50% {
-    text-shadow: 0 0 20px rgba(0, 217, 255, 1), 0 0 30px rgba(0, 102, 255, 0.8), 0 0 40px rgba(255, 0, 255, 0.4);
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
   }
 }
 
-.animate-neon-flicker {
-  animation: neon-flicker 2s ease-in-out infinite;
+.animate-gold-shimmer {
+  animation: gold-shimmer 2s ease-in-out infinite;
 }
 
 /* ============================================
-   CONTRAST MODE
-   ============================================ */
-.contrast {
-  --background: #1a1f3a;
-  --foreground: #ffffff;
-  
-  --card: #2d3456;
-  --card-foreground: #ffffff;
-  
-  --popover: #2d3456;
-  --popover-foreground: #ffffff;
-  
-  --secondary: #00d9ff;
-  --secondary-foreground: #000000;
-  
-  --muted: #3d4a6f;
-  --muted-foreground: #00d9ff;
-  
-  --accent: #ff00ff;
-  --accent-foreground: #ffffff;
-  
-  --destructive: #ff0033;
-  --destructive-foreground: #ffffff;
-  
-  --border: rgba(0, 217, 255, 0.3);
-  --input: rgba(0, 217, 255, 0.25);
-  --ring: #00d9ff;
-  
-  --sidebar: #151a2f;
-  --sidebar-foreground: #ffffff;
-  --sidebar-accent: #2d3456;
-  --sidebar-accent-foreground: #00d9ff;
-  --sidebar-border: rgba(0, 217, 255, 0.2);
-  --sidebar-ring: #00d9ff;
-}
-
-/* ============================================
-   NEON GRID BACKGROUND
+   MARBLE TEXTURE BACKGROUND
    ============================================ */
 
-.neon-grid {
+.marble-bg {
   position: relative;
   overflow: hidden;
 }
 
-.neon-grid::before {
+.marble-bg::before {
   content: '';
   position: absolute;
   top: 0;
@@ -598,9 +541,77 @@
   width: 100%;
   height: 100%;
   background-image: 
-    linear-gradient(0deg, transparent 24%, rgba(0, 217, 255, 0.05) 25%, rgba(0, 217, 255, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 217, 255, 0.05) 75%, rgba(0, 217, 255, 0.05) 76%, transparent 77%, transparent),
-    linear-gradient(90deg, transparent 24%, rgba(0, 217, 255, 0.05) 25%, rgba(0, 217, 255, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 217, 255, 0.05) 75%, rgba(0, 217, 255, 0.05) 76%, transparent 77%, transparent);
-  background-size: 50px 50px;
+    radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
+}
+
+/* ============================================
+   GLASSMORPHISM EFFECT
+   ============================================ */
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(26, 61, 56, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+/* ============================================
+   GOLD ACCENT DIVIDER
+   ============================================ */
+
+.gold-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #d4af37 50%, transparent 100%);
+  opacity: 0.5;
+}
+
+/* ============================================
+   EMERALD ACCENT TEXT
+   ============================================ */
+
+.text-emerald-accent {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.text-gold-accent {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+/* ============================================
+   LUXURY BUTTON STYLES
+   ============================================ */
+
+.btn-luxury {
+  @apply px-6 py-2.5 rounded-lg font-semibold transition-all duration-300;
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-luxury:hover {
+  @apply shadow-lg;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-luxury-outline {
+  @apply px-6 py-2.5 rounded-lg font-semibold transition-all duration-300 border-2;
+  border-color: #10b981;
+  color: #10b981;
+  background: transparent;
+}
+
+.btn-luxury-outline:hover {
+  background: rgba(16, 185, 129, 0.1);
 }
