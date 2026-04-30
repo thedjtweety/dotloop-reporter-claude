@@ -137,10 +137,15 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    letter-spacing: 0.3px;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display;
+    @apply font-display font-semibold;
+    letter-spacing: -0.5px;
   }
+  h1 { @apply text-4xl; }
+  h2 { @apply text-3xl; }
+  h3 { @apply text-2xl; }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -150,7 +155,10 @@
   select:not(:disabled),
   input[type="checkbox"]:not(:disabled),
   input[type="radio"]:not(:disabled) {
-    @apply cursor-pointer;
+    @apply cursor-pointer transition-all duration-200;
+  }
+  input, textarea, select {
+    @apply transition-colors duration-200;
   }
 }
 
@@ -166,6 +174,15 @@
   .flex {
     min-height: 0;
     min-width: 0;
+  }
+  
+  /* Smooth transitions for all interactive elements */
+  button, a, [role="button"] {
+    @apply transition-all duration-200 ease-out;
+  }
+  
+  button:hover:not(:disabled) {
+    @apply -translate-y-0.5;
   }
 
   @media (min-width: 640px) {
