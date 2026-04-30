@@ -1,13 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Crimson+Text:wght@400;600&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Orbitron:wght@400;700;900&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Playfair Display', system-ui, serif;
-  --font-serif: 'Crimson Text', system-ui, serif;
+  --font-sans: 'IBM Plex Mono', system-ui, monospace;
+  --font-display: 'Orbitron', system-ui, monospace;
+  --font-mono: 'Space Mono', monospace;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -48,94 +48,94 @@
 
 :root {
   /* ============================================
-     ORGANIC FLOW DESIGN SYSTEM
-     Forest Green + Bronze + Cream Palette
+     DATA STORYTELLING DESIGN SYSTEM
+     Electric Blue + Neon Cyan + Sci-Fi Aesthetic
      ============================================ */
   
-  /* Primary: Forest Green - Trust, Growth, Sophistication */
-  --primary: #1e5631;
-  --primary-foreground: #fef9f3;
-  --sidebar-primary: #1e5631;
-  --sidebar-primary-foreground: #fef9f3;
+  /* Primary: Electric Blue - Power, Technology, Trust */
+  --primary: #0066ff;
+  --primary-foreground: #ffffff;
+  --sidebar-primary: #0066ff;
+  --sidebar-primary-foreground: #ffffff;
   
-  /* Secondary: Warm Bronze - Premium, Real Estate */
-  --secondary: #8b6f47;
-  --secondary-foreground: #fef9f3;
+  /* Secondary: Neon Cyan - Energy, Innovation, Highlight */
+  --secondary: #00d9ff;
+  --secondary-foreground: #000000;
   
-  /* Accent: Soft Peach - Energy, Warmth */
-  --accent: #f4a582;
-  --accent-foreground: #1a1a1a;
+  /* Accent: Neon Magenta - Excitement, Action */
+  --accent: #ff00ff;
+  --accent-foreground: #ffffff;
   
-  /* Chart Palette - Organic Flow Colors */
-  --chart-1: #1e5631; /* Forest Green - Positive */
-  --chart-2: #8b6f47; /* Bronze - Active */
-  --chart-3: #f4a582; /* Peach - Pending */
-  --chart-4: #d4a574; /* Light Bronze - Archived */
-  --chart-5: #6b9e7f; /* Sage Green - Insights */
+  /* Chart Palette - Data Storytelling Colors */
+  --chart-1: #0066ff; /* Electric Blue - Primary Data */
+  --chart-2: #00d9ff; /* Neon Cyan - Secondary Data */
+  --chart-3: #ff00ff; /* Neon Magenta - Tertiary Data */
+  --chart-4: #00ff88; /* Neon Green - Positive Data */
+  --chart-5: #ff6600; /* Neon Orange - Warning Data */
 
-  --radius: 1.5rem; /* Organic, rounded corners */
+  --radius: 0.5rem; /* Sharp, tech-forward corners */
 
-  /* Dark Mode Base (Deep Forest) */
-  --background: #0d2818;
-  --foreground: #fef9f3;
+  /* Dark Mode Base (Deep Space Black) */
+  --background: #0a0e27;
+  --foreground: #ffffff;
   
-  --card: #1a3a24;
-  --card-foreground: #fef9f3;
+  --card: #1a1f3a;
+  --card-foreground: #ffffff;
   
-  --popover: #1a3a24;
-  --popover-foreground: #fef9f3;
+  --popover: #1a1f3a;
+  --popover-foreground: #ffffff;
   
-  --muted: #2d5a3d;
-  --muted-foreground: #d4a574;
+  --muted: #2d3456;
+  --muted-foreground: #00d9ff;
   
-  --destructive: #c85a3a;
-  --destructive-foreground: #fef9f3;
+  --destructive: #ff0033;
+  --destructive-foreground: #ffffff;
   
-  --border: rgba(212, 165, 116, 0.2);
-  --input: rgba(212, 165, 116, 0.15);
-  --ring: #f4a582;
+  --border: rgba(0, 217, 255, 0.2);
+  --input: rgba(0, 217, 255, 0.15);
+  --ring: #00d9ff;
   
-  --sidebar: #0d2818;
-  --sidebar-foreground: #fef9f3;
-  --sidebar-accent: #1e5631;
-  --sidebar-accent-foreground: #fef9f3;
-  --sidebar-border: rgba(212, 165, 116, 0.15);
-  --sidebar-ring: #f4a582;
+  --sidebar: #0f1429;
+  --sidebar-foreground: #ffffff;
+  --sidebar-accent: #1a1f3a;
+  --sidebar-accent-foreground: #00d9ff;
+  --sidebar-border: rgba(0, 217, 255, 0.15);
+  --sidebar-ring: #00d9ff;
 }
 
 .light {
-  /* Light Mode (Warm, Inviting) */
-  --background: #fef9f3;
-  --foreground: #0d2818;
+  /* Light Mode (Bright Tech) */
+  --background: #f5f7ff;
+  --foreground: #0a0e27;
   
   --card: #ffffff;
-  --card-foreground: #0d2818;
+  --card-foreground: #0a0e27;
   
   --popover: #ffffff;
-  --popover-foreground: #0d2818;
+  --popover-foreground: #0a0e27;
   
-  --secondary: #8b6f47;
-  --secondary-foreground: #fef9f3;
+  --secondary: #0066ff;
+  --secondary-foreground: #ffffff;
   
-  --muted: #f5f1ed;
-  --muted-foreground: #8b6f47;
+  --muted: #e8ecff;
+  --muted-foreground: #0066ff;
   
-  --accent: #f4a582;
-  --accent-foreground: #0d2818;
+  --accent: #ff00ff;
+  --accent-foreground: #ffffff;
   
-  --destructive: #c85a3a;
-  --destructive-foreground: #fef9f3;
+  --destructive: #ff0033;
+  --destructive-foreground: #ffffff;
   
-  --border: rgba(30, 86, 49, 0.15);
-  --input: rgba(30, 86, 49, 0.1);
-  --ring: #1e5631;
+  --border: rgba(0, 102, 255, 0.2);
+  --input: rgba(0, 102, 255, 0.15);
+  --ring: #0066ff;
   
-  --sidebar: #fef9f3;
-  --sidebar-foreground: #0d2818;
-  --sidebar-accent: #f5f1ed;
-  --sidebar-accent-foreground: #1e5631;
-  --sidebar-border: rgba(30, 86, 49, 0.1);
-  --sidebar-ring: #1e5631;
+  --sidebar: #f5f7ff;
+  --sidebar-foreground: #0a0e27;
+  --sidebar-accent: #e8ecff;
+  --sidebar-accent-foreground: #0066ff;
+  --sidebar-border: rgba(0, 102, 255, 0.15);
+  --sidebar-ring: #0066ff;
 }
 
 @layer base {
@@ -191,27 +191,28 @@
   }
 
   /* ============================================
-     GLASSMORPHIC CARD STYLING
+     NEON GLOW METRIC CARDS
      ============================================ */
   .metric-card {
-    @apply relative overflow-hidden rounded-3xl p-6 shadow-lg transition-all duration-500;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    @apply relative overflow-hidden rounded-lg p-6 border-2 transition-all duration-300;
+    background: linear-gradient(135deg, rgba(0, 102, 255, 0.05) 0%, rgba(0, 217, 255, 0.05) 100%);
+    border-color: rgba(0, 217, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.2), inset 0 0 20px rgba(0, 102, 255, 0.1);
   }
 
   .metric-card::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgba(244, 165, 130, 0.1) 0%, rgba(139, 111, 71, 0.05) 100%);
+    background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(255, 0, 255, 0.05) 100%);
     pointer-events: none;
   }
 
   .metric-card:hover {
     @apply shadow-2xl;
-    transform: translateY(-4px);
-    border-color: rgba(244, 165, 130, 0.3);
+    border-color: rgba(0, 217, 255, 0.6);
+    box-shadow: 0 0 40px rgba(0, 217, 255, 0.4), inset 0 0 30px rgba(0, 102, 255, 0.15);
+    transform: translateY(-2px);
   }
 
   .metric-card-header {
@@ -219,90 +220,104 @@
   }
 
   .metric-card-title {
-    @apply text-sm font-medium text-foreground/70 uppercase tracking-widest;
+    @apply text-xs font-bold text-foreground/70 uppercase tracking-widest;
   }
 
   .metric-card-value {
     @apply text-5xl font-display font-bold text-foreground mt-3 relative z-10;
-    background: linear-gradient(135deg, #1e5631 0%, #f4a582 100%);
+    background: linear-gradient(90deg, #0066ff 0%, #00d9ff 50%, #ff00ff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
   }
 
   .metric-card-trend {
-    @apply text-xs font-semibold flex items-center gap-1 mt-3 relative z-10;
+    @apply text-xs font-bold flex items-center gap-1 mt-3 relative z-10;
   }
 
   .metric-card-trend.positive {
-    @apply text-emerald-500;
+    @apply text-emerald-400;
   }
 
   .metric-card-trend.negative {
-    @apply text-red-500;
+    @apply text-red-400;
   }
 
   /* ============================================
-     STATUS BADGE STYLING
+     NEON STATUS BADGES
      ============================================ */
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300;
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-bold transition-all duration-300;
+    background: rgba(0, 217, 255, 0.15);
+    border: 1px solid rgba(0, 217, 255, 0.4);
+    color: #00d9ff;
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.2);
+  }
+
+  .status-badge:hover {
+    background: rgba(0, 217, 255, 0.25);
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.4);
   }
 
   .status-badge-active {
-    @apply bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/50;
+    @apply bg-emerald-500/20 text-emerald-300 border border-emerald-400/50;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
   }
 
   .status-badge-pending {
-    @apply bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/50;
+    @apply bg-amber-500/20 text-amber-300 border border-amber-400/50;
+    box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
   }
 
   .status-badge-closed {
-    @apply bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/50;
+    @apply bg-blue-500/20 text-blue-300 border border-blue-400/50;
+    box-shadow: 0 0 10px rgba(0, 102, 255, 0.2);
   }
 
   .status-badge-archived {
-    @apply bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-500/50;
+    @apply bg-slate-500/20 text-slate-300 border border-slate-400/50;
+    box-shadow: 0 0 10px rgba(100, 116, 139, 0.2);
   }
 
   /* ============================================
-     GRADIENT BACKGROUNDS
+     NEON GRADIENTS
      ============================================ */
   .gradient-closed {
-    background: linear-gradient(135deg, #1e5631 0%, #2d7a42 100%);
+    background: linear-gradient(135deg, #0066ff 0%, #00d9ff 100%);
   }
 
   .gradient-active {
-    background: linear-gradient(135deg, #8b6f47 0%, #a68a5a 100%);
+    background: linear-gradient(135deg, #00d9ff 0%, #00ff88 100%);
   }
 
   .gradient-contract {
-    background: linear-gradient(135deg, #f4a582 0%, #f5b8a0 100%);
+    background: linear-gradient(135deg, #ff00ff 0%, #ff6600 100%);
   }
 
   .gradient-archived {
-    background: linear-gradient(135deg, #6b9e7f 0%, #7fb896 100%);
+    background: linear-gradient(135deg, #0066ff 0%, #ff00ff 100%);
   }
 
   /* ============================================
-     ORGANIC FLOW PIPELINE CARD
+     NEON PIPELINE CARDS
      ============================================ */
   .pipeline-card {
-    @apply relative overflow-hidden rounded-3xl p-5 transition-all duration-500 cursor-grab active:cursor-grabbing;
-    background: linear-gradient(135deg, rgba(254, 249, 243, 0.95) 0%, rgba(244, 165, 130, 0.1) 100%);
-    border: 1px solid rgba(244, 165, 130, 0.3);
-    box-shadow: 0 10px 30px rgba(30, 86, 49, 0.1);
-    border-radius: 30px 30px 50px 20px;
+    @apply relative overflow-hidden rounded-lg p-4 transition-all duration-300 cursor-grab active:cursor-grabbing border;
+    background: linear-gradient(135deg, rgba(0, 102, 255, 0.08) 0%, rgba(0, 217, 255, 0.08) 100%);
+    border-color: rgba(0, 217, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.15), inset 0 0 15px rgba(0, 102, 255, 0.05);
   }
 
   .pipeline-card:hover {
-    @apply shadow-2xl;
-    transform: translateY(-6px) rotate(1deg);
-    border-color: rgba(244, 165, 130, 0.5);
+    @apply shadow-lg;
+    border-color: rgba(0, 217, 255, 0.6);
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 102, 255, 0.1);
+    transform: translateY(-3px);
   }
 
   .pipeline-card-name {
-    @apply text-base font-semibold text-foreground;
+    @apply text-sm font-bold text-foreground;
   }
 
   .pipeline-card-email {
@@ -314,40 +329,46 @@
      ============================================ */
   .property-icon {
     @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold transition-all duration-300;
-    background: linear-gradient(135deg, #1e5631 0%, #f4a582 100%);
-    color: #fef9f3;
+    background: linear-gradient(135deg, #0066ff 0%, #00d9ff 100%);
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(0, 217, 255, 0.4);
   }
 
   /* ============================================
      MARKET BADGE
      ============================================ */
   .market-badge {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300;
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-bold border transition-all duration-300;
   }
 
   .market-badge-success {
-    @apply bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40;
+    @apply bg-emerald-500/15 text-emerald-300 border-emerald-400/50;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
   }
 
   .market-badge-warning {
-    @apply bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/40;
+    @apply bg-amber-500/15 text-amber-300 border-amber-400/50;
+    box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
   }
 
   .market-badge-info {
-    @apply bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-500/40;
+    @apply bg-blue-500/15 text-blue-300 border-blue-400/50;
+    box-shadow: 0 0 10px rgba(0, 102, 255, 0.2);
   }
 
   /* ============================================
      FLOATING ACTION BUTTON
      ============================================ */
   .fab {
-    @apply fixed bottom-8 right-8 w-14 h-14 rounded-full text-primary-foreground shadow-lg transition-all duration-300 flex items-center justify-center cursor-pointer;
-    background: linear-gradient(135deg, #1e5631 0%, #2d7a42 100%);
+    @apply fixed bottom-8 right-8 w-14 h-14 rounded-lg text-primary-foreground shadow-lg transition-all duration-300 flex items-center justify-center cursor-pointer;
+    background: linear-gradient(135deg, #0066ff 0%, #00d9ff 100%);
+    box-shadow: 0 0 30px rgba(0, 217, 255, 0.4);
   }
 
   .fab:hover {
     @apply shadow-2xl;
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.15);
+    box-shadow: 0 0 50px rgba(0, 217, 255, 0.6);
   }
 
   /* ============================================
@@ -358,15 +379,22 @@
   }
 
   .data-table thead {
-    @apply bg-card/50 border-b border-border/50;
+    @apply bg-card/50 border-b-2;
+    border-color: rgba(0, 217, 255, 0.3);
   }
 
   .data-table th {
-    @apply px-4 py-3 text-left text-xs font-semibold text-foreground/70 uppercase tracking-widest;
+    @apply px-4 py-3 text-left text-xs font-bold text-foreground uppercase tracking-widest;
   }
 
   .data-table tbody tr {
-    @apply border-b border-border/30 hover:bg-card/50 transition-colors duration-300;
+    @apply border-b transition-colors duration-300;
+    border-color: rgba(0, 217, 255, 0.15);
+  }
+
+  .data-table tbody tr:hover {
+    @apply bg-card/50;
+    box-shadow: inset 0 0 20px rgba(0, 217, 255, 0.1);
   }
 
   .data-table td {
@@ -375,24 +403,66 @@
 }
 
 /* ============================================
-   KEYFRAME ANIMATIONS
+   KEYFRAME ANIMATIONS - KINETIC & GLOWING
    ============================================ */
 
-/* Organic wave animation */
-@keyframes wave {
-  0% { background-position: 0 0; }
-  100% { background-position: 600px 0; }
+/* Neon glow pulse */
+@keyframes neon-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 217, 255, 0.3), inset 0 0 20px rgba(0, 102, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0, 217, 255, 0.6), inset 0 0 30px rgba(0, 102, 255, 0.2);
+  }
+}
+
+.animate-neon-glow {
+  animation: neon-glow 3s ease-in-out infinite;
+}
+
+/* Kinetic text animation */
+@keyframes kinetic-text {
+  0% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+  100% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+}
+
+.animate-kinetic-text {
+  animation: kinetic-text 2s ease-in-out infinite;
+}
+
+/* Sci-fi scan line */
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 3s linear infinite;
 }
 
 /* Smooth card entrance */
 @keyframes card-entrance {
   from {
     opacity: 0;
-    transform: translateY(20px) rotate(-2deg);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(0);
   }
 }
 
@@ -449,10 +519,10 @@
 /* Pulse metric effect */
 @keyframes pulse-metric {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(30, 86, 49, 0.7);
+    box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(30, 86, 49, 0);
+    box-shadow: 0 0 0 15px rgba(0, 217, 255, 0);
   }
 }
 
@@ -460,90 +530,77 @@
   animation: pulse-metric 2s infinite;
 }
 
-/* Glow effect */
-@keyframes glow {
+/* Neon flicker */
+@keyframes neon-flicker {
   0%, 100% {
-    box-shadow: 0 0 5px rgba(244, 165, 130, 0.5);
+    text-shadow: 0 0 10px rgba(0, 217, 255, 0.8), 0 0 20px rgba(0, 102, 255, 0.6);
   }
   50% {
-    box-shadow: 0 0 20px rgba(244, 165, 130, 0.8);
+    text-shadow: 0 0 20px rgba(0, 217, 255, 1), 0 0 30px rgba(0, 102, 255, 0.8), 0 0 40px rgba(255, 0, 255, 0.4);
   }
 }
 
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
-}
-
-/* Float animation */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+.animate-neon-flicker {
+  animation: neon-flicker 2s ease-in-out infinite;
 }
 
 /* ============================================
    CONTRAST MODE
    ============================================ */
 .contrast {
-  --background: #1a3a24;
-  --foreground: #fef9f3;
+  --background: #1a1f3a;
+  --foreground: #ffffff;
   
-  --card: #2d5a3d;
-  --card-foreground: #fef9f3;
+  --card: #2d3456;
+  --card-foreground: #ffffff;
   
-  --popover: #2d5a3d;
-  --popover-foreground: #fef9f3;
+  --popover: #2d3456;
+  --popover-foreground: #ffffff;
   
-  --secondary: #8b6f47;
-  --secondary-foreground: #fef9f3;
+  --secondary: #00d9ff;
+  --secondary-foreground: #000000;
   
-  --muted: #3d7a4d;
-  --muted-foreground: #d4a574;
+  --muted: #3d4a6f;
+  --muted-foreground: #00d9ff;
   
-  --accent: #f4a582;
-  --accent-foreground: #0d2818;
+  --accent: #ff00ff;
+  --accent-foreground: #ffffff;
   
-  --destructive: #c85a3a;
-  --destructive-foreground: #fef9f3;
+  --destructive: #ff0033;
+  --destructive-foreground: #ffffff;
   
-  --border: rgba(244, 165, 130, 0.3);
-  --input: rgba(244, 165, 130, 0.25);
-  --ring: #f4a582;
+  --border: rgba(0, 217, 255, 0.3);
+  --input: rgba(0, 217, 255, 0.25);
+  --ring: #00d9ff;
   
-  --sidebar: #1a3a24;
-  --sidebar-foreground: #fef9f3;
-  --sidebar-accent: #2d5a3d;
-  --sidebar-accent-foreground: #fef9f3;
-  --sidebar-border: rgba(244, 165, 130, 0.2);
-  --sidebar-ring: #f4a582;
+  --sidebar: #151a2f;
+  --sidebar-foreground: #ffffff;
+  --sidebar-accent: #2d3456;
+  --sidebar-accent-foreground: #00d9ff;
+  --sidebar-border: rgba(0, 217, 255, 0.2);
+  --sidebar-ring: #00d9ff;
 }
 
 /* ============================================
-   ORGANIC FLOW BACKGROUND PATTERNS
+   NEON GRID BACKGROUND
    ============================================ */
 
-.organic-bg {
+.neon-grid {
   position: relative;
   overflow: hidden;
 }
 
-.organic-bg::before {
+.neon-grid::before {
   content: '';
   position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: 
-    radial-gradient(circle at 20% 50%, rgba(30, 86, 49, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(244, 165, 130, 0.1) 0%, transparent 50%);
-  animation: float 20s ease-in-out infinite;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(0deg, transparent 24%, rgba(0, 217, 255, 0.05) 25%, rgba(0, 217, 255, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 217, 255, 0.05) 75%, rgba(0, 217, 255, 0.05) 76%, transparent 77%, transparent),
+    linear-gradient(90deg, transparent 24%, rgba(0, 217, 255, 0.05) 25%, rgba(0, 217, 255, 0.05) 26%, transparent 27%, transparent 74%, rgba(0, 217, 255, 0.05) 75%, rgba(0, 217, 255, 0.05) 76%, transparent 77%, transparent);
+  background-size: 50px 50px;
   pointer-events: none;
+  z-index: 0;
 }
