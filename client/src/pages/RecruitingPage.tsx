@@ -51,15 +51,15 @@ function DraggableProspectCard({ prospect }: { prospect: any }) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-3 bg-muted rounded text-sm hover:bg-muted/80 transition cursor-move border border-transparent hover:border-primary/50 ${
-        isDragging ? 'shadow-lg bg-muted/50' : ''
+      className={`pipeline-card text-sm transition-all duration-300 ${
+        isDragging ? 'shadow-2xl scale-105 opacity-75' : 'hover:shadow-lg'
       }`}
     >
       <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" {...attributes} {...listeners} />
+        <GripVertical className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 mt-0.5 hover:text-muted-foreground transition" {...attributes} {...listeners} />
         <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{prospect.firstName} {prospect.lastName}</p>
-          <p className="text-xs text-muted-foreground truncate">{prospect.email}</p>
+          <p className="pipeline-card-name">{prospect.firstName} {prospect.lastName}</p>
+          <p className="pipeline-card-email">{prospect.email}</p>
         </div>
       </div>
     </div>
@@ -360,49 +360,79 @@ export default function RecruitingPage() {
               </div>
             </Card>
 
-            {/* Pipeline Prospects by Stage - Drag and Drop */}
+            {/* Pipeline Prospects by Stage - Drag and Drop with Organic Flow */}
             <DndContext
               sensors={sensors}
               collisionDetection={closestCorners}
               onDragEnd={handleDragEnd}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map(stage => {
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map((stage, idx) => {
                   const stageProspects = prospects.data?.filter((p: any) => p.pipelineStatus === stage) || [];
+                  const stageColors = [
+                    'from-blue-500/20 to-cyan-500/10 border-blue-400/30',
+                    'from-purple-500/20 to-pink-500/10 border-purple-400/30',
+                    'from-orange-500/20 to-yellow-500/10 border-orange-400/30',
+                    'from-green-500/20 to-emerald-500/10 border-green-400/30',
+                    'from-indigo-500/20 to-blue-500/10 border-indigo-400/30',
+                  ];
+                  const stageBadgeColors = [
+                    'bg-blue-500/20 text-blue-700 dark:text-blue-300',
+                    'bg-purple-500/20 text-purple-700 dark:text-purple-300',
+                    'bg-orange-500/20 text-orange-700 dark:text-orange-300',
+                    'bg-green-500/20 text-green-700 dark:text-green-300',
+                    'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300',
+                  ];
+                  
                   return (
-                    <Card key={stage} className="p-4 bg-card/50 border-2 border-border/50 hover:border-primary/30 transition">
-                      <h4 className="font-semibold mb-4 capitalize text-sm flex items-center justify-between">
-                        <span>{stage.replace('_', ' ')}</span>
-                        <Badge variant="secondary" className="text-xs">{stageProspects.length}</Badge>
-                      </h4>
-                      <SortableContext
-                        items={stageProspects.map((p: any) => p.id)}
-                        strategy={verticalListSortingStrategy}
+                    <div key={stage} className="animate-slide-up">
+                      <div className={`relative overflow-hidden rounded-3xl p-5 backdrop-blur-sm border-2 transition-all duration-500 hover:shadow-xl bg-gradient-to-br ${stageColors[idx]}`}
+                        style={{
+                          borderRadius: '30px 30px 50px 20px',
+                        }}
                       >
-                        <div
-                          className="space-y-2 max-h-96 overflow-y-auto min-h-32 p-2 rounded border-2 border-dashed border-transparent hover:border-primary/20 transition"
-                          data-status={stage}
-                        >
-                          {stageProspects.length > 0 ? (
-                            stageProspects.map((prospect: any) => (
-                              <div
-                                key={prospect.id}
-                                onClick={() => {
-                                  setSelectedProspect(prospect);
-                                  setIsDetailModalOpen(true);
-                                }}
-                              >
-                                <DraggableProspectCard prospect={prospect} />
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground text-xs">
-                              <p>Drop prospects here</p>
+                        {/* Organic background glow */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-3xl" />
+                        
+                        <div className="relative z-10">
+                          <h4 className="font-display font-bold mb-4 capitalize text-base flex items-center justify-between">
+                            <span className="text-foreground">{stage.replace('_', ' ')}</span>
+                            <Badge className={`text-xs font-semibold border-0 ${stageBadgeColors[idx]}`}>
+                              {stageProspects.length}
+                            </Badge>
+                          </h4>
+                          
+                          <SortableContext
+                            items={stageProspects.map((p: any) => p.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div
+                              className="space-y-3 max-h-96 overflow-y-auto min-h-40 p-3 rounded-2xl border-2 border-dashed border-foreground/10 hover:border-foreground/20 transition-all duration-300"
+                              data-status={stage}
+                            >
+                              {stageProspects.length > 0 ? (
+                                stageProspects.map((prospect: any) => (
+                                  <div
+                                    key={prospect.id}
+                                    onClick={() => {
+                                      setSelectedProspect(prospect);
+                                      setIsDetailModalOpen(true);
+                                    }}
+                                    className="transform transition-all duration-300 hover:scale-105"
+                                  >
+                                    <DraggableProspectCard prospect={prospect} />
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-center py-12 text-muted-foreground/60 text-xs">
+                                  <p className="font-medium">Drop prospects here</p>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </SortableContext>
                         </div>
-                      </SortableContext>
-                    </Card>
+                      </div>
+                    </div>
                   );
                 })}
               </div>

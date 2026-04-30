@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Crimson+Text:wght@400;600&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -6,7 +6,8 @@
 
 @theme inline {
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-display: 'Poppins', system-ui, sans-serif;
+  --font-display: 'Playfair Display', system-ui, serif;
+  --font-serif: 'Crimson Text', system-ui, serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -46,89 +47,95 @@
 }
 
 :root {
-  /* Modern Dotloop Reporter Design System */
-  /* Primary: Emerald Green - Success & Positive Metrics */
-  --primary: oklch(0.52 0.16 140);
-  --primary-foreground: oklch(0.98 0.001 0);
-  --sidebar-primary: oklch(0.52 0.16 140);
-  --sidebar-primary-foreground: oklch(0.98 0.001 0);
+  /* ============================================
+     ORGANIC FLOW DESIGN SYSTEM
+     Forest Green + Bronze + Cream Palette
+     ============================================ */
   
-  /* Modern Chart Palette */
-  --chart-1: oklch(0.52 0.16 140); /* Emerald - Positive */
-  --chart-2: oklch(0.60 0.16 260); /* Blue - Active */
-  --chart-3: oklch(0.70 0.18 50);  /* Orange - Pending */
-  --chart-4: oklch(0.55 0.15 15);  /* Red - Archived */
-  --chart-5: oklch(0.65 0.14 290); /* Purple - Insights */
+  /* Primary: Forest Green - Trust, Growth, Sophistication */
+  --primary: #1e5631;
+  --primary-foreground: #fef9f3;
+  --sidebar-primary: #1e5631;
+  --sidebar-primary-foreground: #fef9f3;
+  
+  /* Secondary: Warm Bronze - Premium, Real Estate */
+  --secondary: #8b6f47;
+  --secondary-foreground: #fef9f3;
+  
+  /* Accent: Soft Peach - Energy, Warmth */
+  --accent: #f4a582;
+  --accent-foreground: #1a1a1a;
+  
+  /* Chart Palette - Organic Flow Colors */
+  --chart-1: #1e5631; /* Forest Green - Positive */
+  --chart-2: #8b6f47; /* Bronze - Active */
+  --chart-3: #f4a582; /* Peach - Pending */
+  --chart-4: #d4a574; /* Light Bronze - Archived */
+  --chart-5: #6b9e7f; /* Sage Green - Insights */
 
-  --radius: 0.75rem; /* Softer corners for premium feel */
+  --radius: 1.5rem; /* Organic, rounded corners */
 
-  /* Dark Mode Base (Deep Navy) */
-  --background: oklch(0.10 0.02 260); /* Deep Navy */
-  --foreground: oklch(0.98 0.01 0); /* Pure White */
+  /* Dark Mode Base (Deep Forest) */
+  --background: #0d2818;
+  --foreground: #fef9f3;
   
-  --card: oklch(0.15 0.02 260); /* Darker Navy Card */
-  --card-foreground: oklch(0.98 0.01 0);
+  --card: #1a3a24;
+  --card-foreground: #fef9f3;
   
-  --popover: oklch(0.15 0.02 260);
-  --popover-foreground: oklch(0.98 0.01 0);
+  --popover: #1a3a24;
+  --popover-foreground: #fef9f3;
   
-  --secondary: oklch(0.20 0.02 260);
-  --secondary-foreground: oklch(0.98 0.01 0);
+  --muted: #2d5a3d;
+  --muted-foreground: #d4a574;
   
-  --muted: oklch(0.20 0.02 260);
-  --muted-foreground: oklch(0.70 0.02 260);
+  --destructive: #c85a3a;
+  --destructive-foreground: #fef9f3;
   
-  --accent: oklch(0.52 0.16 140); /* Emerald Accent */
-  --accent-foreground: oklch(0.98 0.001 0);
+  --border: rgba(212, 165, 116, 0.2);
+  --input: rgba(212, 165, 116, 0.15);
+  --ring: #f4a582;
   
-  --destructive: oklch(0.55 0.15 15);
-  --destructive-foreground: oklch(0.98 0.001 0);
-  
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.52 0.16 140); /* Emerald Ring */
-  
-  --sidebar: oklch(0.12 0.02 260);
-  --sidebar-foreground: oklch(0.98 0.01 0);
-  --sidebar-accent: oklch(0.18 0.02 260);
-  --sidebar-accent-foreground: oklch(0.98 0.01 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.52 0.16 140);
+  --sidebar: #0d2818;
+  --sidebar-foreground: #fef9f3;
+  --sidebar-accent: #1e5631;
+  --sidebar-accent-foreground: #fef9f3;
+  --sidebar-border: rgba(212, 165, 116, 0.15);
+  --sidebar-ring: #f4a582;
 }
 
 .light {
-  /* Light Mode (Clean Professional) */
-  --background: oklch(0.99 0.002 0); /* Clean White */
-  --foreground: oklch(0.20 0.05 260); /* Deep Navy Text */
+  /* Light Mode (Warm, Inviting) */
+  --background: #fef9f3;
+  --foreground: #0d2818;
   
-  --card: oklch(1 0 0); /* White Cards */
-  --card-foreground: oklch(0.20 0.05 260);
+  --card: #ffffff;
+  --card-foreground: #0d2818;
   
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0.05 260);
+  --popover: #ffffff;
+  --popover-foreground: #0d2818;
   
-  --secondary: oklch(0.96 0.01 260); /* Very Light Blue */
-  --secondary-foreground: oklch(0.20 0.05 260);
+  --secondary: #8b6f47;
+  --secondary-foreground: #fef9f3;
   
-  --muted: oklch(0.96 0.01 260);
-  --muted-foreground: oklch(0.50 0.03 260);
+  --muted: #f5f1ed;
+  --muted-foreground: #8b6f47;
   
-  --accent: oklch(0.52 0.16 140); /* Emerald Accent */
-  --accent-foreground: oklch(0.98 0.001 0);
+  --accent: #f4a582;
+  --accent-foreground: #0d2818;
   
-  --destructive: oklch(0.55 0.15 15);
-  --destructive-foreground: oklch(0.98 0.001 0);
+  --destructive: #c85a3a;
+  --destructive-foreground: #fef9f3;
   
-  --border: oklch(0.92 0.01 260); /* Light Blue-Grey Border */
-  --input: oklch(0.92 0.01 260);
-  --ring: oklch(0.52 0.16 140);
+  --border: rgba(30, 86, 49, 0.15);
+  --input: rgba(30, 86, 49, 0.1);
+  --ring: #1e5631;
   
-  --sidebar: oklch(0.98 0.002 0);
-  --sidebar-foreground: oklch(0.20 0.05 260);
-  --sidebar-accent: oklch(0.94 0.01 260);
-  --sidebar-accent-foreground: oklch(0.20 0.05 260);
-  --sidebar-border: oklch(0.92 0.01 260);
-  --sidebar-ring: oklch(0.52 0.16 140);
+  --sidebar: #fef9f3;
+  --sidebar-foreground: #0d2818;
+  --sidebar-accent: #f5f1ed;
+  --sidebar-accent-foreground: #1e5631;
+  --sidebar-border: rgba(30, 86, 49, 0.1);
+  --sidebar-ring: #1e5631;
 }
 
 @layer base {
@@ -183,25 +190,48 @@
     }
   }
 
-  /* Modern Metric Card Styling */
+  /* ============================================
+     GLASSMORPHIC CARD STYLING
+     ============================================ */
   .metric-card {
-    @apply bg-card border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-accent/30 transition-all duration-300;
+    @apply relative overflow-hidden rounded-3xl p-6 shadow-lg transition-all duration-500;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(244, 165, 130, 0.1) 0%, rgba(139, 111, 71, 0.05) 100%);
+    pointer-events: none;
+  }
+
+  .metric-card:hover {
+    @apply shadow-2xl;
+    transform: translateY(-4px);
+    border-color: rgba(244, 165, 130, 0.3);
   }
 
   .metric-card-header {
-    @apply flex items-start justify-between mb-4;
+    @apply flex items-start justify-between mb-4 relative z-10;
   }
 
   .metric-card-title {
-    @apply text-sm font-medium text-foreground/70 uppercase tracking-wide;
+    @apply text-sm font-medium text-foreground/70 uppercase tracking-widest;
   }
 
   .metric-card-value {
-    @apply text-4xl font-bold text-foreground mt-2;
+    @apply text-5xl font-display font-bold text-foreground mt-3 relative z-10;
+    background: linear-gradient(135deg, #1e5631 0%, #f4a582 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
   .metric-card-trend {
-    @apply text-xs font-semibold flex items-center gap-1 mt-2;
+    @apply text-xs font-semibold flex items-center gap-1 mt-3 relative z-10;
   }
 
   .metric-card-trend.positive {
@@ -212,86 +242,131 @@
     @apply text-red-500;
   }
 
-  /* Status Badge Styling */
+  /* ============================================
+     STATUS BADGE STYLING
+     ============================================ */
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all;
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-300;
   }
 
   .status-badge-active {
-    @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30;
+    @apply bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/50;
   }
 
   .status-badge-pending {
-    @apply bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30;
+    @apply bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/50;
   }
 
   .status-badge-closed {
-    @apply bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30;
+    @apply bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-500/50;
   }
 
   .status-badge-archived {
-    @apply bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-500/30;
+    @apply bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-500/50;
   }
 
-  /* Gradient Backgrounds for Market Stages */
+  /* ============================================
+     GRADIENT BACKGROUNDS
+     ============================================ */
   .gradient-closed {
-    background: linear-gradient(135deg, oklch(0.52 0.16 140) 0%, oklch(0.48 0.14 130) 100%);
+    background: linear-gradient(135deg, #1e5631 0%, #2d7a42 100%);
   }
 
   .gradient-active {
-    background: linear-gradient(135deg, oklch(0.60 0.16 260) 0%, oklch(0.55 0.14 250) 100%);
+    background: linear-gradient(135deg, #8b6f47 0%, #a68a5a 100%);
   }
 
   .gradient-contract {
-    background: linear-gradient(135deg, oklch(0.70 0.18 50) 0%, oklch(0.65 0.16 40) 100%);
+    background: linear-gradient(135deg, #f4a582 0%, #f5b8a0 100%);
   }
 
   .gradient-archived {
-    background: linear-gradient(135deg, oklch(0.55 0.15 15) 0%, oklch(0.50 0.13 5) 100%);
+    background: linear-gradient(135deg, #6b9e7f 0%, #7fb896 100%);
   }
 
-  /* Property Icon Styling */
+  /* ============================================
+     ORGANIC FLOW PIPELINE CARD
+     ============================================ */
+  .pipeline-card {
+    @apply relative overflow-hidden rounded-3xl p-5 transition-all duration-500 cursor-grab active:cursor-grabbing;
+    background: linear-gradient(135deg, rgba(254, 249, 243, 0.95) 0%, rgba(244, 165, 130, 0.1) 100%);
+    border: 1px solid rgba(244, 165, 130, 0.3);
+    box-shadow: 0 10px 30px rgba(30, 86, 49, 0.1);
+    border-radius: 30px 30px 50px 20px;
+  }
+
+  .pipeline-card:hover {
+    @apply shadow-2xl;
+    transform: translateY(-6px) rotate(1deg);
+    border-color: rgba(244, 165, 130, 0.5);
+  }
+
+  .pipeline-card-name {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .pipeline-card-email {
+    @apply text-xs text-foreground/60 mt-1;
+  }
+
+  /* ============================================
+     PROPERTY ICON STYLING
+     ============================================ */
   .property-icon {
-    @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold bg-accent/10 text-accent;
+    @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold transition-all duration-300;
+    background: linear-gradient(135deg, #1e5631 0%, #f4a582 100%);
+    color: #fef9f3;
   }
 
-  /* Market Penetration Badge */
+  /* ============================================
+     MARKET BADGE
+     ============================================ */
   .market-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold border transition-all duration-300;
   }
 
   .market-badge-success {
-    @apply bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30;
+    @apply bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40;
   }
 
   .market-badge-warning {
-    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30;
+    @apply bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-500/40;
   }
 
   .market-badge-info {
-    @apply bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30;
+    @apply bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-500/40;
   }
 
-  /* Floating Action Button */
+  /* ============================================
+     FLOATING ACTION BUTTON
+     ============================================ */
   .fab {
-    @apply fixed bottom-8 right-8 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center cursor-pointer;
+    @apply fixed bottom-8 right-8 w-14 h-14 rounded-full text-primary-foreground shadow-lg transition-all duration-300 flex items-center justify-center cursor-pointer;
+    background: linear-gradient(135deg, #1e5631 0%, #2d7a42 100%);
   }
 
-  /* Modern Table Styling */
+  .fab:hover {
+    @apply shadow-2xl;
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  /* ============================================
+     MODERN TABLE STYLING
+     ============================================ */
   .data-table {
     @apply w-full;
   }
 
   .data-table thead {
-    @apply bg-card border-b border-border/50;
+    @apply bg-card/50 border-b border-border/50;
   }
 
   .data-table th {
-    @apply px-4 py-3 text-left text-xs font-semibold text-foreground/70 uppercase tracking-wide;
+    @apply px-4 py-3 text-left text-xs font-semibold text-foreground/70 uppercase tracking-widest;
   }
 
   .data-table tbody tr {
-    @apply border-b border-border/30 hover:bg-card/50 transition-colors;
+    @apply border-b border-border/30 hover:bg-card/50 transition-colors duration-300;
   }
 
   .data-table td {
@@ -299,55 +374,33 @@
   }
 }
 
-/* Agent highlight animation */
-@keyframes highlight-agent {
-  0% {
-    background-color: transparent;
-  }
-  50% {
-    background-color: rgb(16, 185, 129, 0.1);
-  }
-  100% {
-    background-color: transparent;
-  }
+/* ============================================
+   KEYFRAME ANIMATIONS
+   ============================================ */
+
+/* Organic wave animation */
+@keyframes wave {
+  0% { background-position: 0 0; }
+  100% { background-position: 600px 0; }
 }
 
-.highlight-agent {
-  animation: highlight-agent 2s ease-in-out;
-  background-color: rgb(16, 185, 129, 0.05);
-}
-
-/* Smooth transitions for dashboard elements */
-@keyframes slide-up {
+/* Smooth card entrance */
+@keyframes card-entrance {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px) rotate(-2deg);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) rotate(0deg);
   }
 }
 
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
+.animate-card-entrance {
+  animation: card-entrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Metric card pulse effect */
-@keyframes pulse-metric {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
-  }
-}
-
-.pulse-metric {
-  animation: pulse-metric 2s infinite;
-}
-
-/* Smooth fade in for charts */
+/* Smooth fade in */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -361,7 +414,7 @@
   animation: fade-in 0.5s ease-out;
 }
 
-/* Smooth scale animation for modals */
+/* Smooth scale animation */
 @keyframes scale-in {
   from {
     opacity: 0;
@@ -377,38 +430,120 @@
   animation: scale-in 0.3s ease-out;
 }
 
+/* Smooth slide up */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Pulse metric effect */
+@keyframes pulse-metric {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(30, 86, 49, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(30, 86, 49, 0);
+  }
+}
+
+.pulse-metric {
+  animation: pulse-metric 2s infinite;
+}
+
+/* Glow effect */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(244, 165, 130, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(244, 165, 130, 0.8);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Float animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ============================================
+   CONTRAST MODE
+   ============================================ */
 .contrast {
-  /* Contrast Mode - Balanced Medium (Happy Medium) */
-  /* Slightly darker than light, slightly brighter than dark */
-  --background: oklch(0.25 0.03 260);
-  --foreground: oklch(0.98 0.01 0);
+  --background: #1a3a24;
+  --foreground: #fef9f3;
   
-  --card: oklch(0.32 0.03 260);
-  --card-foreground: oklch(0.98 0.01 0);
+  --card: #2d5a3d;
+  --card-foreground: #fef9f3;
   
-  --popover: oklch(0.32 0.03 260);
-  --popover-foreground: oklch(0.98 0.01 0);
+  --popover: #2d5a3d;
+  --popover-foreground: #fef9f3;
   
-  --secondary: oklch(0.35 0.03 260);
-  --secondary-foreground: oklch(0.98 0.01 0);
+  --secondary: #8b6f47;
+  --secondary-foreground: #fef9f3;
   
-  --muted: oklch(0.35 0.03 260);
-  --muted-foreground: oklch(0.80 0.02 260);
+  --muted: #3d7a4d;
+  --muted-foreground: #d4a574;
   
-  --accent: oklch(0.52 0.16 140);
-  --accent-foreground: oklch(0.98 0.001 0);
+  --accent: #f4a582;
+  --accent-foreground: #0d2818;
   
-  --destructive: oklch(0.55 0.15 15);
-  --destructive-foreground: oklch(0.98 0.001 0);
+  --destructive: #c85a3a;
+  --destructive-foreground: #fef9f3;
   
-  --border: oklch(0.40 0.02 260);
-  --input: oklch(0.40 0.02 260);
-  --ring: oklch(0.52 0.16 140);
+  --border: rgba(244, 165, 130, 0.3);
+  --input: rgba(244, 165, 130, 0.25);
+  --ring: #f4a582;
   
-  --sidebar: oklch(0.28 0.03 260);
-  --sidebar-foreground: oklch(0.98 0.01 0);
-  --sidebar-accent: oklch(0.35 0.03 260);
-  --sidebar-accent-foreground: oklch(0.98 0.01 0);
-  --sidebar-border: oklch(0.40 0.02 260);
-  --sidebar-ring: oklch(0.52 0.16 140);
+  --sidebar: #1a3a24;
+  --sidebar-foreground: #fef9f3;
+  --sidebar-accent: #2d5a3d;
+  --sidebar-accent-foreground: #fef9f3;
+  --sidebar-border: rgba(244, 165, 130, 0.2);
+  --sidebar-ring: #f4a582;
+}
+
+/* ============================================
+   ORGANIC FLOW BACKGROUND PATTERNS
+   ============================================ */
+
+.organic-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.organic-bg::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(30, 86, 49, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(244, 165, 130, 0.1) 0%, transparent 50%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
 }
