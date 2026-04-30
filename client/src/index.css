@@ -1,13 +1,12 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Lora:wght@400;500;600&family=Crimson+Text:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Lora', system-ui, serif;
-  --font-display: 'Playfair Display', system-ui, serif;
-  --font-mono: 'Crimson Text', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Poppins', system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -47,95 +46,89 @@
 }
 
 :root {
-  /* ============================================
-     REAL ESTATE LUXURY DESIGN SYSTEM
-     Emerald Green + Warm Gold + Marble Textures
-     ============================================ */
+  /* Modern Dotloop Reporter Design System */
+  /* Primary: Emerald Green - Success & Positive Metrics */
+  --primary: oklch(0.52 0.16 140);
+  --primary-foreground: oklch(0.98 0.001 0);
+  --sidebar-primary: oklch(0.52 0.16 140);
+  --sidebar-primary-foreground: oklch(0.98 0.001 0);
   
-  /* Primary: Emerald Green - Trust, Stability, Wealth */
-  --primary: #10b981;
-  --primary-foreground: #ffffff;
-  --sidebar-primary: #10b981;
-  --sidebar-primary-foreground: #ffffff;
-  
-  /* Secondary: Warm Gold - Prestige, Elegance, Premium */
-  --secondary: #d4af37;
-  --secondary-foreground: #1a1a1a;
-  
-  /* Accent: Deep Emerald - Sophistication, Luxury */
-  --accent: #047857;
-  --accent-foreground: #ffffff;
-  
-  /* Chart Palette - Real Estate Luxury Colors */
-  --chart-1: #10b981; /* Emerald Green - Primary Data */
-  --chart-2: #d4af37; /* Warm Gold - Secondary Data */
-  --chart-3: #047857; /* Deep Emerald - Tertiary Data */
-  --chart-4: #6ee7b7; /* Light Emerald - Positive Data */
-  --chart-5: #f59e0b; /* Amber - Warning Data */
+  /* Modern Chart Palette */
+  --chart-1: oklch(0.52 0.16 140); /* Emerald - Positive */
+  --chart-2: oklch(0.60 0.16 260); /* Blue - Active */
+  --chart-3: oklch(0.70 0.18 50);  /* Orange - Pending */
+  --chart-4: oklch(0.55 0.15 15);  /* Red - Archived */
+  --chart-5: oklch(0.65 0.14 290); /* Purple - Insights */
 
-  --radius: 0.75rem; /* Elegant, slightly rounded corners */
+  --radius: 0.75rem; /* Softer corners for premium feel */
 
-  /* Dark Mode Base (Sophisticated Cream/Off-White) */
-  --background: #f8f6f1;
-  --foreground: #1a1a1a;
+  /* Dark Mode Base (Deep Navy) */
+  --background: oklch(0.10 0.02 260); /* Deep Navy */
+  --foreground: oklch(0.98 0.01 0); /* Pure White */
   
-  --card: #ffffff;
-  --card-foreground: #1a1a1a;
+  --card: oklch(0.15 0.02 260); /* Darker Navy Card */
+  --card-foreground: oklch(0.98 0.01 0);
   
-  --popover: #ffffff;
-  --popover-foreground: #1a1a1a;
+  --popover: oklch(0.15 0.02 260);
+  --popover-foreground: oklch(0.98 0.01 0);
   
-  --muted: #e8e4dc;
-  --muted-foreground: #10b981;
+  --secondary: oklch(0.20 0.02 260);
+  --secondary-foreground: oklch(0.98 0.01 0);
   
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
+  --muted: oklch(0.20 0.02 260);
+  --muted-foreground: oklch(0.70 0.02 260);
   
-  --border: rgba(16, 185, 129, 0.15);
-  --input: rgba(16, 185, 129, 0.1);
-  --ring: #10b981;
+  --accent: oklch(0.52 0.16 140); /* Emerald Accent */
+  --accent-foreground: oklch(0.98 0.001 0);
   
-  --sidebar: #f8f6f1;
-  --sidebar-foreground: #1a1a1a;
-  --sidebar-accent: #f0ebe2;
-  --sidebar-accent-foreground: #10b981;
-  --sidebar-border: rgba(16, 185, 129, 0.1);
-  --sidebar-ring: #10b981;
+  --destructive: oklch(0.55 0.15 15);
+  --destructive-foreground: oklch(0.98 0.001 0);
+  
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.52 0.16 140); /* Emerald Ring */
+  
+  --sidebar: oklch(0.12 0.02 260);
+  --sidebar-foreground: oklch(0.98 0.01 0);
+  --sidebar-accent: oklch(0.18 0.02 260);
+  --sidebar-accent-foreground: oklch(0.98 0.01 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.52 0.16 140);
 }
 
-.dark {
-  /* Dark Mode (Deep Emerald Background) */
-  --background: #0f2e2a;
-  --foreground: #f8f6f1;
+.light {
+  /* Light Mode (Clean Professional) */
+  --background: oklch(0.99 0.002 0); /* Clean White */
+  --foreground: oklch(0.20 0.05 260); /* Deep Navy Text */
   
-  --card: #1a3d38;
-  --card-foreground: #f8f6f1;
+  --card: oklch(1 0 0); /* White Cards */
+  --card-foreground: oklch(0.20 0.05 260);
   
-  --popover: #1a3d38;
-  --popover-foreground: #f8f6f1;
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.05 260);
   
-  --secondary: #d4af37;
-  --secondary-foreground: #0f2e2a;
+  --secondary: oklch(0.96 0.01 260); /* Very Light Blue */
+  --secondary-foreground: oklch(0.20 0.05 260);
   
-  --muted: #2a5450;
-  --muted-foreground: #d4af37;
+  --muted: oklch(0.96 0.01 260);
+  --muted-foreground: oklch(0.50 0.03 260);
   
-  --accent: #6ee7b7;
-  --accent-foreground: #0f2e2a;
+  --accent: oklch(0.52 0.16 140); /* Emerald Accent */
+  --accent-foreground: oklch(0.98 0.001 0);
   
-  --destructive: #f87171;
-  --destructive-foreground: #0f2e2a;
+  --destructive: oklch(0.55 0.15 15);
+  --destructive-foreground: oklch(0.98 0.001 0);
   
-  --border: rgba(212, 175, 55, 0.2);
-  --input: rgba(212, 175, 55, 0.15);
-  --ring: #d4af37;
+  --border: oklch(0.92 0.01 260); /* Light Blue-Grey Border */
+  --input: oklch(0.92 0.01 260);
+  --ring: oklch(0.52 0.16 140);
   
-  --sidebar: #0f2e2a;
-  --sidebar-foreground: #f8f6f1;
-  --sidebar-accent: #1a3d38;
-  --sidebar-accent-foreground: #d4af37;
-  --sidebar-border: rgba(212, 175, 55, 0.15);
-  --sidebar-ring: #d4af37;
+  --sidebar: oklch(0.98 0.002 0);
+  --sidebar-foreground: oklch(0.20 0.05 260);
+  --sidebar-accent: oklch(0.94 0.01 260);
+  --sidebar-accent-foreground: oklch(0.20 0.05 260);
+  --sidebar-border: oklch(0.92 0.01 260);
+  --sidebar-ring: oklch(0.52 0.16 140);
 }
 
 @layer base {
@@ -146,7 +139,7 @@
     @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-semibold;
+    @apply font-display;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -190,205 +183,115 @@
     }
   }
 
-  /* ============================================
-     LUXURY METRIC CARDS
-     ============================================ */
+  /* Modern Metric Card Styling */
   .metric-card {
-    @apply relative overflow-hidden rounded-lg p-6 border transition-all duration-300;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(248, 246, 241, 0.6) 100%);
-    border-color: rgba(16, 185, 129, 0.2);
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(10px);
-  }
-
-  .metric-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="marble" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><rect fill="%23f8f6f1" width="100" height="100"/><path d="M0,0 Q25,25 50,20 T100,30 L100,0 Z" fill="%23f0ebe2" opacity="0.3"/><path d="M0,50 Q25,60 50,55 T100,65 L100,50 Z" fill="%23e8e4dc" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23marble)"/></svg>') no-repeat center/cover;
-    opacity: 0.3;
-    pointer-events: none;
-  }
-
-  .metric-card:hover {
-    @apply shadow-2xl;
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 16px 48px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    transform: translateY(-4px);
+    @apply bg-card border border-border/50 rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-accent/30 transition-all duration-300;
   }
 
   .metric-card-header {
-    @apply flex items-start justify-between mb-4 relative z-10;
+    @apply flex items-start justify-between mb-4;
   }
 
   .metric-card-title {
-    @apply text-xs font-semibold text-foreground/60 uppercase tracking-widest;
+    @apply text-sm font-medium text-foreground/70 uppercase tracking-wide;
   }
 
   .metric-card-value {
-    @apply text-5xl font-display font-bold text-foreground mt-3 relative z-10;
-    background: linear-gradient(90deg, #10b981 0%, #047857 50%, #d4af37 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    @apply text-4xl font-bold text-foreground mt-2;
   }
 
   .metric-card-trend {
-    @apply text-xs font-semibold flex items-center gap-1 mt-3 relative z-10;
+    @apply text-xs font-semibold flex items-center gap-1 mt-2;
   }
 
   .metric-card-trend.positive {
-    @apply text-emerald-600;
+    @apply text-emerald-500;
   }
 
   .metric-card-trend.negative {
-    @apply text-red-600;
+    @apply text-red-500;
   }
 
-  /* ============================================
-     LUXURY STATUS BADGES
-     ============================================ */
+  /* Status Badge Styling */
   .status-badge {
-    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-300;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #10b981;
-  }
-
-  .status-badge:hover {
-    background: rgba(16, 185, 129, 0.2);
-    border-color: rgba(16, 185, 129, 0.5);
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all;
   }
 
   .status-badge-active {
-    @apply bg-emerald-50 text-emerald-700 border border-emerald-300;
+    @apply bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30;
   }
 
   .status-badge-pending {
-    @apply bg-amber-50 text-amber-700 border border-amber-300;
+    @apply bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30;
   }
 
   .status-badge-closed {
-    @apply bg-blue-50 text-blue-700 border border-blue-300;
+    @apply bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30;
   }
 
   .status-badge-archived {
-    @apply bg-slate-50 text-slate-700 border border-slate-300;
+    @apply bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-500/30;
   }
 
-  /* ============================================
-     LUXURY GRADIENTS
-     ============================================ */
+  /* Gradient Backgrounds for Market Stages */
   .gradient-closed {
-    background: linear-gradient(135deg, #10b981 0%, #6ee7b7 100%);
+    background: linear-gradient(135deg, oklch(0.52 0.16 140) 0%, oklch(0.48 0.14 130) 100%);
   }
 
   .gradient-active {
-    background: linear-gradient(135deg, #047857 0%, #10b981 100%);
+    background: linear-gradient(135deg, oklch(0.60 0.16 260) 0%, oklch(0.55 0.14 250) 100%);
   }
 
   .gradient-contract {
-    background: linear-gradient(135deg, #d4af37 0%, #f59e0b 100%);
+    background: linear-gradient(135deg, oklch(0.70 0.18 50) 0%, oklch(0.65 0.16 40) 100%);
   }
 
   .gradient-archived {
-    background: linear-gradient(135deg, #10b981 0%, #d4af37 100%);
+    background: linear-gradient(135deg, oklch(0.55 0.15 15) 0%, oklch(0.50 0.13 5) 100%);
   }
 
-  /* ============================================
-     LUXURY PIPELINE CARDS
-     ============================================ */
-  .pipeline-card {
-    @apply relative overflow-hidden rounded-lg p-4 transition-all duration-300 cursor-grab active:cursor-grabbing border;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(248, 246, 241, 0.5) 100%);
-    border-color: rgba(16, 185, 129, 0.2);
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-  }
-
-  .pipeline-card:hover {
-    @apply shadow-lg;
-    border-color: rgba(16, 185, 129, 0.4);
-    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    transform: translateY(-3px);
-  }
-
-  .pipeline-card-name {
-    @apply text-sm font-semibold text-foreground;
-  }
-
-  .pipeline-card-email {
-    @apply text-xs text-foreground/60 mt-1;
-  }
-
-  /* ============================================
-     PROPERTY ICON STYLING
-     ============================================ */
+  /* Property Icon Styling */
   .property-icon {
-    @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold transition-all duration-300;
-    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    @apply w-10 h-10 rounded-lg flex items-center justify-center text-base font-bold bg-accent/10 text-accent;
   }
 
-  /* ============================================
-     MARKET BADGE
-     ============================================ */
+  /* Market Penetration Badge */
   .market-badge {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all duration-300;
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border;
   }
 
   .market-badge-success {
-    @apply bg-emerald-50 text-emerald-700 border-emerald-300;
+    @apply bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30;
   }
 
   .market-badge-warning {
-    @apply bg-amber-50 text-amber-700 border-amber-300;
+    @apply bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30;
   }
 
   .market-badge-info {
-    @apply bg-blue-50 text-blue-700 border-blue-300;
+    @apply bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30;
   }
 
-  /* ============================================
-     FLOATING ACTION BUTTON
-     ============================================ */
+  /* Floating Action Button */
   .fab {
-    @apply fixed bottom-8 right-8 w-14 h-14 rounded-lg text-primary-foreground shadow-lg transition-all duration-300 flex items-center justify-center cursor-pointer;
-    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+    @apply fixed bottom-8 right-8 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-110 transition-all flex items-center justify-center cursor-pointer;
   }
 
-  .fab:hover {
-    @apply shadow-2xl;
-    transform: scale(1.1);
-    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.4);
-  }
-
-  /* ============================================
-     MODERN TABLE STYLING
-     ============================================ */
+  /* Modern Table Styling */
   .data-table {
     @apply w-full;
   }
 
   .data-table thead {
-    @apply bg-card/50 border-b-2;
-    border-color: rgba(16, 185, 129, 0.2);
+    @apply bg-card border-b border-border/50;
   }
 
   .data-table th {
-    @apply px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-widest;
+    @apply px-4 py-3 text-left text-xs font-semibold text-foreground/70 uppercase tracking-wide;
   }
 
   .data-table tbody tr {
-    @apply border-b transition-colors duration-300;
-    border-color: rgba(16, 185, 129, 0.1);
-  }
-
-  .data-table tbody tr:hover {
-    @apply bg-card/30;
-    box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.05);
+    @apply border-b border-border/30 hover:bg-card/50 transition-colors;
   }
 
   .data-table td {
@@ -396,91 +299,25 @@
   }
 }
 
-/* ============================================
-   KEYFRAME ANIMATIONS - ELEGANT & SMOOTH
-   ============================================ */
-
-/* Subtle luxury glow */
-@keyframes luxury-glow {
-  0%, 100% {
-    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  }
-  50% {
-    box-shadow: 0 12px 40px rgba(16, 185, 129, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  }
-}
-
-.animate-luxury-glow {
-  animation: luxury-glow 3s ease-in-out infinite;
-}
-
-/* Elegant text animation */
-@keyframes elegant-text {
+/* Agent highlight animation */
+@keyframes highlight-agent {
   0% {
-    opacity: 0.9;
-    transform: translateY(0);
+    background-color: transparent;
   }
   50% {
-    opacity: 1;
-    transform: translateY(-1px);
+    background-color: rgb(16, 185, 129, 0.1);
   }
   100% {
-    opacity: 0.9;
-    transform: translateY(0);
+    background-color: transparent;
   }
 }
 
-.animate-elegant-text {
-  animation: elegant-text 2.5s ease-in-out infinite;
+.highlight-agent {
+  animation: highlight-agent 2s ease-in-out;
+  background-color: rgb(16, 185, 129, 0.05);
 }
 
-/* Smooth card entrance */
-@keyframes card-entrance {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-card-entrance {
-  animation: card-entrance 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-/* Smooth fade in */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out;
-}
-
-/* Smooth scale animation */
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-scale-in {
-  animation: scale-in 0.3s ease-out;
-}
-
-/* Smooth slide up */
+/* Smooth transitions for dashboard elements */
 @keyframes slide-up {
   from {
     opacity: 0;
@@ -496,13 +333,13 @@
   animation: slide-up 0.3s ease-out;
 }
 
-/* Pulse metric effect */
+/* Metric card pulse effect */
 @keyframes pulse-metric {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
   }
 }
 
@@ -510,108 +347,68 @@
   animation: pulse-metric 2s infinite;
 }
 
-/* Gold accent shimmer */
-@keyframes gold-shimmer {
-  0%, 100% {
-    text-shadow: 0 0 0 rgba(212, 175, 55, 0);
+/* Smooth fade in for charts */
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
-  50% {
-    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+  to {
+    opacity: 1;
   }
 }
 
-.animate-gold-shimmer {
-  animation: gold-shimmer 2s ease-in-out infinite;
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
 }
 
-/* ============================================
-   MARBLE TEXTURE BACKGROUND
-   ============================================ */
-
-.marble-bg {
-  position: relative;
-  overflow: hidden;
+/* Smooth scale animation for modals */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.marble-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(212, 175, 55, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(16, 185, 129, 0.03) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
 }
 
-/* ============================================
-   GLASSMORPHISM EFFECT
-   ============================================ */
-
-.glass {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.glass-dark {
-  background: rgba(26, 61, 56, 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(212, 175, 55, 0.1);
-}
-
-/* ============================================
-   GOLD ACCENT DIVIDER
-   ============================================ */
-
-.gold-divider {
-  height: 2px;
-  background: linear-gradient(90deg, transparent 0%, #d4af37 50%, transparent 100%);
-  opacity: 0.5;
-}
-
-/* ============================================
-   EMERALD ACCENT TEXT
-   ============================================ */
-
-.text-emerald-accent {
-  color: #10b981;
-  font-weight: 600;
-}
-
-.text-gold-accent {
-  color: #d4af37;
-  font-weight: 600;
-}
-
-/* ============================================
-   LUXURY BUTTON STYLES
-   ============================================ */
-
-.btn-luxury {
-  @apply px-6 py-2.5 rounded-lg font-semibold transition-all duration-300;
-  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.btn-luxury:hover {
-  @apply shadow-lg;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
-}
-
-.btn-luxury-outline {
-  @apply px-6 py-2.5 rounded-lg font-semibold transition-all duration-300 border-2;
-  border-color: #10b981;
-  color: #10b981;
-  background: transparent;
-}
-
-.btn-luxury-outline:hover {
-  background: rgba(16, 185, 129, 0.1);
+.contrast {
+  /* Contrast Mode - Balanced Medium (Happy Medium) */
+  /* Slightly darker than light, slightly brighter than dark */
+  --background: oklch(0.25 0.03 260);
+  --foreground: oklch(0.98 0.01 0);
+  
+  --card: oklch(0.32 0.03 260);
+  --card-foreground: oklch(0.98 0.01 0);
+  
+  --popover: oklch(0.32 0.03 260);
+  --popover-foreground: oklch(0.98 0.01 0);
+  
+  --secondary: oklch(0.35 0.03 260);
+  --secondary-foreground: oklch(0.98 0.01 0);
+  
+  --muted: oklch(0.35 0.03 260);
+  --muted-foreground: oklch(0.80 0.02 260);
+  
+  --accent: oklch(0.52 0.16 140);
+  --accent-foreground: oklch(0.98 0.001 0);
+  
+  --destructive: oklch(0.55 0.15 15);
+  --destructive-foreground: oklch(0.98 0.001 0);
+  
+  --border: oklch(0.40 0.02 260);
+  --input: oklch(0.40 0.02 260);
+  --ring: oklch(0.52 0.16 140);
+  
+  --sidebar: oklch(0.28 0.03 260);
+  --sidebar-foreground: oklch(0.98 0.01 0);
+  --sidebar-accent: oklch(0.35 0.03 260);
+  --sidebar-accent-foreground: oklch(0.98 0.01 0);
+  --sidebar-border: oklch(0.40 0.02 260);
+  --sidebar-ring: oklch(0.52 0.16 140);
 }
