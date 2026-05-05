@@ -63,7 +63,7 @@ import UploadZone from '@/components/UploadZone';
 import CommissionProjector from '@/components/CommissionProjector';
 import RecentUploads, { RecentFile } from '@/components/RecentUploads';
 import UploadHistory from '@/components/UploadHistory';
-import ConnectDotloop from '@/components/ConnectDotloop';
+// import ConnectDotloop from '@/components/ConnectDotloop'; // Placeholder for now
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import { CSVValidationReportModal } from '@/components/CSVValidationReportModal';
 import MetricCard from '@/components/MetricCard';
@@ -843,7 +843,7 @@ function HomeContent() {
                 </Card>
               </div>
 
-              {/* Right Column: Dotloop OAuth Login */}
+              {/* Right Column: Dotloop OAuth Login - Placeholder */}
               <div className="flex flex-col">
                 <div className="text-center lg:text-left mb-4">
                   <h3 className="text-xl font-semibold mb-2">🔗 Connect to Dotloop</h3>
@@ -851,9 +851,13 @@ function HomeContent() {
                     Login to your Dotloop workspace for real-time data sync
                   </p>
                 </div>
-                <div className="flex-1">
-                  <ConnectDotloop variant="card" />
-                </div>
+                <Card className="flex-1 p-8 flex items-center justify-center bg-card/50 border-dashed border-2 border-border">
+                  <div className="text-center">
+                    <div className="text-4xl mb-4">🔄</div>
+                    <p className="text-foreground/60 mb-4">Coming Soon</p>
+                    <p className="text-sm text-foreground/50">Direct Dotloop integration will be available soon. For now, use CSV uploads to import your data.</p>
+                  </div>
+                </Card>
               </div>
             </div>
 
