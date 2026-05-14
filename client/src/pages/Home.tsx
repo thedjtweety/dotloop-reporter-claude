@@ -1314,12 +1314,12 @@ function HomeContent() {
                   <PerformanceBadge lastUpdated={new Date()} processingTimeMs={245} />
                 </div>
                 <InteractivePipelineChart 
-                  data={allRecords}
+                  data={contextAllRecords}
                 />
               </Card>
               
               <Card className="p-6 bg-card border border-border">
-                <ConversionTrendsChart data={allRecords} />
+                <ConversionTrendsChart data={contextAllRecords} />
               </Card>
             </TabsContent>
             </TabAnimation>
