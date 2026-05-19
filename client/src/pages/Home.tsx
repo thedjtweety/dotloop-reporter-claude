@@ -1043,7 +1043,16 @@ function HomeContent() {
           isOpen={showValidationReport}
           report={validationReport}
           onClose={() => setShowValidationReport(false)}
-          onProceed={() => setShowValidationReport(false)}
+          onProceed={() => {
+            setShowValidationReport(false);
+            // Scroll to dashboard section after a brief delay
+            setTimeout(() => {
+              const dashboardSection = document.getElementById('dashboard-section');
+              if (dashboardSection) {
+                dashboardSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 300);
+          }}
         />
 
         {/* Legal Footer */}
@@ -1067,7 +1076,7 @@ function HomeContent() {
       <ModernHeader dateRange={dateRange} setDateRange={setDateRange} title="Dotloop Reporter" onDemoClick={handleDemoMode} isDemoLoading={isLoading} />
 
       {/* Main Dashboard */}
-      <main className="flex-1 overflow-y-auto container py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8">
+      <main id="dashboard-section" className="flex-1 overflow-y-auto container py-6 sm:py-8 md:py-10 px-4 sm:px-6 md:px-8">
         {/* Filter Badge */}
         <FilterBadge />
         
@@ -1350,7 +1359,7 @@ function HomeContent() {
                     <PerformanceBadge lastUpdated={new Date()} processingTimeMs={198} />
                   </div>
                   <BuySellTrendChart 
-                    data={filteredRecords}
+                    data={contextAllRecords}
                     onDataPointClick={(month, buySideDeals, sellSideDeals) => {
                       const allDeals = [...buySideDeals, ...sellSideDeals];
                       openAnalyticsDrillDown(`Buy vs Sell: ${month}`, allDeals);
@@ -1371,7 +1380,7 @@ function HomeContent() {
                   <PerformanceBadge lastUpdated={new Date()} processingTimeMs={156} />
                 </div>
                 <LeadSourceChart 
-                  data={getLeadSourceData(allRecords)} 
+                  data={getLeadSourceData(contextAllRecords)} 
                   onSliceClick={(label) => openChartDrillDown('leadSource', label, `Lead Source: ${label}`)}
                 />
               </Card>
@@ -1388,7 +1397,7 @@ function HomeContent() {
                   <PerformanceBadge lastUpdated={new Date()} processingTimeMs={189} />
                 </div>
                 <PropertyTypeChart 
-                  data={getPropertyTypeData(allRecords)} 
+                  data={getPropertyTypeData(contextAllRecords)} 
                   onBarClick={(label) => openChartDrillDown('propertyType', label, `Property Type: ${label}`)}
                 />
               </Card>
@@ -1405,9 +1414,9 @@ function HomeContent() {
                   <PerformanceBadge lastUpdated={new Date()} processingTimeMs={267} />
                 </div>
                 <GeographicChart 
-                  data={getGeographicData(allRecords)} 
+                  data={getGeographicData(contextAllRecords)} 
                   onBarClick={(label) => openChartDrillDown('geographic', label, `Location: ${label}`)}
-                  transactions={allRecords}
+                  transactions={contextAllRecords}
                 />
               </Card>
             </TabsContent>
@@ -1467,13 +1476,13 @@ function HomeContent() {
                   <h2 className="text-xl font-display font-bold text-foreground mb-4">
                     Market Insights
                   </h2>
-                  <EnhancedPriceVsYearBuiltChart data={filteredRecords} />
+                  <EnhancedPriceVsYearBuiltChart data={contextAllRecords} />
                 </Card>
                 <Card className="p-6 bg-card border border-border">
                   <h2 className="text-xl font-display font-bold text-foreground mb-4">
                     Price Reduction Analysis
                   </h2>
-                  <PriceReductionChart data={filteredRecords} />
+                  <PriceReductionChart data={contextAllRecords} />
                 </Card>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1481,13 +1490,13 @@ function HomeContent() {
                   <h2 className="text-xl font-display font-bold text-foreground mb-4">
                     Compliance Status
                   </h2>
-                  <ComplianceChart data={filteredRecords} />
+                  <ComplianceChart data={contextAllRecords} />
                 </Card>
                 <Card className="p-6 bg-card border border-border">
                   <h2 className="text-xl font-display font-bold text-foreground mb-4">
                     Tag Analysis
                   </h2>
-                  <TagsChart data={filteredRecords} />
+                  <TagsChart data={contextAllRecords} />
                 </Card>
               </div>
             </TabsContent>
@@ -1495,9 +1504,9 @@ function HomeContent() {
 
             <TabAnimation isVisible={activeTab === 'health'} duration={400}>
             <TabsContent value="health" className="space-y-4">
-              <DataHealthCheck records={allRecords} />
+              <DataHealthCheck records={contextAllRecords} />
               <DataValidationReport 
-                records={allRecords} 
+                records={contextAllRecords} 
                 onConfirm={() => {
                   // Just switch to pipeline tab as "confirm" action
                   setActiveTab('pipeline');
@@ -1534,7 +1543,7 @@ function HomeContent() {
             <CollapsibleSection title="Agent Performance Leaderboard" icon={<Trophy className="w-6 h-6" />}>
               <AgentLeaderboardWithExport 
                 agents={agentMetrics} 
-                records={filteredRecords}
+                records={contextAllRecords}
                 onNavigateToAssignAgent={(agentName) => {
                   setCommissionManagementTab('assignments');
                   setCommissionManagementHighlightAgent(agentName);
@@ -1557,8 +1566,8 @@ function HomeContent() {
         {/* Commission Management Panel */}
         <div data-section="commission-management">
           <CommissionManagementPanel 
-            records={filteredRecords} 
-            hasData={filteredRecords.length > 0}
+            records={contextAllRecords} 
+            hasData={contextAllRecords.length > 0}
             initialTab={commissionManagementTab}
             highlightAgent={commissionManagementHighlightAgent}
             onTabChange={setCommissionManagementTab}
@@ -1574,7 +1583,7 @@ function HomeContent() {
         {contextMetrics?.hasFinancialData && (
           <div data-section="projector">
             <CollapsibleSection title="Commission Projector" icon={<DollarSign className="w-6 h-6" />}>
-              <CommissionProjector records={filteredRecords} />
+              <CommissionProjector records={contextAllRecords} />
             </CollapsibleSection>
           </div>
         )}
