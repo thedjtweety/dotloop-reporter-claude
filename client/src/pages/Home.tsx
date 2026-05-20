@@ -8,7 +8,7 @@
  * - Interactive charts for pipeline, financial, and geographic analysis
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { trpc } from '@/lib/trpc';
@@ -136,11 +136,14 @@ function HomeContent() {
   const [location, setLocation] = useLocation();
   const { metricsOrder, isEditMode, isLoaded, reorderMetrics, resetToDefault, toggleEditMode } = useMetricsOrder();
   const { showTour, completeTour, skipTour } = useOnboardingTour();
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  
   const [allRecords, setAllRecords] = useState<DotloopRecord[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<DotloopRecord[]>([]);
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [agentMetrics, setAgentMetrics] = useState<AgentMetrics[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldScrollToDashboard, setShouldScrollToDashboard] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [sparklineTrends, setSparklineTrends] = useState<any>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -719,18 +722,40 @@ function HomeContent() {
       
       performanceMetrics.totalTimeMs = Date.now() - overallStartTime;
       
-      // Generate validation report
+      // Generate validation report (store but don't show - let dashboard load first)
       const report = validateCSVData(file.name, records);
       setValidationReport(report);
-      setShowValidationReport(true);
+      // setShowValidationReport(true); // Commented out - show dashboard first, user can view data health tab
       
       // Process the records for immediate display
+      const calculatedMetrics = calculateMetrics(records);
+      const metrics3 = calculateAgentMetrics(records);
+      const agentMetricsWithPlans = applyPlansToAllAgents(metrics3, records);
+      
       setAllRecords(records);
       setFilteredRecords(records);
-      setMetrics(calculateMetrics(records));
-      const metrics3 = calculateAgentMetrics(records);
-      setAgentMetrics(applyPlansToAllAgents(metrics3, records));
+      setMetrics(calculatedMetrics);
+      setAgentMetrics(agentMetricsWithPlans);
+      
+      // Update context to trigger sidebar and hide upload section
+      setTransactionData({
+        allRecords: records,
+        filteredRecords: records,
+        metrics: calculatedMetrics,
+        agentMetrics: agentMetricsWithPlans,
+        fileName: file.name,
+      });
+      
       setIsLoading(false);
+      
+      // Trigger scroll to dashboard after a longer delay to ensure render complete
+      setShouldScrollToDashboard(true);
+      setTimeout(() => {
+        if (dashboardRef.current) {
+          const offsetTop = dashboardRef.current.offsetTop;
+          window.scrollTo({ top: offsetTop - 100, behavior: 'smooth' });
+        }
+      }, 1000);
       
       // Save to recent files (localStorage)
       await handleSaveRecent(file.name, records);
@@ -1082,7 +1107,7 @@ function HomeContent() {
         
         {/* Pipeline Pulse Dashboard */}
         {contextMetrics && contextAllRecords.length > 0 && (
-          <div className="mb-12 space-y-8" data-tour="pipeline-pulse">
+          <div ref={dashboardRef} className="mb-12 space-y-8" data-tour="pipeline-pulse">
             {/* KPI Cards Row - Modern Design */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
               <MetricCardModern

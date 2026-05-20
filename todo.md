@@ -4600,3 +4600,16 @@
 - `InteractiveCommissionCalculator` - Main calculator component with tabs for comparison, configuration, and details
 - `CommissionCalculatorPage` - Dedicated page with help text and usage tips
 - Integrated into sidebar navigation under "Commission Calc"
+
+
+## Phase 32: Major Architecture Refactor - Multi-Page Navigation (CRITICAL)
+
+- [ ] Create separate Dashboard page component with sidebar navigation
+- [ ] Move all dashboard metrics and charts to Dashboard page
+- [ ] Create sidebar navigation component with menu items (Dashboard, Agents, Commission, Net Report, CDA Builder, etc.)
+- [ ] Update CSV upload handler to navigate to /dashboard after upload
+- [ ] Update Demo mode to navigate to /dashboard
+- [ ] Update App.tsx routing to include new /dashboard route
+- [ ] Test upload flow - CSV upload should immediately show dashboard page
+- [ ] Test demo mode - clicking Try Demo should immediately show dashboard page
+- [ ] Ensure Home page still shows upload zone and recent files
