@@ -524,35 +524,35 @@ function HomeContent() {
     switch (type) {
       case 'total':
         title = 'All Transactions';
-        filtered = filteredRecords;
+        filtered = contextAllRecords;
         break;
       case 'volume':
         title = 'Sales Volume Breakdown';
-        filtered = filteredRecords.filter(r => (r.salePrice || r.price) > 0).sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
+        filtered = contextAllRecords.filter(r => (r.salePrice || r.price) > 0).sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
         break;
       case 'closing':
         title = 'Closed Deals';
-        filtered = filteredRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
+        filtered = contextAllRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
         break;
       case 'days':
         title = 'Days to Close Analysis';
-        filtered = filteredRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
+        filtered = contextAllRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
         break;
       case 'active':
         title = 'Active Listings';
-        filtered = filteredRecords.filter(r => r.loopStatus?.toLowerCase().includes('active'));
+        filtered = contextAllRecords.filter(r => r.loopStatus?.toLowerCase().includes('active'));
         break;
       case 'contract':
         title = 'Under Contract';
-        filtered = filteredRecords.filter(r => r.loopStatus?.toLowerCase().includes('contract') || r.loopStatus?.toLowerCase().includes('pending'));
+        filtered = contextAllRecords.filter(r => r.loopStatus?.toLowerCase().includes('contract') || r.loopStatus?.toLowerCase().includes('pending'));
         break;
       case 'closed':
         title = 'Closed Deals';
-        filtered = filteredRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
+        filtered = contextAllRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold'));
         break;
       case 'archived':
         title = 'Archived Loops';
-        filtered = filteredRecords.filter(r => r.loopStatus?.toLowerCase().includes('archived'));
+        filtered = contextAllRecords.filter(r => r.loopStatus?.toLowerCase().includes('archived'));
         break;
     }
 
