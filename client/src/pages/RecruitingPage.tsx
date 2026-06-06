@@ -43,7 +43,7 @@ const SEED_CANDIDATES: Candidate[] = [
 const STAGES: Stage[] = ['Lead', 'Contacted', 'Interviewing', 'Offer Extended', 'Onboarding', 'Hired'];
 
 const STAGE_META: Record<Stage, { color: string; bg: string; textColor: string }> = {
-  'Lead':          { color: '#6b7280', bg: 'bg-gray-500/10',    textColor: 'text-gray-400' },
+  'Lead':          { color: '#6b7280', bg: 'bg-gray-500/10',    textColor: 'text-muted-foreground' },
   'Contacted':     { color: '#3b82f6', bg: 'bg-blue-500/10',    textColor: 'text-blue-400' },
   'Interviewing':  { color: '#f59e0b', bg: 'bg-yellow-500/10',  textColor: 'text-yellow-400' },
   'Offer Extended':{ color: '#f97316', bg: 'bg-orange-500/10',  textColor: 'text-orange-400' },

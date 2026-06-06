@@ -129,7 +129,7 @@ export default function ComparisonPage() {
                         ? 'bg-green-500/20 text-green-400'
                         : metric.change < 0
                         ? 'bg-red-500/20 text-red-400'
-                        : 'bg-gray-500/20 text-gray-400'
+                        : 'bg-gray-500/20 text-muted-foreground'
                     }`}
                   >
                     {metric.change > 0 ? '+' : ''}{metric.change.toFixed(1)}%

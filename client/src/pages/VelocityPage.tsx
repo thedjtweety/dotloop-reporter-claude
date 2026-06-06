@@ -6,6 +6,7 @@ import {
 import { Zap, Clock, TrendingUp, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { DotloopRecord } from '@/lib/csvParser';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -64,6 +65,7 @@ export default function VelocityPage() {
   const { filteredRecords, agentMetrics, hasData, activateDemoMode } = useTransactionData();
   const [sortField, setSortField] = useState<SortField>('avgDaysToClose');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   // Only closed deals with dates
   const closed = useMemo(
@@ -225,12 +227,13 @@ export default function VelocityPage() {
       {/* KPI bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Avg Days to Close', value: `${overallAvg}d`, sub: 'Created → Closed',      icon: <Clock className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400' },
-          { label: 'Avg Days on Market', value: `${overallDOM}d`, sub: 'Listing → Offer',       icon: <TrendingUp className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400' },
-          { label: 'Avg Under Contract', value: `${overallUC}d`, sub: 'Offer → Close',          icon: <Zap className="w-4 h-4 text-emerald-400" />,   color: 'text-emerald-400' },
-          { label: 'Closed Deals',       value: closed.length,   sub: `${filteredRecords.length} total`, icon: <TrendingUp className="w-4 h-4 text-purple-400" />, color: 'text-purple-400' },
+          { label: 'Avg Days to Close', value: `${overallAvg}d`, sub: 'Created → Closed',      icon: <Clock className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400',    records: closed },
+          { label: 'Avg Days on Market', value: `${overallDOM}d`, sub: 'Listing → Offer',       icon: <TrendingUp className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400', records: closed.filter(r => r.listingDate && r.offerDate) },
+          { label: 'Avg Under Contract', value: `${overallUC}d`, sub: 'Offer → Close',          icon: <Zap className="w-4 h-4 text-emerald-400" />,   color: 'text-emerald-400', records: closed.filter(r => r.offerDate) },
+          { label: 'Closed Deals',       value: closed.length,   sub: `${filteredRecords.length} total`, icon: <TrendingUp className="w-4 h-4 text-purple-400" />, color: 'text-purple-400', records: closed },
         ].map(k => (
-          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => setDrillTarget({ title: k.label, records: k.records })}>
             <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -295,7 +298,15 @@ export default function VelocityPage() {
                 contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
                 formatter={(v: number) => [v, 'Deals']}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} cursor="pointer"
+                onClick={(data) => {
+                  const recs = closed.filter(r => {
+                    const d = daysBetween(r.listingDate, r.offerDate);
+                    return d !== null && d >= data.min && d < data.max;
+                  });
+                  setDrillTarget({ title: `Days on Market: ${data.label}`, records: recs });
+                }}
+              >
                 {domBuckets.map((b, i) => (
                   <Cell key={i} fill={b.min >= 60 ? '#ef4444' : b.min >= 30 ? '#f59e0b' : '#10b981'} />
                 ))}
@@ -344,7 +355,8 @@ export default function VelocityPage() {
                   const barPct = (a.avgDaysToClose / maxDays) * 100;
                   const barColor = a.avgDaysToClose <= overallAvg * 0.8 ? '#10b981' : a.avgDaysToClose <= overallAvg ? '#f59e0b' : '#ef4444';
                   return (
-                    <tr key={a.agentName} className="border-b border-border/60 hover:bg-secondary/30 transition-colors">
+                    <tr key={a.agentName} className="border-b border-border/60 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      onClick={() => setDrillTarget({ title: `${a.agentName} — Velocity`, records: closed.filter(r => (r.agents || '').includes(a.agentName)) })}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: a.color }} />
@@ -381,6 +393,8 @@ export default function VelocityPage() {
           </div>
         </div>
       )}
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

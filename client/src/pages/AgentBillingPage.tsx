@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
+import { TxDrillModal } from '@/components/TxDrillModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -144,8 +145,9 @@ function SortIcon({ field, sf, sd }: { field: AgentSortField; sf: AgentSortField
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function AgentBillingPage() {
-  const { agentMetrics, hasData, activateDemoMode } = useTransactionData();
+  const { agentMetrics, filteredRecords, hasData, activateDemoMode } = useTransactionData();
   const [search, setSearch] = useState('');
+  const [drillTarget, setDrillTarget] = useState<{ title: string; records: any[]; subtitle?: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
   const [feeFilter, setFeeFilter]     = useState<FeeType | 'all'>('all');
   const [sortField, setSortField]     = useState<AgentSortField>('totalBilled');
@@ -288,12 +290,13 @@ export default function AgentBillingPage() {
       {/* KPI bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Billed',   value: compactCurrency(grandTotal),   icon: <DollarSign className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400' },
-          { label: 'Collected',      value: compactCurrency(grandPaid),    icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400' },
-          { label: 'Pending',        value: compactCurrency(grandPending), icon: <Clock className="w-4 h-4 text-yellow-400" />,       color: 'text-yellow-400' },
-          { label: 'Overdue',        value: compactCurrency(grandOverdue), icon: <AlertTriangle className="w-4 h-4 text-red-400" />,  color: 'text-red-400' },
+          { label: 'Total Billed',   value: compactCurrency(grandTotal),   icon: <DollarSign className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400',    records: filteredRecords },
+          { label: 'Collected',      value: compactCurrency(grandPaid),    icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Pending',        value: compactCurrency(grandPending), icon: <Clock className="w-4 h-4 text-yellow-400" />,       color: 'text-yellow-400',  records: filteredRecords.filter(r => r.loopStatus === 'Under Contract') },
+          { label: 'Overdue',        value: compactCurrency(grandOverdue), icon: <AlertTriangle className="w-4 h-4 text-red-400" />,  color: 'text-red-400',     records: filteredRecords.filter(r => r.loopStatus === 'Active' || r.loopStatus === 'Active Listing') },
         ].map(k => (
-          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => setDrillTarget({ title: k.label, records: k.records })}>
             <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -371,7 +374,8 @@ export default function AgentBillingPage() {
                   const collectPct = a.totalBilled > 0 ? (a.totalPaid / a.totalBilled) * 100 : 0;
                   const hasOverdue = a.totalOverdue > 0;
                   return (
-                    <tr key={a.agentName} className="border-b border-border/60 hover:bg-secondary/30 transition-colors">
+                    <tr key={a.agentName} className="border-b border-border/60 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      onClick={() => setDrillTarget({ title: `${a.agentName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(a.agentName)) })}>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: a.color }} />
@@ -515,6 +519,8 @@ export default function AgentBillingPage() {
           )}
         </div>
       )}
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

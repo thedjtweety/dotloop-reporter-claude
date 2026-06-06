@@ -12,6 +12,7 @@ import AgentAssignment from '@/components/AgentAssignment';
 import CommissionAuditReport from '@/components/CommissionAuditReport';
 import CommissionCalculator from '@/components/CommissionCalculator';
 import { formatCurrency } from '@/lib/formatUtils';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 // ─── Plan data ────────────────────────────────────────────────────────────────
 
@@ -262,6 +263,7 @@ export default function CommissionManagement() {
   const { filteredRecords, agentMetrics, hasData } = useTransactionData();
   const [plans, setPlans] = useState<CommissionPlan[]>(DEFAULT_PLANS);
   const [activeTab, setActiveTab] = useState('plans');
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   const totalGCI = useMemo(() => filteredRecords.reduce((s, r) => s + (r.commissionTotal || 0), 0), [filteredRecords]);
   const totalCompanyDollar = useMemo(() => filteredRecords.reduce((s, r) => s + (r.companyDollar || 0), 0), [filteredRecords]);
@@ -307,11 +309,11 @@ export default function CommissionManagement() {
       {hasData && (
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'Total GCI', value: formatCurrency(totalGCI), icon: <DollarSign className="w-4 h-4 text-emerald-400" /> },
-            { label: 'Company Dollar', value: formatCurrency(totalCompanyDollar), icon: <TrendingUp className="w-4 h-4 text-blue-400" /> },
-            { label: 'Closed Deals', value: String(totalClosed), icon: <CheckCircle2 className="w-4 h-4 text-purple-400" /> },
+            { label: 'Total GCI', value: formatCurrency(totalGCI), icon: <DollarSign className="w-4 h-4 text-emerald-400" />, records: filteredRecords.filter(r => (r.commissionTotal || 0) > 0) },
+            { label: 'Company Dollar', value: formatCurrency(totalCompanyDollar), icon: <TrendingUp className="w-4 h-4 text-blue-400" />, records: filteredRecords.filter(r => (r.companyDollar || 0) > 0) },
+            { label: 'Closed Deals', value: String(totalClosed), icon: <CheckCircle2 className="w-4 h-4 text-purple-400" />, records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
           ].map(k => (
-            <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+            <div key={k.label} onClick={() => setDrillTarget({ title: k.label, records: k.records })} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors">
               <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
               <div>
                 <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -382,6 +384,8 @@ export default function CommissionManagement() {
           </div>
         </TabsContent>
       </Tabs>
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

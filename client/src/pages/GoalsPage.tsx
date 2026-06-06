@@ -3,6 +3,7 @@ import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { useCDAPanel } from '@/contexts/CDAContext';
 import { formatCurrency } from '@/lib/formatUtils';
 import { Target, Plus, Search, ChevronDown, ChevronUp, TrendingDown, TrendingUp, ClipboardList } from 'lucide-react';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 interface AgentGoal {
   agentName: string;
@@ -32,6 +33,7 @@ export default function GoalsPage() {
   const [search, setSearch] = useState('');
   const [year, setYear] = useState(YEAR);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   // Build goals from agent metrics with simulated targets
   const goals: AgentGoal[] = agentMetrics.map(a => {
@@ -77,21 +79,21 @@ export default function GoalsPage() {
     s === 'ahead' ? 'Ahead' : s === 'on-track' ? 'On Track' : 'Behind';
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Target className="w-6 h-6 text-emerald-400" />
             Agent Goals
           </h1>
-          <p className="text-gray-400 text-sm mt-1">{year} · {goals.length} agents with goals · {YEAR_PROGRESS}% through the year</p>
+          <p className="text-muted-foreground text-sm mt-1">{year} · {goals.length} agents with goals · {YEAR_PROGRESS}% through the year</p>
         </div>
         <div className="flex items-center gap-2">
           <select
             value={year}
             onChange={e => setYear(Number(e.target.value))}
-            className="bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-1.5 text-sm text-gray-200 focus:outline-none"
+            className="bg-secondary border border-border rounded-md px-3 py-1.5 text-sm text-gray-200 focus:outline-none"
           >
             {[2024, 2025, 2026].map(y => <option key={y}>{y}</option>)}
           </select>
@@ -104,15 +106,16 @@ export default function GoalsPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Total Goals Set', value: goals.length, color: 'text-white', icon: '◎' },
-          { label: 'Ahead of Pace', value: ahead, color: 'text-emerald-400', icon: '↗' },
-          { label: 'On Track', value: onTrack, color: 'text-blue-400', icon: '—' },
-          { label: 'Behind Pace', value: behind, color: 'text-red-400', icon: '↘' },
+          { label: 'Total Goals Set', value: goals.length, color: 'text-foreground', icon: '◎', records: filteredRecords },
+          { label: 'Ahead of Pace', value: ahead, color: 'text-emerald-400', icon: '↗', records: filteredRecords.filter(r => goals.find(g => g.status === 'ahead' && (r.agents || '').includes(g.agentName))) },
+          { label: 'On Track', value: onTrack, color: 'text-blue-400', icon: '—', records: filteredRecords.filter(r => goals.find(g => g.status === 'on-track' && (r.agents || '').includes(g.agentName))) },
+          { label: 'Behind Pace', value: behind, color: 'text-red-400', icon: '↘', records: filteredRecords.filter(r => goals.find(g => g.status === 'behind' && (r.agents || '').includes(g.agentName))) },
         ].map(card => (
-          <div key={card.label} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-4">
+          <div key={card.label} className="bg-secondary border border-border rounded-xl p-4 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setDrillTarget({ title: card.label, records: card.records })}>
             <div className="flex items-center gap-2 mb-2">
               <span className={`text-lg ${card.color}`}>{card.icon}</span>
-              <span className="text-gray-400 text-sm">{card.label}</span>
+              <span className="text-muted-foreground text-sm">{card.label}</span>
             </div>
             <div className={`text-3xl font-bold ${card.color}`}>{card.value}</div>
           </div>
@@ -120,52 +123,52 @@ export default function GoalsPage() {
       </div>
 
       {/* Brokerage goal progress */}
-      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5 mb-6">
-        <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-          <span className="text-gray-400">📊</span> Brokerage Goal Progress
+      <div className="bg-secondary border border-border rounded-xl p-5 mb-6">
+        <h2 className="text-foreground font-semibold mb-4 flex items-center gap-2">
+          <span className="text-muted-foreground">📊</span> Brokerage Goal Progress
         </h2>
         <div className="grid grid-cols-2 gap-8">
           <div>
-            <div className="text-gray-400 text-sm mb-1">Total GCI Target</div>
-            <div className="text-white text-2xl font-bold">{formatCurrency(totalGCITarget)}</div>
-            <div className="text-gray-400 text-xs mb-2">{formatCurrency(totalGCIEarned)} earned</div>
-            <div className="h-2 bg-[#1a2332] rounded-full overflow-hidden">
+            <div className="text-muted-foreground text-sm mb-1">Total GCI Target</div>
+            <div className="text-foreground text-2xl font-bold">{formatCurrency(totalGCITarget)}</div>
+            <div className="text-muted-foreground text-xs mb-2">{formatCurrency(totalGCIEarned)} earned</div>
+            <div className="h-2 bg-secondary rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all"
                 style={{ width: `${Math.min(100, (totalGCIEarned / (totalGCITarget || 1)) * 100).toFixed(1)}%` }}
               />
             </div>
-            <div className="text-gray-400 text-xs mt-1">{((totalGCIEarned / (totalGCITarget || 1)) * 100).toFixed(0)}%</div>
+            <div className="text-muted-foreground text-xs mt-1">{((totalGCIEarned / (totalGCITarget || 1)) * 100).toFixed(0)}%</div>
           </div>
           <div>
-            <div className="text-gray-400 text-sm mb-1">Year Progress</div>
-            <div className="text-white text-2xl font-bold">{YEAR_PROGRESS}%</div>
-            <div className="text-gray-400 text-xs mb-2">Calendar year</div>
-            <div className="h-2 bg-[#1a2332] rounded-full overflow-hidden">
+            <div className="text-muted-foreground text-sm mb-1">Year Progress</div>
+            <div className="text-foreground text-2xl font-bold">{YEAR_PROGRESS}%</div>
+            <div className="text-muted-foreground text-xs mb-2">Calendar year</div>
+            <div className="h-2 bg-secondary rounded-full overflow-hidden">
               <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${YEAR_PROGRESS}%` }} />
             </div>
-            <div className="text-gray-400 text-xs mt-1">{YEAR_PROGRESS}%</div>
+            <div className="text-muted-foreground text-xs mt-1">{YEAR_PROGRESS}%</div>
           </div>
         </div>
       </div>
 
       {/* Agent goals list */}
-      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e2d3d]">
-          <h2 className="text-white font-semibold">Agent Goals</h2>
+      <div className="bg-secondary border border-border rounded-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <h2 className="text-foreground font-semibold">Agent Goals</h2>
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search agents..."
-              className="bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48"
+              className="bg-secondary border border-border rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-48"
             />
           </div>
         </div>
 
         {filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             <Target className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p>{agentMetrics.length === 0 ? 'Upload a CSV to see agent goals.' : 'No agents found.'}</p>
           </div>
@@ -183,12 +186,12 @@ export default function GoalsPage() {
                     <div className="flex items-center gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">{goal.agentName}</span>
+                          <span className="text-foreground font-medium">{goal.agentName}</span>
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor(goal.status)}`}>
                             {statusLabel(goal.status)}
                           </span>
                         </div>
-                        <div className="text-gray-400 text-xs mt-0.5 flex items-center gap-3">
+                        <div className="text-muted-foreground text-xs mt-0.5 flex items-center gap-3">
                           <span>$ GCI: {formatCurrency(goal.gciCurrent)} / {formatCurrency(goal.gciTarget)}</span>
                           <span>📊 Vol: {formatCurrency(goal.volCurrent)} / {formatCurrency(goal.volTarget)}</span>
                           <span># Deals: {goal.dealsCurrent} / {goal.dealsTarget}</span>
@@ -197,11 +200,11 @@ export default function GoalsPage() {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-gray-400 text-xs">GCI</div>
-                        <div className="w-32 h-1.5 bg-[#1a2332] rounded-full mt-1">
+                        <div className="text-muted-foreground text-xs">GCI</div>
+                        <div className="w-32 h-1.5 bg-secondary rounded-full mt-1">
                           <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${gciPct}%` }} />
                         </div>
-                        <div className="text-gray-400 text-xs mt-0.5">{gciPct.toFixed(0)}%</div>
+                        <div className="text-muted-foreground text-xs mt-0.5">{gciPct.toFixed(0)}%</div>
                       </div>
                       <div className="text-right">
                         {goal.status === 'behind' ? (
@@ -209,7 +212,7 @@ export default function GoalsPage() {
                         ) : (
                           <TrendingUp className="w-4 h-4 text-emerald-400" />
                         )}
-                        <div className="text-gray-400 text-xs">{formatCurrency(goal.projectedGCI)} proj.</div>
+                        <div className="text-muted-foreground text-xs">{formatCurrency(goal.projectedGCI)} proj.</div>
                       </div>
                       <button
                         onClick={(e) => {
@@ -226,12 +229,17 @@ export default function GoalsPage() {
                       >
                         <ClipboardList className="w-4 h-4" />
                       </button>
-                      {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                      {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-[#1a2332]">
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <button
+                        className="mb-3 px-3 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setDrillTarget({ title: `${goal.agentName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(goal.agentName)) }); }}
+                      >View Deals</button>
+                    <div className="grid grid-cols-3 gap-4">
                       {[
                         { label: 'GCI Progress', current: goal.gciCurrent, target: goal.gciTarget, format: formatCurrency },
                         { label: 'Volume Progress', current: goal.volCurrent, target: goal.volTarget, format: formatCurrency },
@@ -239,17 +247,18 @@ export default function GoalsPage() {
                       ].map(m => {
                         const pct = Math.min(100, (m.current / (m.target || 1)) * 100);
                         return (
-                          <div key={m.label} className="bg-[#1a2332] rounded-lg p-3">
-                            <div className="text-gray-400 text-xs mb-1">{m.label}</div>
-                            <div className="text-white font-medium">{m.format(m.current)}</div>
-                            <div className="text-gray-500 text-xs">of {m.format(m.target)}</div>
-                            <div className="h-1.5 bg-[#0f1923] rounded-full mt-2">
+                          <div key={m.label} className="bg-secondary rounded-lg p-3">
+                            <div className="text-muted-foreground text-xs mb-1">{m.label}</div>
+                            <div className="text-foreground font-medium">{m.format(m.current)}</div>
+                            <div className="text-muted-foreground text-xs">of {m.format(m.target)}</div>
+                            <div className="h-1.5 bg-secondary rounded-full mt-2">
                               <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }} />
                             </div>
-                            <div className="text-gray-400 text-xs mt-1">{pct.toFixed(0)}%</div>
+                            <div className="text-muted-foreground text-xs mt-1">{pct.toFixed(0)}%</div>
                           </div>
                         );
                       })}
+                    </div>
                     </div>
                   )}
                 </div>
@@ -258,6 +267,8 @@ export default function GoalsPage() {
           </div>
         )}
       </div>
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

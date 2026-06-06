@@ -1312,7 +1312,7 @@ function HomeContent() {
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                <HomeIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <HomeIcon className="w-6 h-6 text-muted-foreground dark:text-foreground" />
               </div>
             </div>
           </Card>

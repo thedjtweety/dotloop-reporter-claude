@@ -57,43 +57,43 @@ export default function CDAHistoryPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">CDA Document History</h1>
-          <p className="text-gray-400">View, download, and manage your Commission Disbursement Authorizations</p>
+          <p className="text-muted-foreground">View, download, and manage your Commission Disbursement Authorizations</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-[#1a2332] rounded-lg p-4 mb-6 border border-[#1e2d3d]">
+        <div className="bg-secondary rounded-lg p-4 mb-6 border border-border">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search by property, buyer, or seller..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#1e2d3d] rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Date From */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+              <Calendar className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <input
                 type="date"
                 value={dateRange.from}
                 onChange={e => setDateRange(prev => ({ ...prev, from: e.target.value }))}
-                className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#1e2d3d] rounded-lg text-sm text-gray-200 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
             {/* Date To */}
             <div className="relative">
-              <Calendar className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+              <Calendar className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
               <input
                 type="date"
                 value={dateRange.to}
                 onChange={e => setDateRange(prev => ({ ...prev, to: e.target.value }))}
-                className="w-full pl-10 pr-4 py-2 bg-[#0d1117] border border-[#1e2d3d] rounded-lg text-sm text-gray-200 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-10 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-gray-200 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -104,7 +104,7 @@ export default function CDAHistoryPage() {
                 setDateRange({ from: '', to: '' });
                 setFilterStatus('all');
               }}
-              className="px-4 py-2 bg-[#0d1117] border border-[#1e2d3d] rounded-lg text-sm text-gray-300 hover:border-emerald-500 transition-colors"
+              className="px-4 py-2 bg-background border border-border rounded-lg text-sm text-foreground hover:border-emerald-500 transition-colors"
             >
               Clear Filters
             </button>
@@ -117,34 +117,34 @@ export default function CDAHistoryPage() {
             <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
           </div>
         ) : filteredDocuments.length === 0 ? (
-          <div className="bg-[#1a2332] rounded-lg p-12 text-center border border-[#1e2d3d]">
-            <FileText className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-gray-300 font-medium mb-1">No CDA documents found</h3>
-            <p className="text-gray-500 text-sm">Start by creating a new CDA from the CDA Builder</p>
+          <div className="bg-secondary rounded-lg p-12 text-center border border-border">
+            <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-foreground font-medium mb-1">No CDA documents found</h3>
+            <p className="text-muted-foreground text-sm">Start by creating a new CDA from the CDA Builder</p>
           </div>
         ) : (
-          <div className="bg-[#1a2332] rounded-lg overflow-hidden border border-[#1e2d3d]">
+          <div className="bg-secondary rounded-lg overflow-hidden border border-border">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-[#0d1117] border-b border-[#1e2d3d]">
+                <thead className="bg-background border-b border-border">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Property</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Buyer / Seller</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Sale Price</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase">Created</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Property</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Buyer / Seller</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Sale Price</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Created</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1e2d3d]">
                   {filteredDocuments.map(doc => (
-                    <tr key={doc.id} className="hover:bg-[#0d1117]/50 transition-colors">
+                    <tr key={doc.id} className="hover:bg-background/50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-200">{doc.propertyAddress || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{doc.city}, {doc.state}</div>
+                        <div className="text-xs text-muted-foreground">{doc.city}, {doc.state}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-200">{doc.buyerName || 'N/A'}</div>
-                        <div className="text-xs text-gray-500">{doc.sellerName || 'N/A'}</div>
+                        <div className="text-xs text-muted-foreground">{doc.sellerName || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-emerald-400">
@@ -152,10 +152,10 @@ export default function CDAHistoryPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-300">
+                        <div className="text-sm text-foreground">
                           {new Date(doc.createdAt).toLocaleDateString()}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {new Date(doc.createdAt).toLocaleTimeString()}
                         </div>
                       </td>
@@ -185,8 +185,8 @@ export default function CDAHistoryPage() {
             </div>
 
             {/* Summary */}
-            <div className="bg-[#0d1117] border-t border-[#1e2d3d] px-6 py-3">
-              <p className="text-sm text-gray-400">
+            <div className="bg-background border-t border-border px-6 py-3">
+              <p className="text-sm text-muted-foreground">
                 Showing <span className="text-emerald-400 font-medium">{filteredDocuments.length}</span> of{' '}
                 <span className="text-emerald-400 font-medium">{documents?.length || 0}</span> documents
               </p>

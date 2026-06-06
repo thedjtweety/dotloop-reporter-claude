@@ -10,17 +10,18 @@ import { Users, TrendingUp, DollarSign, Home, ChevronDown, ChevronUp, Plus, Sear
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
 import { Button } from '@/components/ui/button';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 const TEAM_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 function EmptyState({ onDemo }: { onDemo: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
-        <Users className="w-8 h-8 text-gray-500" />
+      <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+        <Users className="w-8 h-8 text-muted-foreground" />
       </div>
       <h3 className="text-white text-lg font-semibold mb-2">No Team Data</h3>
-      <p className="text-gray-400 text-sm max-w-sm mb-6">
+      <p className="text-muted-foreground text-sm max-w-sm mb-6">
         Upload a CSV file from the Dashboard to see team performance, or try the demo mode.
       </p>
       <Button onClick={onDemo} className="bg-emerald-500 hover:bg-emerald-600 text-white">
@@ -43,6 +44,7 @@ interface TeamData {
 export default function TeamsPage() {
   const { agentMetrics, filteredRecords, hasData, activateDemoMode } = useTransactionData();
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
   const [sortBy, setSortBy] = useState<'totalGCI' | 'closedDeals' | 'totalVolume'>('totalGCI');
   const [search, setSearch] = useState('');
   const [showNewTeam, setShowNewTeam] = useState(false);
@@ -109,12 +111,12 @@ export default function TeamsPage() {
   if (!hasData) return <div className="p-6"><EmptyState onDemo={activateDemoMode} /></div>;
 
   return (
-    <div className="p-6 space-y-6 min-h-screen bg-[#0d1117] text-white">
+    <div className="p-6 space-y-6 min-h-screen bg-background text-white">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Teams & Offices</h1>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {allTeams.length} teams · {filteredRecords.length} total transactions
           </p>
         </div>
@@ -130,14 +132,15 @@ export default function TeamsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Total GCI', value: formatCurrency(totalGCI), icon: DollarSign, color: 'text-emerald-400' },
-          { label: 'Closed Deals', value: String(totalDeals), icon: Home, color: 'text-blue-400' },
-          { label: 'Sales Volume', value: formatCurrency(totalVolume), icon: TrendingUp, color: 'text-purple-400' },
+          { label: 'Total GCI', value: formatCurrency(totalGCI), icon: DollarSign, color: 'text-emerald-400', records: filteredRecords.filter(r => (r.commissionTotal || 0) > 0) },
+          { label: 'Closed Deals', value: String(totalDeals), icon: Home, color: 'text-blue-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Sales Volume', value: formatCurrency(totalVolume), icon: TrendingUp, color: 'text-purple-400', records: filteredRecords },
         ].map(m => (
-          <div key={m.label} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+          <div key={m.label} className="bg-secondary border border-border rounded-xl p-5 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setDrillTarget({ title: m.label, records: m.records })}>
             <div className="flex items-center gap-2 mb-2">
               <m.icon className={`w-4 h-4 ${m.color}`} />
-              <span className="text-gray-400 text-sm">{m.label}</span>
+              <span className="text-muted-foreground text-sm">{m.label}</span>
             </div>
             <div className={`text-2xl font-bold ${m.color}`}>{m.value}</div>
           </div>
@@ -147,7 +150,7 @@ export default function TeamsPage() {
       {/* Charts */}
       <div className="grid grid-cols-2 gap-6">
         {/* Bar Chart */}
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+        <div className="bg-secondary border border-border rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-white font-semibold">Performance by Team</h2>
             <div className="flex gap-1">
@@ -156,7 +159,7 @@ export default function TeamsPage() {
                   key={k}
                   onClick={() => setSortBy(k)}
                   className={`px-2 py-1 rounded text-xs transition-colors ${
-                    sortBy === k ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400 hover:text-gray-200'
+                    sortBy === k ? 'bg-emerald-500/20 text-emerald-400' : 'text-muted-foreground hover:text-gray-200'
                   }`}
                 >
                   {k === 'totalGCI' ? 'GCI' : k === 'closedDeals' ? 'Deals' : 'Volume'}
@@ -186,7 +189,7 @@ export default function TeamsPage() {
         </div>
 
         {/* Pie Chart */}
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+        <div className="bg-secondary border border-border rounded-xl p-5">
           <h2 className="text-white font-semibold mb-4">GCI Distribution</h2>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
@@ -213,12 +216,12 @@ export default function TeamsPage() {
 
       {/* Search */}
       <div className="relative max-w-xs">
-        <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+        <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Search teams..."
-          className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+          className="w-full bg-secondary border border-border rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
         />
       </div>
 
@@ -230,49 +233,49 @@ export default function TeamsPage() {
           const share = totalGCI > 0 ? (team.totalGCI / totalGCI) * 100 : 0;
 
           return (
-            <div key={team.name} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl overflow-hidden">
+            <div key={team.name} className="bg-secondary border border-border rounded-xl overflow-hidden">
               <div
-                className="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-[#1a2332]/50 transition-colors"
+                className="flex items-center justify-between px-6 py-4 cursor-pointer hover:bg-secondary/50 transition-colors"
                 onClick={() => setExpandedTeam(isExpanded ? null : team.name)}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full" style={{ background: team.color }} />
                   <div>
                     <div className="text-white font-semibold">{team.name}</div>
-                    <div className="text-gray-400 text-xs">{team.agentNames.length} agents</div>
+                    <div className="text-muted-foreground text-xs">{team.agentNames.length} agents</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-right">
                     <div className="text-emerald-400 font-bold">{formatCurrency(team.totalGCI)}</div>
-                    <div className="text-gray-500 text-xs">{share.toFixed(1)}% of total</div>
+                    <div className="text-muted-foreground text-xs">{share.toFixed(1)}% of total</div>
                   </div>
                   <div className="text-right">
                     <div className="text-white font-medium">{team.closedDeals}</div>
-                    <div className="text-gray-500 text-xs">deals</div>
+                    <div className="text-muted-foreground text-xs">deals</div>
                   </div>
                   <div className="text-right">
                     <div className="text-blue-400 font-medium">{formatCurrency(team.totalVolume)}</div>
-                    <div className="text-gray-500 text-xs">volume</div>
+                    <div className="text-muted-foreground text-xs">volume</div>
                   </div>
-                  <div className="w-24 bg-[#1a2332] rounded-full h-1.5">
+                  <div className="w-24 bg-secondary rounded-full h-1.5">
                     <div className="h-1.5 rounded-full" style={{ width: `${share}%`, background: team.color }} />
                   </div>
                   {isExpanded
-                    ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                    : <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   }
                 </div>
               </div>
 
               {isExpanded && (
-                <div className="border-t border-[#1e2d3d] px-6 py-4">
+                <div className="border-t border-border px-6 py-4">
                   {teamAgentMetrics.length === 0 ? (
-                    <p className="text-gray-500 text-sm">No agents assigned to this team yet.</p>
+                    <p className="text-muted-foreground text-sm">No agents assigned to this team yet.</p>
                   ) : (
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-gray-400 text-xs border-b border-[#1e2d3d]">
+                        <tr className="text-muted-foreground text-xs border-b border-border">
                           <th className="text-left pb-2">Agent</th>
                           <th className="text-right pb-2">Deals</th>
                           <th className="text-right pb-2">GCI</th>
@@ -282,12 +285,13 @@ export default function TeamsPage() {
                       </thead>
                       <tbody>
                         {teamAgentMetrics.map(a => (
-                          <tr key={a.agentName} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
+                          <tr key={a.agentName} className="border-b border-border hover:bg-secondary/30 cursor-pointer"
+                            onClick={() => setDrillTarget({ title: `${a.agentName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(a.agentName)) })}>
                             <td className="py-2 text-gray-200">{a.agentName}</td>
-                            <td className="py-2 text-right text-gray-300">{a.closedDeals}</td>
+                            <td className="py-2 text-right text-foreground">{a.closedDeals}</td>
                             <td className="py-2 text-right text-emerald-400">{formatCurrency(a.totalCommission)}</td>
                             <td className="py-2 text-right text-blue-400">{formatCurrency(a.totalSalesVolume)}</td>
-                            <td className="py-2 text-right text-gray-300">{formatCurrency(a.averageSalesPrice)}</td>
+                            <td className="py-2 text-right text-foreground">{formatCurrency(a.averageSalesPrice)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -303,18 +307,18 @@ export default function TeamsPage() {
       {/* New Team Modal */}
       {showNewTeam && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowNewTeam(false)}>
-          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+          <div className="bg-secondary border border-border rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
             <h2 className="text-white font-semibold text-lg mb-4">Create New Team</h2>
             <input
               value={newTeamName}
               onChange={e => setNewTeamName(e.target.value)}
               placeholder="Team name..."
-              className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 mb-4"
+              className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 mb-4"
               onKeyDown={e => e.key === 'Enter' && handleCreateTeam()}
               autoFocus
             />
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowNewTeam(false)} className="px-4 py-2 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332]">
+              <button onClick={() => setShowNewTeam(false)} className="px-4 py-2 rounded-md border border-border text-foreground text-sm hover:bg-secondary">
                 Cancel
               </button>
               <button onClick={handleCreateTeam} className="px-4 py-2 rounded-md bg-emerald-500 text-white text-sm hover:bg-emerald-600">
@@ -324,6 +328,8 @@ export default function TeamsPage() {
           </div>
         </div>
       )}
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

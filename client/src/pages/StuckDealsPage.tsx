@@ -6,6 +6,7 @@ import {
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { DotloopRecord } from '@/lib/csvParser';
 import { formatCurrency } from '@/lib/formatUtils';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,7 +51,7 @@ const RISK_META: Record<RiskLevel, { color: string; bg: string; text: string }> 
   Critical: { color: '#ef4444', bg: 'bg-red-500/15',    text: 'text-red-400' },
   High:     { color: '#f97316', bg: 'bg-orange-500/15', text: 'text-orange-400' },
   Medium:   { color: '#f59e0b', bg: 'bg-yellow-500/15', text: 'text-yellow-400' },
-  Low:      { color: '#6b7280', bg: 'bg-gray-500/15',   text: 'text-gray-400' },
+  Low:      { color: '#6b7280', bg: 'bg-gray-500/15',   text: 'text-muted-foreground' },
 };
 
 const STAGE_META: Record<string, { bg: string; text: string }> = {
@@ -75,6 +76,7 @@ export default function StuckDealsPage() {
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState<StageFilter>('All');
   const [riskFilter, setRiskFilter] = useState<RiskLevel | 'All'>('All');
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   // Derive stuck deals — any Active or Under Contract record past the threshold
   const stuckDeals = useMemo<StuckDeal[]>(() => {
@@ -167,21 +169,25 @@ export default function StuckDealsPage() {
           {
             label: 'Total Stuck Deals', value: stuckDeals.length,
             icon: <AlertTriangle className="w-4 h-4 text-red-400" />, color: 'text-red-400',
+            records: stuckDeals.map(d => d.record),
           },
           {
             label: 'Stuck Volume', value: formatCurrency(stuckVol).replace('$', '$').replace('.00', ''),
             icon: <TrendingDown className="w-4 h-4 text-orange-400" />, color: 'text-orange-400',
+            records: [...stuckDeals].sort((a, b) => (b.record.salePrice || 0) - (a.record.salePrice || 0)).map(d => d.record),
           },
           {
             label: 'Overdue Under Contract', value: overdueUC,
             icon: <Clock className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400',
+            records: stuckDeals.filter(d => d.record.loopStatus === 'Under Contract' && d.daysInStage > 45).map(d => d.record),
           },
           {
             label: 'Critical + High Risk', value: critical + high,
             icon: <AlertCircle className="w-4 h-4 text-red-400" />, color: 'text-red-400',
+            records: stuckDeals.filter(d => d.risk === 'Critical' || d.risk === 'High').map(d => d.record),
           },
         ].map(k => (
-          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={k.label} onClick={() => setDrillTarget({ title: k.label, records: k.records })} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors">
             <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -285,7 +291,7 @@ export default function StuckDealsPage() {
                 const threshold = STUCK_DAYS[r.loopStatus] ?? 30;
                 const overBy = Math.max(0, d.daysInStage - threshold);
                 return (
-                  <tr key={i} className="border-b border-border/60 hover:bg-secondary/30 transition-colors">
+                  <tr key={i} onClick={() => setDrillTarget({ title: r.address || r.loopName || "Deal Detail", records: [r] })} className="border-b border-border/60 hover:bg-secondary/30 transition-colors cursor-pointer">
                     {/* Address */}
                     <td className="px-3 py-3 max-w-[200px]">
                       <p className="text-foreground truncate font-medium">{r.address || r.loopName || r.loopId}</p>
@@ -332,6 +338,8 @@ export default function StuckDealsPage() {
           </table>
         </div>
       </div>
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

@@ -126,10 +126,11 @@ All routes are declared in `client/src/App.tsx` in the `SIDEBAR_ROUTES` array. E
 | Team | `/teams` | `TeamsPage` | Built |
 | Team | `/contests` | `ContestsPage` | Built |
 | Team | `/recruiting` | `RecruitingPage` | Built |
-| Team | `/retention` | `PlaceholderPage` | **Stub** |
+| Team | `/comparison` | `ComparisonPage` | Built — accessed from /compare when comparison mode active (no sidebar link) |
+| Team | `/retention` | `RetentionPage` | Built |
 | Team | `/lead-roi` | `LeadROIPage` | Built |
 | Finance | `/agent-billing` | `AgentBillingPage` | Built |
-| Finance | `/quickbooks` | `PlaceholderPage` | **Stub** |
+| Finance | `/quickbooks` | `QuickBooksPage` | Built |
 | Finance | `/templates` | `CommissionTemplates` | Built |
 | Admin | `/reporting` | `ReportingComplete` | Built |
 | Admin | `/data-quality` | `DataValidationRules` | Built |
@@ -137,7 +138,7 @@ All routes are declared in `client/src/App.tsx` in the `SIDEBAR_ROUTES` array. E
 | Admin | `/admin` | `AdminDashboard` | Built |
 | Settings | `/settings` | `SettingsComplete` | Built |
 
-Routes still as `PlaceholderPage` (stubs remaining to build): `/retention`, `/quickbooks`.
+All routes are fully built. `/team-management` was removed from routes (requires live auth backend). `/comparison` is reachable from `/compare` when comparison mode is active.
 
 ---
 
@@ -575,3 +576,39 @@ The following pages were designed and built with consistent patterns in this pro
 ## Demo Mode
 
 `activateDemoMode()` calls `generateSampleData(200)` from `client/src/lib/sampleData.ts`, which creates 200 realistic synthetic `DotloopRecord`s. All pages check `hasData` and show an empty state with a "Load Demo Data" button when false.
+
+---
+
+## Phase 1 — Complete (2026-06-06)
+
+All 29 pages are built and polished. The following work was completed in Phase 1:
+
+- All routes rendered through `SidebarLayout` with consistent nav
+- Every page has: proper `h1` header + subtitle, `hasData` empty state with "Load Demo Data" button, theme-aware Tailwind classes (no hardcoded hex colors)
+- Hardcoded hex colors (`#0d1117`, `#111827`, `#1e2d3d`, etc.) replaced with `bg-background`, `bg-secondary`, `border-border`, `text-foreground`, `text-muted-foreground` across all 30 active page files
+- DataValidationRules: real-time data analysis + "Download Report" button added
+- ForecastingPage: click-to-drill-down modal on agent projection table rows
+- `/team-management` removed from routes (requires live auth/tRPC backend — not usable in CSV mode)
+- TypeScript: 0 errors
+
+**Known limitations before Phase 2:**
+- CDA Builder "Generate PDF" button is not implemented (>30 min — deferred to Phase 2)
+- All data is computed client-side from CSV; no persistence between sessions
+- Demo mode uses synthetic data; real Dotloop API connection not yet active
+- No user accounts — any broker can access any demo session
+
+---
+
+## Next Phase (Phase 2)
+
+The following items are planned for production launch. All frontend pages are complete — this phase is infrastructure, auth, and live data.
+
+1. **Dotloop OAuth integration** — Client ID and secret are ready. Wire up the existing `server/routers/dotloopApi.ts` router and `server/_core/oauth.ts` flow so brokers can connect their Dotloop account directly instead of uploading CSVs.
+
+2. **Supabase database setup** — Replace the current MySQL/TiDB `DATABASE_URL` with Supabase (Postgres). Update `drizzle/schema.ts` for Postgres dialect, run migrations, and update `db.ts` connection helpers.
+
+3. **Railway deployment** — Deploy the Express + Vite build (`pnpm build` → `dist/`) to Railway. Set all required env vars in Railway dashboard (DATABASE_URL, JWT_SECRET, TOKEN_ENCRYPTION_KEY, DOTLOOP_CLIENT_ID/SECRET, DOTLOOP_REDIRECT_URI pointing to prod domain).
+
+4. **Custom domain** — Point `dotlooproport.com` to the Railway deployment. Update `DOTLOOP_REDIRECT_URI` and `VITE_OAUTH_PORTAL_URL` to the production domain.
+
+5. **Real user auth** — Replace demo mode as the primary entry point with proper broker sign-up/login. The Manus OAuth scaffolding in `server/_core/auth.ts` is the starting point; replace or adapt it for email/password or Supabase Auth. Gate all pages behind `protectedProcedure` and remove the `activateDemoMode` fallback from the default landing experience (keep it as a "Try Demo" option).

@@ -6,6 +6,7 @@ import {
 import { DollarSign, TrendingUp, Target, BarChart2 } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 // ─── Mock spend data (no spend field in CSV) ─────────────────────────────────
 
@@ -36,6 +37,7 @@ function compactCurrency(n: number) {
 export default function LeadROIPage() {
   const { filteredRecords, hasData, activateDemoMode } = useTransactionData();
   const [highlightSource, setHighlightSource] = useState<string | null>(null);
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   // Aggregate GCI by source
   const bySource = useMemo(() => {
@@ -144,7 +146,8 @@ export default function LeadROIPage() {
             icon: <Target className="w-4 h-4 text-blue-400" />, color: 'text-blue-400',
           },
         ].map(k => (
-          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => setDrillTarget({ title: k.label, records: filteredRecords.filter(r => r.loopStatus === 'Closed') })}>
             <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -242,7 +245,10 @@ export default function LeadROIPage() {
                   <tr
                     key={row.source}
                     className="border-b border-border/60 hover:bg-secondary/30 transition-colors cursor-pointer"
-                    onClick={() => setHighlightSource(h => h === row.source ? null : row.source)}
+                    onClick={() => {
+                      setHighlightSource(h => h === row.source ? null : row.source);
+                      setDrillTarget({ title: `${row.source} — Lead Source`, records: filteredRecords.filter(r => r.loopStatus === 'Closed' && (r.leadSource || 'Unknown') === row.source) });
+                    }}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -288,6 +294,8 @@ export default function LeadROIPage() {
           </table>
         </div>
       </div>
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

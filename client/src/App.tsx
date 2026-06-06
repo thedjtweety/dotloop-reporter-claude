@@ -49,8 +49,6 @@ import MarketPage from "./pages/MarketPage";
 import TeamsPage from "./pages/TeamsPage";
 import ContestsPage from "./pages/ContestsPage";
 import RecruitingPage from "./pages/RecruitingPage";
-import TeamManagementComplete from "./pages/TeamManagementComplete";
-
 // Finance & Ops
 import CommissionTemplates from "./pages/CommissionTemplates";
 
@@ -94,7 +92,6 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/teams",           component: TeamsPage },
   { path: "/contests",        component: ContestsPage },
   { path: "/recruiting",      component: RecruitingPage },
-  { path: "/team-management", component: TeamManagementComplete },
   { path: "/retention",       component: RetentionPage },
   { path: "/lead-roi",        component: LeadROIPage },
 

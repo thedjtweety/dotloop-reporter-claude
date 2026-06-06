@@ -3,6 +3,7 @@ import { Trophy, Plus, Calendar, Users, Target, Medal, Award, X } from 'lucide-r
 import { formatCurrency } from '@/lib/formatUtils';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { Button } from '@/components/ui/button';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 interface Contest {
   id: string;
@@ -26,7 +27,8 @@ const SEED_CONTESTS: Contest[] = [
 const MEDAL_COLORS = ['#f59e0b', '#9ca3af', '#cd7f32'];
 
 export default function ContestsPage() {
-  const { agentMetrics, hasData, activateDemoMode } = useTransactionData();
+  const { agentMetrics, filteredRecords, hasData, activateDemoMode } = useTransactionData();
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
   const [contests, setContests] = useState<Contest[]>(SEED_CONTESTS);
   const [selectedContest, setSelectedContest] = useState<Contest | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'completed' | 'create'>('active');
@@ -84,7 +86,7 @@ export default function ContestsPage() {
   const statusColor = (s: Contest['status']) =>
     s === 'active' ? 'text-emerald-400 bg-emerald-500/20' :
     s === 'upcoming' ? 'text-blue-400 bg-blue-500/20' :
-    'text-gray-400 bg-gray-500/20';
+    'text-muted-foreground bg-gray-500/20';
 
   const typeIcon = (t: Contest['type']) =>
     t === 'deals' ? '#' : t === 'volume' ? '$' : '%';
@@ -93,7 +95,7 @@ export default function ContestsPage() {
     activeTab === 'upcoming' ? upcomingContests : completedContests;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6">
+    <div className="min-h-screen bg-background text-white p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -101,7 +103,7 @@ export default function ContestsPage() {
             <Trophy className="w-6 h-6 text-yellow-400" />
             Contests & Challenges
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Motivate agents with performance contests</p>
+          <p className="text-muted-foreground text-sm mt-1">Motivate agents with performance contests</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -116,14 +118,14 @@ export default function ContestsPage() {
         {[
           { label: 'Active Contests', value: activeContests.length, color: 'text-emerald-400', icon: Trophy },
           { label: 'Upcoming', value: upcomingContests.length, color: 'text-blue-400', icon: Calendar },
-          { label: 'Completed', value: completedContests.length, color: 'text-gray-400', icon: Target },
+          { label: 'Completed', value: completedContests.length, color: 'text-muted-foreground', icon: Target },
         ].map(card => {
           const Icon = card.icon;
           return (
-            <div key={card.label} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-4">
+            <div key={card.label} className="bg-secondary border border-border rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Icon className={`w-5 h-5 ${card.color}`} />
-                <span className="text-gray-400 text-sm">{card.label}</span>
+                <span className="text-muted-foreground text-sm">{card.label}</span>
               </div>
               <div className={`text-3xl font-bold ${card.color}`}>{card.value}</div>
             </div>
@@ -132,7 +134,7 @@ export default function ContestsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6 border-b border-[#1e2d3d]">
+      <div className="flex items-center gap-1 mb-6 border-b border-border">
         {([
           { key: 'active', label: `Active (${activeContests.length})` },
           { key: 'upcoming', label: `Upcoming (${upcomingContests.length})` },
@@ -142,7 +144,7 @@ export default function ContestsPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-4 py-2 text-sm transition-colors border-b-2 -mb-px ${
-              activeTab === tab.key ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-gray-200'
+              activeTab === tab.key ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-muted-foreground hover:text-gray-200'
             }`}
           >{tab.label}</button>
         ))}
@@ -150,10 +152,10 @@ export default function ContestsPage() {
 
       {/* Contest list */}
       {displayContests.length === 0 ? (
-        <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-16 flex flex-col items-center justify-center">
-          <Trophy className="w-12 h-12 text-gray-500 mb-4 opacity-30" />
+        <div className="bg-secondary border border-border rounded-xl p-16 flex flex-col items-center justify-center">
+          <Trophy className="w-12 h-12 text-muted-foreground mb-4 opacity-30" />
           <p className="text-white font-medium mb-1">No {activeTab} contests</p>
-          <p className="text-gray-400 text-sm mb-4">
+          <p className="text-muted-foreground text-sm mb-4">
             {activeTab === 'active' ? 'Create a contest to motivate your agents' : `No ${activeTab} contests found`}
           </p>
           {activeTab === 'active' && (
@@ -168,7 +170,7 @@ export default function ContestsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayContests.map(contest => (
-            <div key={contest.id} className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5 hover:border-yellow-500/30 transition-colors cursor-pointer" onClick={() => setSelectedContest(contest)}>
+            <div key={contest.id} className="bg-secondary border border-border rounded-xl p-5 hover:border-yellow-500/30 transition-colors cursor-pointer" onClick={() => setSelectedContest(contest)}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h3 className="text-white font-semibold">{contest.name}</h3>
@@ -176,7 +178,7 @@ export default function ContestsPage() {
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${statusColor(contest.status)}`}>
                       {contest.status.charAt(0).toUpperCase() + contest.status.slice(1)}
                     </span>
-                    <span className="text-gray-400 text-xs capitalize">{contest.type}</span>
+                    <span className="text-muted-foreground text-xs capitalize">{contest.type}</span>
                   </div>
                 </div>
                 <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
@@ -184,19 +186,19 @@ export default function ContestsPage() {
                 </div>
               </div>
               {contest.description && (
-                <p className="text-gray-400 text-sm mb-3">{contest.description}</p>
+                <p className="text-muted-foreground text-sm mb-3">{contest.description}</p>
               )}
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Prize</span>
+                  <span className="text-muted-foreground">Prize</span>
                   <span className="text-yellow-400 font-medium">{contest.prize || 'TBD'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Participants</span>
+                  <span className="text-muted-foreground">Participants</span>
                   <span className="text-gray-200">{contest.participants}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Period</span>
+                  <span className="text-muted-foreground">Period</span>
                   <span className="text-gray-200 text-xs">{contest.startDate} → {contest.endDate || 'Ongoing'}</span>
                 </div>
               </div>
@@ -208,26 +210,26 @@ export default function ContestsPage() {
       {/* Contest Detail Modal */}
       {selectedContest && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedContest(null)}>
-          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#1e2d3d]">
+          <div className="bg-secondary border border-border rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div>
                 <h2 className="text-white font-semibold text-lg">{selectedContest.name}</h2>
-                <p className="text-gray-400 text-sm">{selectedContest.startDate} → {selectedContest.endDate}</p>
+                <p className="text-muted-foreground text-sm">{selectedContest.startDate} → {selectedContest.endDate}</p>
               </div>
-              <button onClick={() => setSelectedContest(null)} className="text-gray-400 hover:text-gray-200"><X className="w-5 h-5" /></button>
+              <button onClick={() => setSelectedContest(null)} className="text-muted-foreground hover:text-gray-200"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-[#1a2332] rounded-lg p-3">
-                  <div className="text-gray-400 text-xs mb-1">Metric</div>
+                <div className="bg-secondary rounded-lg p-3">
+                  <div className="text-muted-foreground text-xs mb-1">Metric</div>
                   <div className="text-white font-medium capitalize">{selectedContest.type}</div>
                 </div>
-                <div className="bg-[#1a2332] rounded-lg p-3">
-                  <div className="text-gray-400 text-xs mb-1">Prize</div>
+                <div className="bg-secondary rounded-lg p-3">
+                  <div className="text-muted-foreground text-xs mb-1">Prize</div>
                   <div className="text-yellow-400 font-medium">{selectedContest.prize}</div>
                 </div>
-                <div className="bg-[#1a2332] rounded-lg p-3">
-                  <div className="text-gray-400 text-xs mb-1">Participants</div>
+                <div className="bg-secondary rounded-lg p-3">
+                  <div className="text-muted-foreground text-xs mb-1">Participants</div>
                   <div className="text-white font-medium">{agentMetrics.length}</div>
                 </div>
               </div>
@@ -240,20 +242,21 @@ export default function ContestsPage() {
                       const maxRaw = getLeaderValue(getLeaderboard(selectedContest)[0], selectedContest.type).raw;
                       const pct = maxRaw > 0 ? (raw / maxRaw) * 100 : 0;
                       return (
-                        <div key={agent.agentName} className="flex items-center gap-3">
+                        <div key={agent.agentName} className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setDrillTarget({ title: `${agent.agentName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(agent.agentName)) })}>
                           <div className="w-6 text-center">
                             {i < 3 ? (
                               <span style={{ color: MEDAL_COLORS[i] }} className="text-sm font-bold">#{i+1}</span>
                             ) : (
-                              <span className="text-gray-500 text-xs">#{i+1}</span>
+                              <span className="text-muted-foreground text-xs">#{i+1}</span>
                             )}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-gray-200 text-sm">{agent.agentName}</span>
-                              <span className="text-gray-300 text-xs font-medium">{label}</span>
+                              <span className="text-foreground text-xs font-medium">{label}</span>
                             </div>
-                            <div className="h-1.5 bg-[#1a2332] rounded-full">
+                            <div className="h-1.5 bg-secondary rounded-full">
                               <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : i === 2 ? '#cd7f32' : '#10b981' }} />
                             </div>
                           </div>
@@ -263,7 +266,7 @@ export default function ContestsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-muted-foreground">
                   <p>Upload CSV data or load demo data to see the leaderboard</p>
                   <button onClick={() => { activateDemoMode(); setSelectedContest(null); }} className="mt-2 text-emerald-400 hover:text-emerald-300 text-sm">Load demo data →</button>
                 </div>
@@ -276,24 +279,24 @@ export default function ContestsPage() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-6 w-full max-w-md">
+          <div className="bg-secondary border border-border rounded-xl p-6 w-full max-w-md">
             <h2 className="text-white font-semibold text-lg mb-4">Create Contest</h2>
             <div className="space-y-3">
               <div>
-                <label className="text-gray-400 text-xs mb-1 block">Contest Name *</label>
+                <label className="text-muted-foreground text-xs mb-1 block">Contest Name *</label>
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Q2 Deals Challenge"
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="text-gray-400 text-xs mb-1 block">Type</label>
+                <label className="text-muted-foreground text-xs mb-1 block">Type</label>
                 <select
                   value={form.type}
                   onChange={e => setForm(f => ({ ...f, type: e.target.value as Contest['type'] }))}
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                  className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
                 >
                   <option value="deals">Most Deals</option>
                   <option value="volume">Highest Volume</option>
@@ -302,51 +305,53 @@ export default function ContestsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-gray-400 text-xs mb-1 block">Start Date</label>
+                  <label className="text-muted-foreground text-xs mb-1 block">Start Date</label>
                   <input
                     type="date"
                     value={form.startDate}
                     onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                    className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                    className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-xs mb-1 block">End Date</label>
+                  <label className="text-muted-foreground text-xs mb-1 block">End Date</label>
                   <input
                     type="date"
                     value={form.endDate}
                     onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                    className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
+                    className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-gray-400 text-xs mb-1 block">Prize</label>
+                <label className="text-muted-foreground text-xs mb-1 block">Prize</label>
                 <input
                   value={form.prize}
                   onChange={e => setForm(f => ({ ...f, prize: e.target.value }))}
                   placeholder="e.g. $500 bonus, gift card..."
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
                 />
               </div>
               <div>
-                <label className="text-gray-400 text-xs mb-1 block">Description</label>
+                <label className="text-muted-foreground text-xs mb-1 block">Description</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Contest rules and details..."
                   rows={2}
-                  className="w-full bg-[#1a2332] border border-[#1e2d3d] rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
+                  className="w-full bg-secondary border border-border rounded-md px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332]">Cancel</button>
+              <button onClick={() => setShowCreate(false)} className="px-4 py-2 rounded-md border border-border text-foreground text-sm hover:bg-secondary">Cancel</button>
               <button onClick={handleCreate} className="px-4 py-2 rounded-md bg-emerald-500 text-white text-sm hover:bg-emerald-600">Create</button>
             </div>
           </div>
         </div>
       )}
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

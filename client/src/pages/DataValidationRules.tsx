@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CheckCircle2, XCircle, AlertTriangle, Database } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, Database, Download } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { DotloopRecord } from '@/lib/csvParser';
 
@@ -217,15 +217,53 @@ export default function DataValidationRules() {
 
   const totalIssues = issues.reduce((s, i) => s + i.count, 0);
 
+  function downloadReport() {
+    const lines: string[] = [
+      `Data Quality Report — ${new Date().toLocaleDateString()}`,
+      `Total Records: ${filteredRecords.length}`,
+      `Overall Score: ${overallScore}%`,
+      `Total Issues: ${totalIssues}`,
+      '',
+      'FIELD COMPLETENESS',
+      ...FIELD_SPECS.map(spec => {
+        const filled = filteredRecords.filter(r => {
+          const v = r[spec.key];
+          return spec.validate ? spec.validate(v) : v !== undefined && v !== null && v !== '';
+        }).length;
+        const pct = filteredRecords.length ? ((filled / filteredRecords.length) * 100).toFixed(1) : '0.0';
+        return `  ${spec.label}: ${pct}% (${filled}/${filteredRecords.length})${spec.critical ? ' *critical*' : ''}`;
+      }),
+      '',
+      'VALIDATION ISSUES',
+      ...issues.map(i => `  ${i.label}: ${i.count} records — e.g. ${i.examples.filter(Boolean).slice(0, 2).join(', ')}`),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `data-quality-report-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6 pb-8">
 
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Data Quality</h1>
-        <p className="text-muted-foreground text-sm mt-0.5">
-          Field completeness and validation issues across {filteredRecords.length} records.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Data Quality</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            Field completeness and validation issues across {filteredRecords.length} records.
+          </p>
+        </div>
+        <button
+          onClick={downloadReport}
+          className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors shrink-0"
+        >
+          <Download className="w-4 h-4" />
+          Download Report
+        </button>
       </div>
 
       {/* Score + summary */}

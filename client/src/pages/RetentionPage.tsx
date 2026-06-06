@@ -10,6 +10,7 @@ import {
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { AgentMetrics } from '@/lib/csvParser';
 import { formatCurrency } from '@/lib/formatUtils';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -136,6 +137,7 @@ export default function RetentionPage() {
   const [sortDir, setSortDir]     = useState<'asc' | 'desc'>('desc');
   const [riskFilter, setRiskFilter] = useState<RiskLevel | 'All'>('All');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   const agents = useMemo<AgentRetention[]>(() => {
     return agentMetrics.map((a, i) => {
@@ -240,12 +242,13 @@ export default function RetentionPage() {
       {/* KPI bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Agents',    value: agents.length,        icon: <Users className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400' },
-          { label: 'Avg Tenure',      value: `${avgTenure} mo`,    icon: <Clock className="w-4 h-4 text-purple-400" />,  color: 'text-purple-400' },
-          { label: 'At-Risk (High+)', value: atRisk,               icon: <AlertTriangle className="w-4 h-4 text-red-400" />,    color: 'text-red-400' },
-          { label: 'Retention Rate',  value: `${retentionRate}%`,  icon: <Shield className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400' },
+          { label: 'Total Agents',    value: agents.length,        icon: <Users className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400',    records: filteredRecords },
+          { label: 'Avg Tenure',      value: `${avgTenure} mo`,    icon: <Clock className="w-4 h-4 text-purple-400" />,  color: 'text-purple-400',  records: filteredRecords },
+          { label: 'At-Risk (High+)', value: atRisk,               icon: <AlertTriangle className="w-4 h-4 text-red-400" />,    color: 'text-red-400',     records: filteredRecords.filter(r => agents.find(a => (a.riskLevel === 'Critical' || a.riskLevel === 'High') && (r.agents || '').includes(a.agentName))) },
+          { label: 'Retention Rate',  value: `${retentionRate}%`,  icon: <Shield className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', records: filteredRecords.filter(r => agents.find(a => a.riskLevel === 'Low' && (r.agents || '').includes(a.agentName))) },
         ].map(k => (
-          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors"
+            onClick={() => setDrillTarget({ title: k.label, records: k.records })}>
             <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -423,13 +426,17 @@ export default function RetentionPage() {
                   isExpanded && a.riskFactors.length > 0 ? (
                     <tr key={`${a.agentName}-expand`} className="border-b border-border/40 bg-secondary/20">
                       <td colSpan={8} className="px-6 py-3">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 items-center">
                           <span className="text-muted-foreground text-xs font-semibold mr-1">Risk factors:</span>
                           {a.riskFactors.map(f => (
                             <span key={f} className="px-2 py-0.5 bg-red-500/10 text-red-400 text-[11px] rounded-full border border-red-500/20">
                               {f}
                             </span>
                           ))}
+                          <button
+                            className="ml-2 px-2 py-0.5 bg-secondary border border-border rounded text-[11px] text-foreground hover:bg-secondary/80 transition-colors"
+                            onClick={(e) => { e.stopPropagation(); setDrillTarget({ title: `${a.agentName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(a.agentName)) }); }}
+                          >View Deals</button>
                         </div>
                       </td>
                     </tr>
@@ -446,6 +453,8 @@ export default function RetentionPage() {
           </div>
         )}
       </div>
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

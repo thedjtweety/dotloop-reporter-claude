@@ -3,6 +3,7 @@ import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
 import { TrendingUp, Search, MessageSquare } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const ALL_YEARS = [2021, 2022, 2023, 2024, 2025, 2026];
@@ -21,6 +22,7 @@ export default function TrendsPage() {
   const [activeTab, setActiveTab] = useState<'year' | 'monthly' | 'quarterly' | 'agent' | 'compare'>('year');
   const [metric, setMetric] = useState<'volume' | 'gci' | 'deals' | 'avgPrice' | 'companyDollar'>('volume');
   const [agentFilter, setAgentFilter] = useState('');
+  const [drillTarget, setDrillTarget] = useState<{ title: string; records: any[]; subtitle?: string } | null>(null);
 
   // Build year data from records
   const yearDataMap: Record<number, YearData> = {};
@@ -89,12 +91,12 @@ export default function TrendsPage() {
 
   if (!hasData) {
     return (
-      <div className="p-6 flex flex-col items-center justify-center min-h-screen bg-[#0d1117]">
-        <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
-          <TrendingUp className="w-8 h-8 text-gray-500" />
+      <div className="p-6 flex flex-col items-center justify-center min-h-screen bg-background">
+        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+          <TrendingUp className="w-8 h-8 text-muted-foreground" />
         </div>
         <h3 className="text-white text-lg font-semibold mb-2">No Trend Data</h3>
-        <p className="text-gray-400 text-sm max-w-sm text-center mb-6">
+        <p className="text-muted-foreground text-sm max-w-sm text-center mb-6">
           Upload a Dotloop CSV export to analyze multi-year performance trends, or try demo mode.
         </p>
         <button onClick={activateDemoMode} className="px-4 py-2 rounded bg-emerald-500 text-white text-sm hover:bg-emerald-600">
@@ -105,7 +107,7 @@ export default function TrendsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white p-6">
+    <div className="min-h-screen bg-background text-white p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -113,31 +115,31 @@ export default function TrendsPage() {
             <TrendingUp className="w-6 h-6 text-emerald-400" />
             Multi-Year Trends
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Year-over-year performance comparison</p>
+          <p className="text-muted-foreground text-sm mt-1">Year-over-year performance comparison</p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-300 text-sm hover:bg-[#1a2332]">
+          <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-foreground text-sm hover:bg-secondary">
             Saved Views
           </button>
           <div className="flex items-center gap-1">
-            <span className="text-gray-400 text-sm mr-1">Years:</span>
+            <span className="text-muted-foreground text-sm mr-1">Years:</span>
             {ALL_YEARS.map(y => (
               <button
                 key={y}
                 onClick={() => toggleYear(y)}
                 className={`px-2.5 py-1 rounded text-sm transition-colors ${
-                  selectedYears.has(y) ? 'bg-emerald-500 text-white' : 'border border-[#1e2d3d] text-gray-400 hover:bg-[#1a2332]'
+                  selectedYears.has(y) ? 'bg-emerald-500 text-white' : 'border border-border text-muted-foreground hover:bg-secondary'
                 }`}
               >{y}</button>
             ))}
           </div>
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               value={agentFilter}
               onChange={e => setAgentFilter(e.target.value)}
               placeholder="Filter by agent..."
-              className="bg-[#1a2332] border border-[#1e2d3d] rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-40"
+              className="bg-secondary border border-border rounded-md pl-8 pr-3 py-1.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 w-40"
             />
           </div>
           <button className="px-3 py-1.5 rounded-md bg-emerald-500 text-white text-sm hover:bg-emerald-600">Apply</button>
@@ -150,9 +152,17 @@ export default function TrendsPage() {
           const prev = selectedData[i - 1];
           const pct = prev ? getPctChange(d.volume, prev.volume) : null;
           return (
-            <div key={d.year} className={`bg-[#0f1923] border rounded-xl p-4 min-w-[180px] ${
-              pct && parseFloat(pct) > 0 ? 'border-emerald-500/30' : pct && parseFloat(pct) < 0 ? 'border-red-500/30' : 'border-[#1e2d3d]'
-            }`}>
+            <div key={d.year} className={`bg-secondary border rounded-xl p-4 min-w-[180px] cursor-pointer hover:opacity-80 transition-opacity ${
+              pct && parseFloat(pct) > 0 ? 'border-emerald-500/30' : pct && parseFloat(pct) < 0 ? 'border-red-500/30' : 'border-border'
+            }`}
+            onClick={() => {
+              const recs = allRecords.filter(r => {
+                const date = r.closingDate ? new Date(r.closingDate) : null;
+                return date && !isNaN(date.getTime()) && date.getFullYear() === d.year;
+              });
+              setDrillTarget({ title: `${d.year} Transactions`, records: recs });
+            }}
+          >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-white font-bold text-lg">{d.year}</span>
                 {pct && (
@@ -164,10 +174,10 @@ export default function TrendsPage() {
                 )}
               </div>
               <div className="space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-gray-400">Volume</span><span className="text-gray-200">{formatCurrency(d.volume)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">GCI</span><span className="text-gray-200">{formatCurrency(d.gci)}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Deals</span><span className="text-gray-200">{d.deals}</span></div>
-                <div className="flex justify-between"><span className="text-gray-400">Avg Price</span><span className="text-gray-200">{formatCurrency(d.avgPrice)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Volume</span><span className="text-gray-200">{formatCurrency(d.volume)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">GCI</span><span className="text-gray-200">{formatCurrency(d.gci)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Deals</span><span className="text-gray-200">{d.deals}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Avg Price</span><span className="text-gray-200">{formatCurrency(d.avgPrice)}</span></div>
               </div>
             </div>
           );
@@ -175,7 +185,7 @@ export default function TrendsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 mb-4 border-b border-[#1e2d3d]">
+      <div className="flex items-center gap-1 mb-4 border-b border-border">
         {[
           { key: 'year', label: 'Year Comparison' },
           { key: 'monthly', label: 'Monthly Overlay' },
@@ -187,7 +197,7 @@ export default function TrendsPage() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
             className={`px-4 py-2 text-sm transition-colors border-b-2 -mb-px ${
-              activeTab === tab.key ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-gray-200'
+              activeTab === tab.key ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-muted-foreground hover:text-gray-200'
             }`}
           >{tab.label}</button>
         ))}
@@ -200,20 +210,20 @@ export default function TrendsPage() {
             key={m}
             onClick={() => setMetric(m)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors ${
-              metric === m ? 'bg-emerald-500 text-white' : 'border border-[#1e2d3d] text-gray-400 hover:bg-[#1a2332]'
+              metric === m ? 'bg-emerald-500 text-white' : 'border border-border text-muted-foreground hover:bg-secondary'
             }`}
           >
             {m === 'volume' ? '$ ' : m === 'gci' ? '$ ' : m === 'deals' ? '# ' : m === 'avgPrice' ? '🏠 ' : '🏢 '}
             {metricLabel[m]}
           </button>
         ))}
-        <button className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#1e2d3d] text-gray-400 text-sm hover:bg-[#1a2332]">
+        <button className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-muted-foreground text-sm hover:bg-secondary">
           <MessageSquare className="w-4 h-4" /> Add Annotation
         </button>
       </div>
 
       {/* Chart */}
-      <div className="bg-[#0f1923] border border-[#1e2d3d] rounded-xl p-5">
+      <div className="bg-secondary border border-border rounded-xl p-5">
         <h2 className="text-white font-semibold mb-4">
           {activeTab === 'monthly' ? 'Monthly Overlay' : `Year-over-Year ${metricLabel[metric]}`}
         </h2>
@@ -278,7 +288,7 @@ export default function TrendsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#1e2d3d] text-gray-400 text-xs">
+                <tr className="border-b border-border text-muted-foreground text-xs">
                   <th className="py-3 text-left">Agent</th>
                   {Array.from(selectedYears).sort().map(y => (
                     <th key={y} className="py-3 text-right">{y} GCI</th>
@@ -301,10 +311,14 @@ export default function TrendsPage() {
                   const prev = gciByYear[years[years.length - 2]] || 0;
                   const pct = prev > 0 ? ((last - prev) / prev * 100).toFixed(1) : null;
                   return (
-                    <tr key={a.agentName} className="border-b border-[#1a2332] hover:bg-[#1a2332]/30">
+                    <tr key={a.agentName} className="border-b border-border hover:bg-secondary/30 cursor-pointer"
+                      onClick={() => {
+                        const recs = allRecords.filter(r => r.agentName === a.agentName || r.listingAgent === a.agentName || r.buyerAgent === a.agentName || (r.agents || '').includes(a.agentName));
+                        setDrillTarget({ title: `${a.agentName} — All Transactions`, records: recs });
+                      }}>
                       <td className="py-3 text-gray-200">{a.agentName}</td>
                       {years.map(y => (
-                        <td key={y} className="py-3 text-right text-gray-300">{formatCurrency(gciByYear[y] || 0)}</td>
+                        <td key={y} className="py-3 text-right text-foreground">{formatCurrency(gciByYear[y] || 0)}</td>
                       ))}
                       <td className="py-3 text-right">
                         {pct ? (
@@ -331,8 +345,8 @@ export default function TrendsPage() {
                   {[['Volume', data.volume, prevData?.volume], ['GCI', data.gci, prevData?.gci], ['Deals', data.deals, prevData?.deals], ['Avg Price', data.avgPrice, prevData?.avgPrice]].map(([label, val, pval]) => {
                     const pct = pval && (pval as number) > 0 ? (((val as number) - (pval as number)) / (pval as number) * 100).toFixed(1) : null;
                     return (
-                      <div key={label as string} className="bg-[#1a2332] rounded-lg p-3">
-                        <div className="text-gray-400 text-xs mb-1">{label as string}</div>
+                      <div key={label as string} className="bg-secondary rounded-lg p-3">
+                        <div className="text-muted-foreground text-xs mb-1">{label as string}</div>
                         <div className="text-white font-bold">{label === 'Deals' ? val : formatCurrency(val as number)}</div>
                         {pct && <div className={`text-xs mt-1 ${parseFloat(pct) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{parseFloat(pct) >= 0 ? '+' : ''}{pct}% vs {arr[i-1]}</div>}
                       </div>
@@ -344,6 +358,7 @@ export default function TrendsPage() {
           </div>
         )}
       </div>
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }
