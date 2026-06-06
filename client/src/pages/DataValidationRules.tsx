@@ -1,481 +1,350 @@
-/**
- * Data Validation Rules Page
- * 
- * Displays and manages data validation rules for Dotloop sync
- */
+import { useMemo } from 'react';
+import { CheckCircle2, XCircle, AlertTriangle, Database } from 'lucide-react';
+import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { DotloopRecord } from '@/lib/csvParser';
 
-import { useState } from 'react';
-import { trpc } from '@/lib/trpc';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { AlertCircle, CheckCircle2, Plus, Trash2, Edit2 } from 'lucide-react';
+// ─── Fields to inspect ───────────────────────────────────────────────────────
 
-interface ValidationRule {
-  id: string;
-  field: string;
-  type: 'required' | 'format' | 'range' | 'pattern' | 'custom';
-  operator: string;
-  value: string;
-  errorMessage: string;
-  isActive: boolean;
-  createdAt: Date;
+interface FieldSpec {
+  key: keyof DotloopRecord;
+  label: string;
+  validate?: (v: unknown) => boolean;
+  critical?: boolean;
 }
 
-const FIELD_OPTIONS = [
-  { value: 'loopName', label: 'Loop Name' },
-  { value: 'loopStatus', label: 'Loop Status' },
-  { value: 'price', label: 'Price' },
-  { value: 'closingDate', label: 'Closing Date' },
-  { value: 'address', label: 'Address' },
-  { value: 'city', label: 'City' },
-  { value: 'state', label: 'State' },
-  { value: 'propertyType', label: 'Property Type' },
-  { value: 'agents', label: 'Agents' },
+const FIELD_SPECS: FieldSpec[] = [
+  { key: 'loopStatus',      label: 'Loop Status',       critical: true,  validate: v => typeof v === 'string' && v.length > 0 },
+  { key: 'address',         label: 'Property Address',  critical: true,  validate: v => typeof v === 'string' && v.length > 3 },
+  { key: 'agents',          label: 'Agent Name(s)',     critical: true,  validate: v => typeof v === 'string' && v.length > 0 },
+  { key: 'salePrice',       label: 'Sale Price',        critical: true,  validate: v => typeof v === 'number' && v > 0 },
+  { key: 'commissionTotal', label: 'Commission Total',  critical: true,  validate: v => typeof v === 'number' && v >= 0 },
+  { key: 'closingDate',     label: 'Closing Date',      critical: false, validate: v => {
+    if (!v || v === '') return false;
+    const d = new Date(v as string);
+    return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2035;
+  }},
+  { key: 'leadSource',      label: 'Lead Source',       critical: false, validate: v => typeof v === 'string' && v.length > 0 },
+  { key: 'companyDollar',   label: 'Company Dollar',    critical: false, validate: v => typeof v === 'number' && v >= 0 },
+  { key: 'propertyType',    label: 'Property Type',     critical: false, validate: v => typeof v === 'string' && v.length > 0 },
+  { key: 'city',            label: 'City',              critical: false, validate: v => typeof v === 'string' && v.length > 0 },
+  { key: 'state',           label: 'State',             critical: false, validate: v => typeof v === 'string' && v.length >= 2 },
+  { key: 'listingDate',     label: 'Listing Date',      critical: false, validate: v => {
+    if (!v || v === '') return false;
+    const d = new Date(v as string);
+    return !isNaN(d.getTime()) && d.getFullYear() >= 2000;
+  }},
+  { key: 'price',           label: 'List Price',        critical: false, validate: v => typeof v === 'number' && v > 0 },
+  { key: 'loopId',          label: 'Loop ID',           critical: false, validate: v => typeof v === 'string' && v.length > 0 },
 ];
 
-const RULE_TYPES = [
-  { value: 'required', label: 'Required' },
-  { value: 'format', label: 'Format' },
-  { value: 'range', label: 'Range' },
-  { value: 'pattern', label: 'Pattern' },
-  { value: 'custom', label: 'Custom' },
-];
+// ─── Issue detector ───────────────────────────────────────────────────────────
 
-export default function DataValidationRules() {
-  const [rules, setRules] = useState<ValidationRule[]>([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<ValidationRule | null>(null);
-  const [formData, setFormData] = useState({
-    field: '',
-    type: 'required',
-    operator: 'equals',
-    value: '',
-    errorMessage: '',
+interface IssueGroup {
+  label: string;
+  count: number;
+  color: string;
+  examples: string[];
+}
+
+function detectIssues(records: DotloopRecord[]): IssueGroup[] {
+  if (!records.length) return [];
+
+  const issues: IssueGroup[] = [];
+
+  // Invalid prices (≤ 0 or > 50M for closed/active deals)
+  const badPrices = records.filter(r =>
+    (r.salePrice < 0 || (r.salePrice > 50_000_000 && r.loopStatus === 'Closed')) ||
+    (r.price < 0)
+  );
+  if (badPrices.length)
+    issues.push({ label: 'Invalid sale/list price', count: badPrices.length, color: '#ef4444', examples: badPrices.slice(0, 3).map(r => r.address || r.loopId) });
+
+  // Missing closing date on closed deals
+  const closedNoDates = records.filter(r => r.loopStatus === 'Closed' && !r.closingDate);
+  if (closedNoDates.length)
+    issues.push({ label: 'Closed deal — missing closing date', count: closedNoDates.length, color: '#ef4444', examples: closedNoDates.slice(0, 3).map(r => r.address || r.loopId) });
+
+  // Future closing dates on closed deals
+  const futureClose = records.filter(r => {
+    if (r.loopStatus !== 'Closed' || !r.closingDate) return false;
+    return new Date(r.closingDate) > new Date();
   });
+  if (futureClose.length)
+    issues.push({ label: 'Closed deal — closing date in future', count: futureClose.length, color: '#f59e0b', examples: futureClose.slice(0, 3).map(r => r.address || r.loopId) });
 
-  // Fetch validation rules
-  const { data: validationRules } = trpc.dataValidation.getRules.useQuery(undefined, {
-    enabled: true,
-  });
+  // Commission > 15% of sale price (likely data error)
+  const highComm = records.filter(r =>
+    r.salePrice > 0 && r.commissionTotal > 0 &&
+    (r.commissionTotal / r.salePrice) > 0.15
+  );
+  if (highComm.length)
+    issues.push({ label: 'Commission > 15% of sale price', count: highComm.length, color: '#f97316', examples: highComm.slice(0, 3).map(r => r.address || r.loopId) });
 
-  // Create/Update rule mutation
-  const saveRuleMutation = trpc.dataValidation.saveRule.useMutation({
-    onSuccess: () => {
-      setIsDialogOpen(false);
-      setEditingRule(null);
-      setFormData({
-        field: '',
-        type: 'required',
-        operator: 'equals',
-        value: '',
-        errorMessage: '',
-      });
-    },
-  });
+  // Missing agent
+  const noAgent = records.filter(r => !r.agents);
+  if (noAgent.length)
+    issues.push({ label: 'Missing agent name', count: noAgent.length, color: '#f59e0b', examples: noAgent.slice(0, 3).map(r => r.address || r.loopId) });
 
-  // Delete rule mutation
-  const deleteRuleMutation = trpc.dataValidation.deleteRule.useMutation({
-    onSuccess: () => {
-      setRules(rules.filter(r => r.id !== editingRule?.id));
-    },
-  });
-
-  const handleSaveRule = async () => {
-    if (!formData.field || !formData.errorMessage) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    await saveRuleMutation.mutateAsync({
-      ...formData,
-      type: formData.type as 'required' | 'format' | 'range' | 'pattern' | 'custom',
-      id: editingRule?.id,
+  // Duplicate addresses (same address, different loopId)
+  const addressCount: Record<string, number> = {};
+  for (const r of records) if (r.address) addressCount[r.address.toLowerCase()] = (addressCount[r.address.toLowerCase()] || 0) + 1;
+  const dupAddresses = Object.entries(addressCount).filter(([, c]) => c > 1);
+  if (dupAddresses.length)
+    issues.push({
+      label: 'Duplicate property address',
+      count: dupAddresses.reduce((s, [, c]) => s + c, 0),
+      color: '#8b5cf6',
+      examples: dupAddresses.slice(0, 3).map(([addr]) => addr),
     });
-  };
 
-  const handleDeleteRule = async (ruleId: string) => {
-    if (confirm('Are you sure you want to delete this rule?')) {
-      await deleteRuleMutation.mutateAsync({ ruleId });
-    }
-  };
+  // Missing lead source
+  const noSource = records.filter(r => !r.leadSource);
+  if (noSource.length)
+    issues.push({ label: 'Missing lead source', count: noSource.length, color: '#6b7280', examples: noSource.slice(0, 3).map(r => r.address || r.loopId) });
 
-  const handleEditRule = (rule: ValidationRule) => {
-    setEditingRule(rule);
-    setFormData({
-      field: rule.field,
-      type: rule.type,
-      operator: rule.operator,
-      value: rule.value,
-      errorMessage: rule.errorMessage,
-    });
-    setIsDialogOpen(true);
-  };
+  return issues.sort((a, b) => b.count - a.count);
+}
 
-  const handleNewRule = () => {
-    setEditingRule(null);
-    setFormData({
-      field: '',
-      type: 'required',
-      operator: 'equals',
-      value: '',
-      errorMessage: '',
-    });
-    setIsDialogOpen(true);
-  };
+// ─── Score ring ───────────────────────────────────────────────────────────────
 
-  const getFieldLabel = (fieldValue: string) => {
-    return FIELD_OPTIONS.find(f => f.value === fieldValue)?.label || fieldValue;
-  };
-
-  const getRuleTypeLabel = (typeValue: string) => {
-    return RULE_TYPES.find(t => t.value === typeValue)?.label || typeValue;
-  };
+function ScoreRing({ score }: { score: number }) {
+  const r = 52;
+  const circ = 2 * Math.PI * r;
+  const dash = (score / 100) * circ;
+  const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
+  const label = score >= 80 ? 'Good' : score >= 60 ? 'Fair' : 'Poor';
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Data Validation Rules
-          </h1>
-          <p className="text-foreground/70 mt-2">
-            Define and manage validation rules for Dotloop data synchronization
-          </p>
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative w-32 h-32">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r={r} fill="none" stroke="var(--border)" strokeWidth="10" />
+          <circle
+            cx="60" cy="60" r={r} fill="none"
+            stroke={color}
+            strokeWidth="10"
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${circ - dash}`}
+            style={{ transition: 'stroke-dasharray 0.8s ease' }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-3xl font-bold" style={{ color }}>{score}</span>
+          <span className="text-xs text-muted-foreground">/ 100</span>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleNewRule} className="gap-2">
-              <Plus className="w-4 h-4" />
-              New Rule
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingRule ? 'Edit Validation Rule' : 'Create Validation Rule'}
-              </DialogTitle>
-              <DialogDescription>
-                Define a validation rule to ensure data quality during sync
-              </DialogDescription>
-            </DialogHeader>
+      </div>
+      <span className="text-sm font-semibold" style={{ color }}>{label} Quality</span>
+    </div>
+  );
+}
 
-            <div className="space-y-4">
-              {/* Field Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="field">Field *</Label>
-                <Select
-                  value={formData.field}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, field: value })
-                  }
-                >
-                  <SelectTrigger id="field">
-                    <SelectValue placeholder="Select a field" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FIELD_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+// ─── Completeness bar ─────────────────────────────────────────────────────────
 
-              {/* Rule Type */}
-              <div className="space-y-2">
-                <Label htmlFor="type">Rule Type *</Label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, type: value as any })
-                  }
-                >
-                  <SelectTrigger id="type">
-                    <SelectValue placeholder="Select rule type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {RULE_TYPES.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+function CompletenessBar({ spec, records }: { spec: FieldSpec; records: DotloopRecord[] }) {
+  const total = records.length;
+  const filled = records.filter(r => {
+    const v = r[spec.key];
+    return spec.validate ? spec.validate(v) : v !== undefined && v !== null && v !== '' && v !== 0;
+  }).length;
+  const pct = total > 0 ? Math.round((filled / total) * 100) : 0;
+  const color = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
 
-              {/* Operator */}
-              <div className="space-y-2">
-                <Label htmlFor="operator">Operator</Label>
-                <Select
-                  value={formData.operator}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, operator: value })
-                  }
-                >
-                  <SelectTrigger id="operator">
-                    <SelectValue placeholder="Select operator" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="equals">Equals</SelectItem>
-                    <SelectItem value="notEquals">Not Equals</SelectItem>
-                    <SelectItem value="contains">Contains</SelectItem>
-                    <SelectItem value="greaterThan">Greater Than</SelectItem>
-                    <SelectItem value="lessThan">Less Than</SelectItem>
-                    <SelectItem value="matches">Matches Pattern</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 w-44 shrink-0">
+        {spec.critical && <span className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" title="Critical field" />}
+        <span className="text-foreground text-xs truncate">{spec.label}</span>
+      </div>
+      <div className="flex-1 h-4 bg-secondary rounded-full overflow-hidden relative">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{ width: `${pct}%`, background: color }}
+        />
+        <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-foreground">
+          {pct}%
+        </span>
+      </div>
+      <span className="text-muted-foreground text-xs w-20 text-right tabular-nums shrink-0">
+        {filled}/{total} rows
+      </span>
+    </div>
+  );
+}
 
-              {/* Value */}
-              <div className="space-y-2">
-                <Label htmlFor="value">Value</Label>
-                <Input
-                  id="value"
-                  placeholder="Enter validation value"
-                  value={formData.value}
-                  onChange={(e) =>
-                    setFormData({ ...formData, value: e.target.value })
-                  }
-                />
-              </div>
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
-              {/* Error Message */}
-              <div className="space-y-2">
-                <Label htmlFor="errorMessage">Error Message *</Label>
-                <Input
-                  id="errorMessage"
-                  placeholder="Message to display when validation fails"
-                  value={formData.errorMessage}
-                  onChange={(e) =>
-                    setFormData({ ...formData, errorMessage: e.target.value })
-                  }
-                />
-              </div>
+export default function DataValidationRules() {
+  const { filteredRecords, hasData, activateDemoMode } = useTransactionData();
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 justify-end pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveRule}
-                  disabled={saveRuleMutation.isPending}
-                  className="gap-2"
-                >
-                  {saveRuleMutation.isPending ? 'Saving...' : 'Save Rule'}
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+  const issues = useMemo(() => detectIssues(filteredRecords), [filteredRecords]);
+
+  // Overall score: weighted average of critical field completeness
+  const overallScore = useMemo(() => {
+    if (!filteredRecords.length) return 0;
+    const criticalSpecs = FIELD_SPECS.filter(s => s.critical);
+    let totalPct = 0;
+    for (const spec of criticalSpecs) {
+      const filled = filteredRecords.filter(r => {
+        const v = r[spec.key];
+        return spec.validate ? spec.validate(v) : v !== undefined && v !== null && v !== '';
+      }).length;
+      totalPct += (filled / filteredRecords.length) * 100;
+    }
+    // Penalise each issue type
+    const penalty = Math.min(30, issues.filter(i => ['#ef4444', '#f97316'].includes(i.color)).reduce((s, i) => s + Math.min(5, Math.ceil(i.count / filteredRecords.length * 100) / 2), 0));
+    return Math.max(0, Math.round(totalPct / criticalSpecs.length - penalty));
+  }, [filteredRecords, issues]);
+
+  if (!hasData) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center px-4">
+        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+          <Database className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-foreground text-xl font-semibold mb-2">No Data Loaded</h3>
+        <p className="text-muted-foreground text-sm max-w-sm mb-6">
+          Upload a CSV to see field completeness scores and data quality issues.
+        </p>
+        <button
+          onClick={activateDemoMode}
+          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium"
+        >
+          Load Demo Data
+        </button>
+      </div>
+    );
+  }
+
+  const totalIssues = issues.reduce((s, i) => s + i.count, 0);
+
+  return (
+    <div className="space-y-6 pb-8">
+
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Data Quality</h1>
+        <p className="text-muted-foreground text-sm mt-0.5">
+          Field completeness and validation issues across {filteredRecords.length} records.
+        </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-foreground">
-              Total Rules
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">{rules.length}</div>
-            <p className="text-xs text-foreground/70 mt-1">Active validation rules</p>
-          </CardContent>
-        </Card>
+      {/* Score + summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Score ring */}
+        <div className="bg-background border border-border rounded-xl p-6 flex flex-col items-center justify-center">
+          <ScoreRing score={overallScore} />
+        </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-foreground">
-              Active
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
-              {rules.filter(r => r.isActive).length}
+        {/* Summary KPIs */}
+        <div className="lg:col-span-3 grid grid-cols-3 gap-4">
+          {[
+            {
+              label: 'Total Records', value: filteredRecords.length,
+              icon: <Database className="w-4 h-4 text-blue-400" />,
+            },
+            {
+              label: 'Quality Issues', value: totalIssues,
+              icon: <AlertTriangle className="w-4 h-4 text-yellow-400" />,
+            },
+            {
+              label: 'Critical Fields Complete',
+              value: `${Math.round(
+                FIELD_SPECS.filter(s => s.critical).reduce((sum, spec) => {
+                  const filled = filteredRecords.filter(r => {
+                    const v = r[spec.key];
+                    return spec.validate ? spec.validate(v) : !!v;
+                  }).length;
+                  return sum + (filled / filteredRecords.length) * 100;
+                }, 0) / FIELD_SPECS.filter(s => s.critical).length
+              )}%`,
+              icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
+            },
+          ].map(k => (
+            <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+              <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
+              <div>
+                <p className="text-muted-foreground text-xs">{k.label}</p>
+                <p className="text-foreground font-bold text-xl tabular-nums">{k.value}</p>
+              </div>
             </div>
-            <p className="text-xs text-foreground/70 mt-1">Currently enforced</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-foreground">
-              Inactive
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">
-              {rules.filter(r => !r.isActive).length}
-            </div>
-            <p className="text-xs text-foreground/70 mt-1">Disabled rules</p>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       </div>
 
-      {/* Validation Rules Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Validation Rules</CardTitle>
-          <CardDescription>
-            All data validation rules applied during Dotloop synchronization
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Field</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Operator</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rules.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-foreground/70">
-                      No validation rules defined. Click "New Rule" to create one.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rules.map((rule) => (
-                    <TableRow key={rule.id} className="hover:bg-accent/50">
-                      <TableCell className="font-medium text-foreground">
-                        {getFieldLabel(rule.field)}
-                      </TableCell>
-                      <TableCell className="text-foreground">
-                        {getRuleTypeLabel(rule.type)}
-                      </TableCell>
-                      <TableCell className="text-foreground">
-                        {rule.operator}
-                      </TableCell>
-                      <TableCell className="text-foreground font-mono text-sm">
-                        {rule.value || '—'}
-                      </TableCell>
-                      <TableCell>
-                        {rule.isActive ? (
-                          <Badge
-                            variant="outline"
-                            className="bg-emerald-50 text-emerald-700 border-emerald-200"
-                          >
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="bg-amber-50 text-amber-700 border-amber-200"
-                          >
-                            <AlertCircle className="w-3 h-3 mr-1" />
-                            Inactive
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditRule(rule)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteRule(rule.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Field completeness */}
+      <div className="bg-background border border-border rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-1">
+          <h2 className="text-foreground font-semibold text-sm uppercase tracking-wide">Field Completeness</h2>
+        </div>
+        <p className="text-muted-foreground text-xs mb-4">
+          <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" /> Critical fields</span>
+          {' '}— empty, zero, or invalid values are counted as missing.
+        </p>
+        <div className="space-y-2.5">
+          {FIELD_SPECS.map(spec => (
+            <CompletenessBar key={String(spec.key)} spec={spec} records={filteredRecords} />
+          ))}
+        </div>
+      </div>
 
-      {/* Rules Documentation */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Validation Rule Types</CardTitle>
-          <CardDescription>
-            Understanding different types of validation rules
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Required</h4>
-              <p className="text-sm text-foreground/70">
-                Field must have a value. No operator or value needed.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Format</h4>
-              <p className="text-sm text-foreground/70">
-                Field must match a specific format (email, phone, date, etc).
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Range</h4>
-              <p className="text-sm text-foreground/70">
-                Numeric field must be within a specified range (e.g., 0-100).
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Pattern</h4>
-              <p className="text-sm text-foreground/70">
-                Field must match a regular expression pattern.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <h4 className="font-medium text-foreground">Custom</h4>
-              <p className="text-sm text-foreground/70">
-                Custom validation logic defined by your team.
-              </p>
-            </div>
+      {/* Validation issues */}
+      <div className="bg-background border border-border rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-yellow-400" />
+          <h2 className="text-foreground font-semibold text-sm uppercase tracking-wide">
+            Validation Issues ({totalIssues})
+          </h2>
+        </div>
+
+        {issues.length === 0 ? (
+          <div className="text-center py-12 flex flex-col items-center gap-2">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+            <p className="text-foreground font-medium">No issues detected</p>
+            <p className="text-muted-foreground text-sm">Your data looks clean.</p>
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          <div className="divide-y divide-border/60">
+            {issues.map(issue => (
+              <div key={issue.label} className="flex items-start gap-4 px-5 py-4 hover:bg-secondary/30 transition-colors">
+                <div className="p-2 rounded-lg shrink-0" style={{ background: issue.color + '20' }}>
+                  <XCircle className="w-4 h-4" style={{ color: issue.color }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-foreground font-medium text-sm">{issue.label}</p>
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                      style={{ background: issue.color + '20', color: issue.color }}
+                    >
+                      {issue.count} record{issue.count !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  {issue.examples.length > 0 && (
+                    <p className="text-muted-foreground text-xs mt-1 truncate">
+                      e.g. {issue.examples.filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                </div>
+                {/* Mini bar */}
+                <div className="w-24 shrink-0">
+                  <div className="h-1.5 bg-border rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.min(100, (issue.count / filteredRecords.length) * 100)}%`,
+                        background: issue.color,
+                      }}
+                    />
+                  </div>
+                  <p className="text-muted-foreground text-[10px] text-right mt-0.5 tabular-nums">
+                    {((issue.count / filteredRecords.length) * 100).toFixed(0)}% of rows
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

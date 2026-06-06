@@ -1,731 +1,343 @@
-import { useState, useRef } from 'react';
-import { trpc } from '@/lib/trpc';
+import { useState, useMemo } from 'react';
+import {
+  UserPlus, Mail, Phone, MessageSquare, ChevronDown, Search, Plus, X,
+  TrendingUp, Users,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { AlertCircle, Users, Clock, TrendingUp, Search, Upload, AlertTriangle, Loader2, GripVertical } from 'lucide-react';
-import { parseMarketViewBrokerCSV, validateMarketViewBrokerCSV } from '@/lib/marketViewBrokerParser';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import ProspectDetailModal from '@/components/ProspectDetailModal';
-import CSVUploadValidator from '@/components/CSVUploadValidator';
-import { exportProspectsToCSV, exportProspectsToPDF } from '@/lib/prospectExporter';
-import RetentionActionTemplates from '@/components/RetentionActionTemplates';
-import {
-  DndContext,
-  closestCorners,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
-// Draggable prospect card component
-function DraggableProspectCard({ prospect }: { prospect: any }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: prospect.id });
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+type Stage = 'Lead' | 'Contacted' | 'Interviewing' | 'Offer Extended' | 'Onboarding' | 'Hired';
+
+interface Candidate {
+  id: string;
+  name: string;
+  source: string;
+  stage: Stage;
+  email: string;
+  phone: string;
+  currentBrokerage: string;
+  ytdGCI: number;
+  addedDate: string;
+  notes: string;
+}
+
+// ─── Static seed data ─────────────────────────────────────────────────────────
+
+const SEED_CANDIDATES: Candidate[] = [
+  { id: '1', name: 'Sarah Chen',      source: 'Referral',    stage: 'Lead',          email: 'schen@email.com',    phone: '555-1001', currentBrokerage: 'RE/MAX', ytdGCI: 82000,  addedDate: '2026-05-10', notes: '' },
+  { id: '2', name: 'Marcus Webb',     source: 'LinkedIn',    stage: 'Lead',          email: 'mwebb@email.com',    phone: '555-1002', currentBrokerage: 'KW',     ytdGCI: 65000,  addedDate: '2026-05-14', notes: '' },
+  { id: '3', name: 'Priya Nair',      source: 'Cold Outreach', stage: 'Lead',        email: 'pnair@email.com',    phone: '555-1003', currentBrokerage: 'C21',    ytdGCI: 45000,  addedDate: '2026-05-18', notes: '' },
+  { id: '4', name: 'James Ortega',    source: 'Referral',    stage: 'Contacted',     email: 'jortega@email.com',  phone: '555-1004', currentBrokerage: 'eXp',    ytdGCI: 120000, addedDate: '2026-05-03', notes: 'Ready to switch Q3' },
+  { id: '5', name: 'Dana Reyes',      source: 'Job Board',   stage: 'Contacted',     email: 'dreyes@email.com',   phone: '555-1005', currentBrokerage: 'Compass', ytdGCI: 95000, addedDate: '2026-05-07', notes: '' },
+  { id: '6', name: 'Tyler Brooks',    source: 'LinkedIn',    stage: 'Contacted',     email: 'tbrooks@email.com',  phone: '555-1006', currentBrokerage: 'KW',     ytdGCI: 58000,  addedDate: '2026-05-12', notes: 'Follow up June 15' },
+  { id: '7', name: 'Monique Laval',   source: 'Referral',    stage: 'Interviewing',  email: 'mlaval@email.com',   phone: '555-1007', currentBrokerage: 'RE/MAX', ytdGCI: 145000, addedDate: '2026-04-22', notes: 'Very interested in cap' },
+  { id: '8', name: 'Kevin Park',      source: 'Career Fair', stage: 'Interviewing',  email: 'kpark@email.com',    phone: '555-1008', currentBrokerage: 'eXp',    ytdGCI: 72000,  addedDate: '2026-04-28', notes: '' },
+  { id: '9', name: 'Alicia Fontaine', source: 'Referral',    stage: 'Offer Extended',email: 'afontaine@email.com',phone: '555-1009', currentBrokerage: 'Berkshire', ytdGCI: 190000, addedDate: '2026-04-10', notes: 'Counter offer pending' },
+  { id: '10', name: 'Robert Hsu',     source: 'LinkedIn',    stage: 'Onboarding',    email: 'rhsu@email.com',     phone: '555-1010', currentBrokerage: '—',      ytdGCI: 0,       addedDate: '2026-03-28', notes: 'Starting July 1' },
+  { id: '11', name: 'Camille Troy',   source: 'Referral',    stage: 'Hired',         email: 'ctroy@email.com',    phone: '555-1011', currentBrokerage: '—',      ytdGCI: 0,       addedDate: '2026-02-15', notes: 'Active since March' },
+  { id: '12', name: 'Noah Singh',     source: 'Job Board',   stage: 'Hired',         email: 'nsingh@email.com',   phone: '555-1012', currentBrokerage: '—',      ytdGCI: 0,       addedDate: '2026-01-20', notes: '2 closed deals' },
+];
+
+const STAGES: Stage[] = ['Lead', 'Contacted', 'Interviewing', 'Offer Extended', 'Onboarding', 'Hired'];
+
+const STAGE_META: Record<Stage, { color: string; bg: string; textColor: string }> = {
+  'Lead':          { color: '#6b7280', bg: 'bg-gray-500/10',    textColor: 'text-gray-400' },
+  'Contacted':     { color: '#3b82f6', bg: 'bg-blue-500/10',    textColor: 'text-blue-400' },
+  'Interviewing':  { color: '#f59e0b', bg: 'bg-yellow-500/10',  textColor: 'text-yellow-400' },
+  'Offer Extended':{ color: '#f97316', bg: 'bg-orange-500/10',  textColor: 'text-orange-400' },
+  'Onboarding':    { color: '#8b5cf6', bg: 'bg-purple-500/10',  textColor: 'text-purple-400' },
+  'Hired':         { color: '#10b981', bg: 'bg-emerald-500/10', textColor: 'text-emerald-400' },
+};
+
+const SOURCE_COLORS: Record<string, string> = {
+  Referral: '#10b981', LinkedIn: '#3b82f6', 'Cold Outreach': '#f59e0b',
+  'Job Board': '#8b5cf6', 'Career Fair': '#ef4444',
+};
+
+// ─── Funnel bar row ───────────────────────────────────────────────────────────
+
+function FunnelBar({ stage, count, total }: { stage: Stage; count: number; total: number }) {
+  const pct = total > 0 ? (count / total) * 100 : 0;
+  const meta = STAGE_META[stage];
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-muted-foreground text-xs w-28 shrink-0">{stage}</span>
+      <div className="flex-1 h-5 bg-secondary rounded-full overflow-hidden relative">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${pct}%`, background: meta.color }}
+        />
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] font-semibold text-foreground">
+          {count}
+        </span>
+      </div>
+      <span className="text-muted-foreground text-xs w-10 text-right tabular-nums">{pct.toFixed(0)}%</span>
+    </div>
+  );
+}
+
+// ─── Candidate card ───────────────────────────────────────────────────────────
+
+function CandidateCard({ candidate, onChange, onRemove }: {
+  candidate: Candidate;
+  onChange: (id: string, stage: Stage) => void;
+  onRemove: (id: string) => void;
+}) {
+  const meta = STAGE_META[candidate.stage];
+  const initials = candidate.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const srcColor = SOURCE_COLORS[candidate.source] ?? '#6b7280';
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`p-3 bg-muted rounded text-sm hover:bg-muted/80 transition cursor-move border border-transparent hover:border-primary/50 ${
-        isDragging ? 'shadow-lg bg-muted/50' : ''
-      }`}
-    >
-      <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" {...attributes} {...listeners} />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{prospect.firstName} {prospect.lastName}</p>
-          <p className="text-xs text-muted-foreground truncate">{prospect.email}</p>
+    <div className="bg-background border border-border rounded-lg p-3 text-sm hover:border-border/80 transition-all">
+      {/* Name + remove */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+            style={{ background: srcColor + '25', color: srcColor }}
+          >
+            {initials}
+          </div>
+          <div>
+            <p className="text-foreground font-medium leading-tight">{candidate.name}</p>
+            <p className="text-muted-foreground text-[10px]">{candidate.currentBrokerage}</p>
+          </div>
         </div>
+        <button
+          onClick={() => onRemove(candidate.id)}
+          className="text-muted-foreground hover:text-red-400 p-0.5 shrink-0"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+
+      {/* Source badge */}
+      <div className="flex items-center gap-1.5 mb-2.5">
+        <span
+          className="px-1.5 py-0.5 rounded-full text-[10px] font-medium"
+          style={{ background: srcColor + '20', color: srcColor }}
+        >
+          {candidate.source}
+        </span>
+        {candidate.ytdGCI > 0 && (
+          <span className="text-muted-foreground text-[10px]">YTD ${(candidate.ytdGCI / 1000).toFixed(0)}K</span>
+        )}
+      </div>
+
+      {/* Action icons */}
+      <div className="flex items-center gap-1 mb-2.5">
+        <a href={`mailto:${candidate.email}`} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-blue-400 transition-colors">
+          <Mail className="w-3.5 h-3.5" />
+        </a>
+        <a href={`tel:${candidate.phone}`} className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-emerald-400 transition-colors">
+          <Phone className="w-3.5 h-3.5" />
+        </a>
+        <button className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-purple-400 transition-colors">
+          <MessageSquare className="w-3.5 h-3.5" />
+        </button>
+        <span className="flex-1" />
+        {candidate.notes && (
+          <span className="text-muted-foreground text-[10px] italic truncate max-w-[80px]">{candidate.notes}</span>
+        )}
+      </div>
+
+      {/* Stage dropdown */}
+      <div className="relative">
+        <select
+          value={candidate.stage}
+          onChange={e => onChange(candidate.id, e.target.value as Stage)}
+          className={`w-full text-[11px] font-medium rounded-md px-2 py-1 border-0 cursor-pointer appearance-none pr-6 ${meta.bg} ${meta.textColor}`}
+        >
+          {STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <ChevronDown className={`w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none ${meta.textColor}`} />
       </div>
     </div>
   );
 }
 
-export default function RecruitingPage() {
-  const [activeTab, setActiveTab] = useState('pipeline');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [selectedProspect, setSelectedProspect] = useState<any>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isValidatorOpen, setIsValidatorOpen] = useState(false);
-  const [validatorData, setValidatorData] = useState<{ headers: string[]; data: any[] }>({ headers: [], data: [] });
-  const [selectedProspects, setSelectedProspects] = useState<Set<string>>(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [draggedProspect, setDraggedProspect] = useState<any>(null);
+// ─── Add candidate dialog ─────────────────────────────────────────────────────
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+function AddCandidatePanel({ onAdd, onClose }: { onAdd: (c: Candidate) => void; onClose: () => void }) {
+  const [name, setName] = useState('');
+  const [source, setSource] = useState('Referral');
+  const [stage, setStage] = useState<Stage>('Lead');
+  const [email, setEmail] = useState('');
+  const [brokerage, setBrokerage] = useState('');
 
-  // Queries - public access
-  const pipelineStats = trpc.recruiting.getPipelineStats.useQuery();
-  const conversionFunnel = trpc.recruiting.getConversionFunnel.useQuery();
-  const prospects = trpc.recruiting.getProspects.useQuery({ search: searchQuery });
-  const retentionRisk = trpc.recruiting.getRetentionRisk.useQuery();
-
-  // Mutations
-  const importProspects = trpc.recruiting.importProspects.useMutation();
-  const updateProspectStatus = trpc.recruiting.updateProspectStatus.useMutation();
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const prospectId = active.id as string;
-    const newStatus = over.id as 'lead' | 'contacted' | 'interviewing' | 'offer_extended' | 'onboarding' | 'hired' | 'declined';
-
-    const prospect = prospects.data?.find((p: any) => p.id === prospectId);
-    if (prospect && prospect.pipelineStatus !== newStatus) {
-      updateProspectStatus.mutate(
-        { prospectId, newStatus },
-        {
-          onSuccess: () => {
-            prospects.refetch();
-            pipelineStats.refetch();
-            conversionFunnel.refetch();
-          },
-        }
-      );
-    }
-    setDraggedProspect(null);
+  const submit = () => {
+    if (!name.trim()) return;
+    onAdd({
+      id: `new-${Date.now()}`,
+      name: name.trim(),
+      source,
+      stage,
+      email,
+      phone: '',
+      currentBrokerage: brokerage,
+      ytdGCI: 0,
+      addedDate: new Date().toISOString().slice(0, 10),
+      notes: '',
+    });
+    onClose();
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCsvFile(file);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const text = event.target?.result as string;
-        const lines = text.split('\n').filter(l => l.trim());
-        const headers = lines[0].split(',').map(h => h.trim());
-        const data = lines.slice(1, 6).map(line => {
-          const values = line.split(',');
-          const row: any = {};
-          headers.forEach((h, i) => {
-            row[h] = values[i]?.trim() || '';
-          });
-          return row;
-        });
-        setValidatorData({ headers, data });
-        setIsValidatorOpen(true);
-      };
-      reader.readAsText(file);
-    }
-  };
-
-  const handleValidatorConfirm = async (file: File, mappings: Record<string, string>) => {
-    setIsImporting(true);
-    try {
-      const text = await file.text();
-      const { prospects: parsed } = parseMarketViewBrokerCSV(text);
-      
-      const mappedProspects = parsed.map((prospect: any) => {
-        const mapped: any = { ...prospect };
-        Object.entries(mappings).forEach(([key, csvCol]) => {
-          if (csvCol && prospect[csvCol]) {
-            mapped[key] = prospect[csvCol];
-          }
-        });
-        return mapped;
-      });
-
-      await importProspects.mutateAsync({
-        prospects: mappedProspects,
-        fileName: file.name,
-      });
-
-      setCsvFile(null);
-      setIsValidatorOpen(false);
-      prospects.refetch();
-      pipelineStats.refetch();
-    } catch (error) {
-      console.error('Import failed:', error);
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleImportCSV = async () => {
-    if (!csvFile) return;
-
-    setIsImporting(true);
-    try {
-      const csvText = await csvFile.text();
-      const validation = validateMarketViewBrokerCSV(csvText);
-
-      if (!validation.valid) {
-        alert(`CSV validation failed: ${validation.errors.join(', ')}`);
-        setIsImporting(false);
-        return;
-      }
-
-      const { prospects: parsedProspects, errors } = parseMarketViewBrokerCSV(csvText);
-
-      if (errors.length > 0) {
-        console.warn('CSV parsing warnings:', errors);
-      }
-
-      await importProspects.mutateAsync({
-        prospects: parsedProspects,
-        fileName: csvFile.name,
-      });
-
-      setCsvFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      prospects.refetch();
-      pipelineStats.refetch();
-    } catch (error) {
-      alert(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  const handleStatusChange = async (prospectId: string, newStatus: string) => {
-    try {
-      await updateProspectStatus.mutateAsync({
-        prospectId,
-        newStatus: newStatus as any,
-      });
-      prospects.refetch();
-      conversionFunnel.refetch();
-      pipelineStats.refetch();
-    } catch (error) {
-      alert(`Status update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  };
-
-  const getRiskColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'high':
-        return 'bg-red-100 text-red-800 border-red-300';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-300';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      lead: 'bg-blue-100 text-blue-800',
-      contacted: 'bg-cyan-100 text-cyan-800',
-      interviewing: 'bg-orange-100 text-orange-800',
-      offer_extended: 'bg-purple-100 text-purple-800',
-      onboarding: 'bg-green-100 text-green-800',
-      hired: 'bg-emerald-100 text-emerald-800',
-      declined: 'bg-red-100 text-red-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+  const fieldCls = 'w-full bg-secondary border border-border rounded-lg px-3 py-2 text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500';
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">Recruiting</h1>
-            <p className="text-lg text-muted-foreground">Agent pipeline, prospects & retention risk</p>
+    <div className="bg-background border border-border rounded-xl p-5 space-y-3">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-foreground font-semibold text-sm">Add Candidate</p>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+      </div>
+      <input className={fieldCls} placeholder="Full name *" value={name} onChange={e => setName(e.target.value)} />
+      <input className={fieldCls} placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input className={fieldCls} placeholder="Current brokerage" value={brokerage} onChange={e => setBrokerage(e.target.value)} />
+      <div className="grid grid-cols-2 gap-3">
+        <select value={source} onChange={e => setSource(e.target.value)} className={fieldCls}>
+          {Object.keys(SOURCE_COLORS).map(s => <option key={s}>{s}</option>)}
+        </select>
+        <select value={stage} onChange={e => setStage(e.target.value as Stage)} className={fieldCls}>
+          {STAGES.map(s => <option key={s}>{s}</option>)}
+        </select>
+      </div>
+      <Button onClick={submit} className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-sm h-8">
+        Add Candidate
+      </Button>
+    </div>
+  );
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+export default function RecruitingPage() {
+  const [candidates, setCandidates] = useState<Candidate[]>(SEED_CANDIDATES);
+  const [search, setSearch] = useState('');
+  const [showAdd, setShowAdd] = useState(false);
+
+  const stageChange = (id: string, stage: Stage) =>
+    setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage } : c));
+  const removeCandidate = (id: string) =>
+    setCandidates(prev => prev.filter(c => c.id !== id));
+  const addCandidate = (c: Candidate) =>
+    setCandidates(prev => [...prev, c]);
+
+  const filtered = useMemo(() =>
+    search
+      ? candidates.filter(c =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.source.toLowerCase().includes(search.toLowerCase()) ||
+          c.currentBrokerage.toLowerCase().includes(search.toLowerCase())
+        )
+      : candidates,
+  [candidates, search]);
+
+  const stageCounts = useMemo(() =>
+    Object.fromEntries(STAGES.map(s => [s, candidates.filter(c => c.stage === s).length])) as Record<Stage, number>,
+  [candidates]);
+
+  const conversionRate = candidates.length > 0
+    ? ((stageCounts['Hired'] / candidates.length) * 100).toFixed(0)
+    : '0';
+
+  // Calculate avg days in pipeline for hired (mock: based on addedDate vs now)
+  const avgDays = useMemo(() => {
+    const hired = candidates.filter(c => c.stage === 'Hired');
+    if (!hired.length) return 0;
+    const now = new Date();
+    const total = hired.reduce((s, c) => s + Math.floor((now.getTime() - new Date(c.addedDate).getTime()) / 86400000), 0);
+    return Math.round(total / hired.length);
+  }, [candidates]);
+
+  return (
+    <div className="space-y-6 pb-8">
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Recruiting Pipeline</h1>
+          <p className="text-muted-foreground text-sm mt-0.5">{candidates.length} candidates · {conversionRate}% hire rate</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search candidates…"
+              className="bg-secondary border border-border rounded-lg pl-8 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500 w-44"
+            />
           </div>
-          <Button className="bg-orange-500 hover:bg-orange-600">
-            <Users className="w-4 h-4 mr-2" />
-            Add Candidate
+          <Button size="sm" onClick={() => setShowAdd(v => !v)} className="bg-emerald-500 hover:bg-emerald-600 text-white gap-1.5">
+            <Plus className="w-4 h-4" /> Add
           </Button>
         </div>
+      </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-l-4 border-l-blue-500 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">In Pipeline</p>
-                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.inPipeline || 0}</p>
-              </div>
-              <Users className="w-8 h-8 text-blue-500" />
-            </div>
-          </Card>
+      {/* Add panel */}
+      {showAdd && <AddCandidatePanel onAdd={addCandidate} onClose={() => setShowAdd(false)} />}
 
-          <Card className="border-l-4 border-l-purple-500 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Offers Pending</p>
-                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.offersPending || 0}</p>
-              </div>
-              <Clock className="w-8 h-8 text-purple-500" />
+      {/* Summary KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Pipeline', value: candidates.length, icon: <Users className="w-4 h-4 text-blue-400" /> },
+          { label: 'Active (non-Lead)', value: candidates.filter(c => c.stage !== 'Lead').length, icon: <TrendingUp className="w-4 h-4 text-yellow-400" /> },
+          { label: 'Hired YTD', value: stageCounts['Hired'], icon: <UserPlus className="w-4 h-4 text-emerald-400" /> },
+          { label: 'Avg Days to Hire', value: avgDays > 0 ? `${avgDays}d` : '—', icon: <TrendingUp className="w-4 h-4 text-purple-400" /> },
+        ].map(k => (
+          <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+            <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
+            <div>
+              <p className="text-muted-foreground text-xs">{k.label}</p>
+              <p className="text-foreground font-bold text-xl tabular-nums">{k.value}</p>
             </div>
-          </Card>
+          </div>
+        ))}
+      </div>
 
-          <Card className="border-l-4 border-l-green-500 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Recent Hires (90d)</p>
-                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.recentHires || 0}</p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-green-500" />
-            </div>
-          </Card>
-
-          <Card className="border-l-4 border-l-orange-500 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">MVB Prospects</p>
-                <p className="text-3xl font-bold text-foreground">{pipelineStats.data?.mvbProspects || 0}</p>
-              </div>
-              <Search className="w-8 h-8 text-orange-500" />
-            </div>
-          </Card>
+      {/* Conversion funnel */}
+      <div className="bg-background border border-border rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-4 h-4 text-muted-foreground" />
+          <h2 className="text-foreground font-semibold text-sm uppercase tracking-wide">Conversion Funnel</h2>
         </div>
+        <div className="space-y-2.5">
+          {STAGES.map(stage => (
+            <FunnelBar key={stage} stage={stage} count={stageCounts[stage]} total={candidates.length} />
+          ))}
+        </div>
+      </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-            <TabsTrigger value="prospects">Prospects</TabsTrigger>
-            <TabsTrigger value="retention">Retention Risk</TabsTrigger>
-          </TabsList>
-
-          {/* Pipeline Tab */}
-          <TabsContent value="pipeline" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5" />
-                Conversion Funnel
-              </h3>
-
-              <div className="space-y-4">
-                {conversionFunnel.data && (
-                  <>
-                    {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map((stage, idx) => {
-                      const stageKey = stage as keyof typeof conversionFunnel.data;
-                      const value = conversionFunnel.data[stageKey] || 0;
-                      const maxValue = conversionFunnel.data.lead || 1;
-                      const percentage = (value / maxValue) * 100;
-                      const colors = ['bg-blue-500', 'bg-cyan-500', 'bg-orange-500', 'bg-purple-500', 'bg-green-500'];
-
-                      return (
-                        <div key={stage}>
-                          <div className="flex justify-between mb-2">
-                            <span className="text-sm font-medium capitalize">{stage.replace('_', ' ')}</span>
-                            <span className="text-sm font-bold">{value}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-8 overflow-hidden">
-                            <div
-                              className={`${colors[idx]} h-full flex items-center justify-center text-white text-sm font-bold transition-all`}
-                              style={{ width: `${percentage}%` }}
-                            >
-                              {percentage > 10 && `${Math.round(percentage)}%`}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-            </Card>
-
-            {/* Pipeline Prospects by Stage - Drag and Drop */}
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCorners}
-              onDragEnd={handleDragEnd}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {['lead', 'contacted', 'interviewing', 'offer_extended', 'onboarding'].map(stage => {
-                  const stageProspects = prospects.data?.filter((p: any) => p.pipelineStatus === stage) || [];
-                  return (
-                    <Card key={stage} className="p-4 bg-card/50 border-2 border-border/50 hover:border-primary/30 transition">
-                      <h4 className="font-semibold mb-4 capitalize text-sm flex items-center justify-between">
-                        <span>{stage.replace('_', ' ')}</span>
-                        <Badge variant="secondary" className="text-xs">{stageProspects.length}</Badge>
-                      </h4>
-                      <SortableContext
-                        items={stageProspects.map((p: any) => p.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div
-                          className="space-y-2 max-h-96 overflow-y-auto min-h-32 p-2 rounded border-2 border-dashed border-transparent hover:border-primary/20 transition"
-                          data-status={stage}
-                        >
-                          {stageProspects.length > 0 ? (
-                            stageProspects.map((prospect: any) => (
-                              <div
-                                key={prospect.id}
-                                onClick={() => {
-                                  setSelectedProspect(prospect);
-                                  setIsDetailModalOpen(true);
-                                }}
-                              >
-                                <DraggableProspectCard prospect={prospect} />
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground text-xs">
-                              <p>Drop prospects here</p>
-                            </div>
-                          )}
-                        </div>
-                      </SortableContext>
-                    </Card>
-                  );
-                })}
-              </div>
-            </DndContext>
-          </TabsContent>
-
-          {/* Prospects Tab */}
-          <TabsContent value="prospects" className="space-y-6">
-            <Alert className="border-yellow-200 bg-yellow-50">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <AlertDescription className="text-yellow-800">
-                Import agent production data from Market View Broker CSV exports. A <a href="#" className="underline font-semibold">Market View Broker subscription</a> from ShowingTime is required to access this data.
-              </AlertDescription>
-            </Alert>
-
-            {/* CSV Upload */}
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Upload className="w-5 h-5" />
-                Import CSV
-              </h3>
-
-              <div className="space-y-4">
-                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <Upload className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mb-2"
-                  >
-                    Select CSV File
-                  </Button>
-                  {csvFile && (
-                    <p className="text-sm text-muted-foreground">Selected: <span className="font-semibold">{csvFile.name}</span></p>
+      {/* Kanban board */}
+      <div className="overflow-x-auto pb-2">
+        <div className="flex gap-3" style={{ minWidth: `${STAGES.length * 220}px` }}>
+          {STAGES.map(stage => {
+            const meta = STAGE_META[stage];
+            const stageCandidates = filtered.filter(c => c.stage === stage);
+            return (
+              <div key={stage} className="w-52 shrink-0">
+                {/* Column header */}
+                <div className={`flex items-center justify-between px-3 py-2 rounded-t-lg ${meta.bg}`}>
+                  <span className={`text-xs font-semibold ${meta.textColor}`}>{stage}</span>
+                  <span className={`text-xs font-bold px-1.5 py-0.5 rounded-full ${meta.bg} ${meta.textColor}`}>
+                    {stageCandidates.length}
+                  </span>
+                </div>
+                {/* Cards */}
+                <div className="bg-secondary/40 border border-t-0 border-border rounded-b-lg p-2 space-y-2 min-h-[300px]">
+                  {stageCandidates.map(c => (
+                    <CandidateCard key={c.id} candidate={c} onChange={stageChange} onRemove={removeCandidate} />
+                  ))}
+                  {stageCandidates.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground text-xs">No candidates</div>
                   )}
                 </div>
-
-                <Button
-                  onClick={handleImportCSV}
-                  disabled={!csvFile || isImporting}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isImporting ? 'Importing...' : 'Import Prospects'}
-                </Button>
               </div>
-            </Card>
-
-            {/* Search */}
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, office, or email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {/* Prospects List */}
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Imported Prospects</h3>
-                {selectedProspects.size > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{selectedProspects.size} selected</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedProspects(new Set())}
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {prospects.isLoading ? (
-                <p className="text-muted-foreground">Loading prospects...</p>
-              ) : prospects.data && prospects.data.length > 0 ? (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="border-b">
-                        <tr>
-                          <th className="text-left py-3 px-4 font-semibold w-8">
-                            <input
-                              type="checkbox"
-                              checked={prospects.data.length > 0 && prospects.data.every((p: any) => selectedProspects.has(p.id))}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  const newSelected = new Set(selectedProspects);
-                                  prospects.data.forEach((p: any) => newSelected.add(p.id));
-                                  setSelectedProspects(newSelected);
-                                } else {
-                                  setSelectedProspects(new Set());
-                                }
-                              }}
-                              className="cursor-pointer"
-                            />
-                          </th>
-                          <th className="text-left py-3 px-4 font-semibold">Name</th>
-                          <th className="text-left py-3 px-4 font-semibold">Email</th>
-                          <th className="text-left py-3 px-4 font-semibold">Office</th>
-                          <th className="text-left py-3 px-4 font-semibold">Volume</th>
-                          <th className="text-left py-3 px-4 font-semibold">Status</th>
-                          <th className="text-left py-3 px-4 font-semibold">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {prospects.data
-                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                          .map((prospect: any) => (
-                            <tr key={prospect.id} className="border-b hover:bg-muted/50 transition">
-                              <td className="py-3 px-4">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedProspects.has(prospect.id)}
-                                  onChange={(e) => {
-                                    const newSelected = new Set(selectedProspects);
-                                    if (e.target.checked) {
-                                      newSelected.add(prospect.id);
-                                    } else {
-                                      newSelected.delete(prospect.id);
-                                    }
-                                    setSelectedProspects(newSelected);
-                                  }}
-                                  className="cursor-pointer"
-                                />
-                              </td>
-                              <td className="py-3 px-4 font-medium">{prospect.firstName} {prospect.lastName}</td>
-                              <td className="py-3 px-4 text-xs">{prospect.email}</td>
-                              <td className="py-3 px-4">{prospect.office || '-'}</td>
-                              <td className="py-3 px-4">${(parseFloat(prospect.totalVolume) || 0).toLocaleString()}</td>
-                              <td className="py-3 px-4">
-                                <Badge className={getStatusColor(prospect.pipelineStatus)}>
-                                  {prospect.pipelineStatus.replace('_', ' ')}
-                                </Badge>
-                              </td>
-                              <td className="py-3 px-4">
-                                <select
-                                  value={prospect.pipelineStatus}
-                                  onChange={(e) => handleStatusChange(prospect.id, e.target.value)}
-                                  className="text-xs border rounded px-2 py-1 bg-background"
-                                >
-                                  <option value="lead">Lead</option>
-                                  <option value="contacted">Contacted</option>
-                                  <option value="interviewing">Interviewing</option>
-                                  <option value="offer_extended">Offer Extended</option>
-                                  <option value="onboarding">Onboarding</option>
-                                  <option value="hired">Hired</option>
-                                  <option value="declined">Declined</option>
-                                </select>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Bulk Actions & Pagination */}
-                  <div className="mt-6 pt-4 border-t space-y-4">
-                    {selectedProspects.size > 0 && (
-                      <div className="flex gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <span className="text-sm font-medium text-blue-900 flex-1">
-                          {selectedProspects.size} prospect{selectedProspects.size !== 1 ? 's' : ''} selected
-                        </span>
-                        <Button
-                          size="sm"
-                          className="bg-blue-600 hover:bg-blue-700"
-                          onClick={async () => {
-                            const selectedIds = Array.from(selectedProspects);
-                            try {
-                              for (const prospectId of selectedIds) {
-                                await updateProspectStatus.mutateAsync({
-                                  prospectId,
-                                  newStatus: 'lead',
-                                });
-                              }
-                              setSelectedProspects(new Set());
-                              prospects.refetch();
-                              pipelineStats.refetch();
-                            } catch (error) {
-                              console.error('Failed to add to pipeline:', error);
-                            }
-                          }}
-                        >
-                          Add to Pipeline
-                        </Button>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-muted-foreground">
-                        Showing {Math.min((currentPage - 1) * itemsPerPage + 1, prospects.data.length)} to {Math.min(currentPage * itemsPerPage, prospects.data.length)} of {prospects.data.length}
-                      </div>
-                      <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.ceil(prospects.data.length / itemsPerPage) }).map((_, i) => (
-                          <Button
-                            key={i + 1}
-                            variant={currentPage === i + 1 ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setCurrentPage(i + 1)}
-                            className="w-8 h-8 p-0"
-                          >
-                            {i + 1}
-                          </Button>
-                        ))}
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.min(Math.ceil(prospects.data.length / itemsPerPage), currentPage + 1))}
-                        disabled={currentPage === Math.ceil(prospects.data.length / itemsPerPage)}
-                      >
-                        Next
-                      </Button>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-12">
-                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-                  <p className="text-muted-foreground font-medium">No prospects imported yet</p>
-                  <p className="text-sm text-muted-foreground">Upload a Market View Broker CSV to get started</p>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-
-          {/* Retention Risk Tab */}
-          <TabsContent value="retention" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5" />
-                Agent Retention Risk (90-day vs prior 90-day comparison)
-              </h3>
-
-              {retentionRisk.isLoading ? (
-                <p className="text-muted-foreground">Loading retention risk data...</p>
-              ) : retentionRisk.data && retentionRisk.data.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b bg-muted/50">
-                      <tr>
-                        <th className="text-left py-3 px-4 font-semibold">Agent</th>
-                        <th className="text-right py-3 px-4 font-semibold">Prior Deals</th>
-                        <th className="text-right py-3 px-4 font-semibold">Recent Deals</th>
-                        <th className="text-right py-3 px-4 font-semibold">Change</th>
-                        <th className="text-right py-3 px-4 font-semibold">Prior Volume</th>
-                        <th className="text-right py-3 px-4 font-semibold">Recent Volume</th>
-                        <th className="text-right py-3 px-4 font-semibold">Volume Change</th>
-                        <th className="text-center py-3 px-4 font-semibold">Risk</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {retentionRisk.data.map((agent: any) => (
-                        <tr key={agent.id} className="border-b hover:bg-muted/50 transition">
-                          <td className="py-3 px-4 font-medium">{agent.agentName}</td>
-                          <td className="py-3 px-4 text-right">{agent.priorDeals}</td>
-                          <td className="py-3 px-4 text-right">{agent.recentDeals}</td>
-                          <td className={`py-3 px-4 text-right font-semibold ${parseFloat(agent.dealChangePercent) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {parseFloat(agent.dealChangePercent).toFixed(1)}%
-                          </td>
-                          <td className="py-3 px-4 text-right">${(parseFloat(agent.priorVolume) || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                          <td className="py-3 px-4 text-right">${(parseFloat(agent.recentVolume) || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                          <td className={`py-3 px-4 text-right font-semibold ${parseFloat(agent.volumeChangePercent) < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            {parseFloat(agent.volumeChangePercent).toFixed(1)}%
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <Badge className={getRiskColor(agent.riskLevel)}>
-                              {agent.riskLevel}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-30" />
-                  <p className="text-muted-foreground font-medium">No retention risk data available</p>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Prospect Detail Modal */}
-        <ProspectDetailModal
-          prospect={selectedProspect}
-          isOpen={isDetailModalOpen}
-          onClose={() => {
-            setIsDetailModalOpen(false);
-            setSelectedProspect(null);
-          }}
-          onStatusChange={async (prospectId: string, newStatus: string) => {
-            await updateProspectStatus.mutateAsync({
-              prospectId,
-              newStatus: newStatus as 'lead' | 'contacted' | 'interviewing' | 'offer_extended' | 'onboarding' | 'hired' | 'declined',
-            });
-            prospects.refetch();
-          }}
-        />
+            );
+          })}
+        </div>
       </div>
     </div>
   );

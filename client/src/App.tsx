@@ -14,6 +14,8 @@ import { CDAProvider } from "./contexts/CDAContext";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import PlaceholderPage from "./pages/PlaceholderPage";
+import LeadROIPage from "./pages/LeadROIPage";
+import StuckDealsPage from "./pages/StuckDealsPage";
 
 // Auth / legal
 import OAuthCallback from "./pages/OAuthCallback";
@@ -71,7 +73,7 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/net-commission-report", component: NetCommissionReportPage },
   { path: "/cda-builder",           component: CDABuilderPage },
   { path: "/cda-history",           component: CDAHistoryPage },
-  { path: "/stuck-deals",           component: PlaceholderPage },
+  { path: "/stuck-deals",           component: StuckDealsPage },
   { path: "/tasks",                 component: PlaceholderPage },
 
   // Analytics
@@ -90,7 +92,7 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/recruiting",      component: RecruitingPage },
   { path: "/team-management", component: TeamManagementComplete },
   { path: "/retention",       component: PlaceholderPage },
-  { path: "/lead-roi",        component: PlaceholderPage },
+  { path: "/lead-roi",        component: LeadROIPage },
 
   // Finance & Ops
   { path: "/agent-billing", component: PlaceholderPage },
