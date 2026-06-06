@@ -13,12 +13,13 @@ import { CDAProvider } from "./contexts/CDAContext";
 
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
-import PlaceholderPage from "./pages/PlaceholderPage";
 import LeadROIPage from "./pages/LeadROIPage";
 import StuckDealsPage from "./pages/StuckDealsPage";
 import VelocityPage from "./pages/VelocityPage";
 import TasksPage from "./pages/TasksPage";
 import AgentBillingPage from "./pages/AgentBillingPage";
+import RetentionPage from "./pages/RetentionPage";
+import QuickBooksPage from "./pages/QuickBooksPage";
 
 // Auth / legal
 import OAuthCallback from "./pages/OAuthCallback";
@@ -94,12 +95,12 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/contests",        component: ContestsPage },
   { path: "/recruiting",      component: RecruitingPage },
   { path: "/team-management", component: TeamManagementComplete },
-  { path: "/retention",       component: PlaceholderPage },
+  { path: "/retention",       component: RetentionPage },
   { path: "/lead-roi",        component: LeadROIPage },
 
   // Finance & Ops
   { path: "/agent-billing", component: AgentBillingPage },
-  { path: "/quickbooks",    component: PlaceholderPage },
+  { path: "/quickbooks",    component: QuickBooksPage },
   { path: "/templates",     component: CommissionTemplates },
 
   // Reports & Admin
