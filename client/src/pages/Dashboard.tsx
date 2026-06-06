@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useLocation } from 'wouter';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
 import { Badge } from '@/components/ui/badge';
@@ -205,6 +206,7 @@ function SectionLabel({ children, sub }: { children: React.ReactNode; sub?: stri
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const [, setLocation] = useLocation();
   const { filteredRecords, metrics, agentMetrics, hasData, activateDemoMode } = useTransactionData();
 
   const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
@@ -351,16 +353,21 @@ export default function Dashboard() {
   if (!hasData) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center px-4">
-        <div className="w-16 h-16 rounded-full bg-[#1a2332] flex items-center justify-center mb-4">
-          <BarChart2 className="w-8 h-8 text-gray-500" />
+        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+          <BarChart2 className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-white text-xl font-semibold mb-2">No Data Loaded</h3>
-        <p className="text-gray-400 text-sm max-w-sm mb-6">
-          Upload a CSV from the main dashboard or load demo data to see your brokerage overview.
+        <h3 className="text-foreground text-xl font-semibold mb-2">No Data Loaded</h3>
+        <p className="text-muted-foreground text-sm max-w-sm mb-6">
+          Upload a CSV export from Dotloop, or load demo data to explore the dashboard.
         </p>
-        <Button onClick={activateDemoMode} className="bg-emerald-500 hover:bg-emerald-600 text-white">
-          Load Demo Data
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => setLocation('/upload')}>
+            Upload CSV
+          </Button>
+          <Button onClick={activateDemoMode} className="bg-emerald-500 hover:bg-emerald-600 text-white">
+            Load Demo Data
+          </Button>
+        </div>
       </div>
     );
   }
