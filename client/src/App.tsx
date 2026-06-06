@@ -23,6 +23,8 @@ import CDAHistoryPage from "./pages/CDAHistoryPage";
 import CommissionManagement from "./pages/CommissionManagement";
 import AuditLog from "./pages/AuditLog";
 
+import Dashboard from "./pages/Dashboard";
+
 // New pages
 import AgentsPage from "./pages/AgentsPage";
 import ComparePage from "./pages/ComparePage";
@@ -46,6 +48,7 @@ import { useTransactionData } from "./contexts/TransactionDataContext";
 // Pages that use sidebar layout
 const SIDEBAR_ROUTES = [
   { path: "/", component: Home },
+  { path: "/dashboard", component: Dashboard },
   { path: "/agents", component: AgentsPage },
   { path: "/commission", component: CommissionManagement },
   { path: "/net-commission-report", component: NetCommissionReportPage },
