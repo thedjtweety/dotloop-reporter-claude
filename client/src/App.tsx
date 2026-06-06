@@ -16,6 +16,9 @@ import Home from "./pages/Home";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import LeadROIPage from "./pages/LeadROIPage";
 import StuckDealsPage from "./pages/StuckDealsPage";
+import VelocityPage from "./pages/VelocityPage";
+import TasksPage from "./pages/TasksPage";
+import AgentBillingPage from "./pages/AgentBillingPage";
 
 // Auth / legal
 import OAuthCallback from "./pages/OAuthCallback";
@@ -74,14 +77,14 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/cda-builder",           component: CDABuilderPage },
   { path: "/cda-history",           component: CDAHistoryPage },
   { path: "/stuck-deals",           component: StuckDealsPage },
-  { path: "/tasks",                 component: PlaceholderPage },
+  { path: "/tasks",                 component: TasksPage },
 
   // Analytics
   { path: "/trends",      component: TrendsPage },
   { path: "/forecasting", component: ForecastingPage },
   { path: "/goals",       component: GoalsPage },
   { path: "/timeline",    component: TimelinePage },
-  { path: "/velocity",    component: PlaceholderPage },
+  { path: "/velocity",    component: VelocityPage },
   { path: "/compare",     component: ComparePage },
   { path: "/comparison",  component: ComparisonPage },
   { path: "/market",      component: MarketPage },
@@ -95,7 +98,7 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/lead-roi",        component: LeadROIPage },
 
   // Finance & Ops
-  { path: "/agent-billing", component: PlaceholderPage },
+  { path: "/agent-billing", component: AgentBillingPage },
   { path: "/quickbooks",    component: PlaceholderPage },
   { path: "/templates",     component: CommissionTemplates },
 
