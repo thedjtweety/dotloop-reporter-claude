@@ -559,6 +559,58 @@ The following pages were designed and built with consistent patterns in this pro
 
 ---
 
+## DrillDownModal — Universal Drill-Down Component
+
+**File:** `client/src/components/DrillDownModal.tsx`
+**Import alias (backward-compat):** `client/src/components/TxDrillModal.tsx`
+
+> Note: the previous transaction-table component formerly at `DrillDownModal.tsx` was renamed to `LegacyTransactionDrillModal.tsx` (used by `Home.tsx` and `DataHealthCheck.tsx`). The name `DrillDownModal` now refers to the universal drill-down component below.
+
+Every page that shows clickable metrics uses this component. It provides a two-level drill-down experience:
+- **Level 1:** Paginated, searchable, filterable, sortable transaction list
+- **Level 2:** Full property detail view for any clicked row
+
+### Usage (any page)
+```typescript
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
+
+const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
+
+// Open the modal:
+setDrillTarget({ title: 'Closed Transactions', records: closedRecords });
+
+// In JSX:
+<TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
+```
+
+### Props
+| Prop | Type | Description |
+|---|---|---|
+| `target` | `DrillTarget \| null` | `null` = closed, non-null = open |
+| `onClose` | `() => void` | Called when user closes the modal |
+
+### DrillTarget
+```typescript
+interface DrillTarget {
+  title: string;            // Modal header title
+  records: DotloopRecord[]; // Transactions to show
+  subtitle?: string;        // Optional override subtitle
+}
+```
+
+### Features
+- Pagination: 25/50/100 rows, page size saved to localStorage
+- Search: real-time filtering on address, agent, status
+- Filters: status, agent, date range dropdowns
+- Sort: click any column header to sort asc/desc
+- Level 2: click any row to see full property detail (all DotloopRecord fields)
+- Breadcrumb navigation + Backspace key to go back
+- Export CSV (all filtered records or single record)
+- Copy address to clipboard
+- Keyboard: Escape closes, Backspace goes back one level
+
+---
+
 ## SidebarLayout
 
 `SidebarLayout.tsx` is the main shell. It:
