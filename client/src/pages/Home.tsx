@@ -91,7 +91,7 @@ import PropertyTypeChart from '@/components/charts/PropertyTypeChart';
 import GeographicChart from '@/components/charts/GeographicChart';
 import SalesTimelineChart from '@/components/charts/SalesTimelineChart';
 import AgentLeaderboardWithExport from '@/components/AgentLeaderboardWithExport';
-import DrillDownModal from '@/components/DrillDownModal';
+import DrillDownModal from '@/components/LegacyTransactionDrillModal';
 import DataHealthCheck from '@/components/DataHealthCheck';
 import CommissionPlansManager from '@/components/CommissionPlansManager';
 import TeamManager from '@/components/TeamManager';

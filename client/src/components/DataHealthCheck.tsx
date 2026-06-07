@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import DrillDownModal from './DrillDownModal';
+import DrillDownModal from './LegacyTransactionDrillModal';
 
 interface DataHealthCheckProps {
   records: DotloopRecord[];
