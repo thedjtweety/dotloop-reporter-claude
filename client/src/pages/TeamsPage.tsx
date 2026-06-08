@@ -133,7 +133,7 @@ export default function TeamsPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total GCI', value: formatCurrency(totalGCI), icon: DollarSign, color: 'text-emerald-400', records: filteredRecords.filter(r => (r.commissionTotal || 0) > 0) },
-          { label: 'Closed Deals', value: String(totalDeals), icon: Home, color: 'text-blue-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Closed Deals', value: String(totalDeals), icon: Home, color: 'text-blue-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
           { label: 'Sales Volume', value: formatCurrency(totalVolume), icon: TrendingUp, color: 'text-purple-400', records: filteredRecords },
         ].map(m => (
           <div key={m.label} className="bg-secondary border border-border rounded-xl p-5 cursor-pointer hover:opacity-80 transition-opacity"

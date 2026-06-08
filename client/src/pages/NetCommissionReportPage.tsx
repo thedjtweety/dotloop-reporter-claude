@@ -336,7 +336,7 @@ export default function NetCommissionReportPage() {
                   ${filteredAgents.reduce((sum, a) => sum + a.totalGrossCommission, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}
                 </p>
               </Card>
-              <Card className="p-4 cursor-pointer hover:bg-secondary/60 transition-colors" onClick={() => setDrillTarget({ title: 'Net Commission', records: reportRecords.filter(r => r.loopStatus === 'Closed') })}>
+              <Card className="p-4 cursor-pointer hover:bg-secondary/60 transition-colors" onClick={() => setDrillTarget({ title: 'Net Commission', records: reportRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') })}>
                 <p className="text-xs font-medium text-muted-foreground uppercase">Total Net Commission</p>
                 <p className="text-2xl font-bold text-primary mt-2">
                   ${filteredAgents.reduce((sum, a) => sum + a.totalNetCommission, 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}

@@ -507,7 +507,7 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
 
   return (
     <Dialog open={!!target} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-[95vw] min-w-[800px] bg-background border border-border p-0 flex flex-col overflow-hidden" style={{ height: '90vh' }}>
+      <DialogContent className="sm:max-w-none bg-background border border-border p-0 flex flex-col overflow-hidden" style={{ width: '90vw', maxWidth: '90vw', height: '85vh' }}>
         {selectedRecord ? <Level2View /> : <Level1View />}
       </DialogContent>
     </Dialog>

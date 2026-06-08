@@ -69,7 +69,7 @@ export default function VelocityPage() {
 
   // Only closed deals with dates
   const closed = useMemo(
-    () => filteredRecords.filter(r => r.loopStatus === 'Closed' && r.closingDate),
+    () => filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold' && r.closingDate),
     [filteredRecords],
   );
 

@@ -119,7 +119,7 @@ export default function MarketPage() {
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Total Volume', value: formatCurrency(totalVolume), sub: `${totalDeals} transactions`, color: 'text-emerald-400', records: allRecords },
-          { label: 'Avg Sale Price', value: formatCurrency(avgPrice), sub: 'per transaction', color: 'text-blue-400', records: allRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Avg Sale Price', value: formatCurrency(avgPrice), sub: 'per transaction', color: 'text-blue-400', records: allRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
           { label: 'Markets Active', value: Object.keys(stateMap).length.toString(), sub: 'states/regions', color: 'text-purple-400', records: allRecords },
           { label: 'Top Market', value: topState?.state || '—', sub: topState ? formatCurrency(topState.volume) : '', color: 'text-orange-400', records: topState ? allRecords.filter(r => r.state === topState.state) : [] },
         ].map(card => (

@@ -292,7 +292,7 @@ export default function AgentBillingPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Billed',   value: compactCurrency(grandTotal),   icon: <DollarSign className="w-4 h-4 text-blue-400" />,    color: 'text-blue-400',    records: filteredRecords },
-          { label: 'Collected',      value: compactCurrency(grandPaid),    icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Collected',      value: compactCurrency(grandPaid),    icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
           { label: 'Pending',        value: compactCurrency(grandPending), icon: <Clock className="w-4 h-4 text-yellow-400" />,       color: 'text-yellow-400',  records: filteredRecords.filter(r => r.loopStatus === 'Under Contract') },
           { label: 'Overdue',        value: compactCurrency(grandOverdue), icon: <AlertTriangle className="w-4 h-4 text-red-400" />,  color: 'text-red-400',     records: filteredRecords.filter(r => r.loopStatus === 'Active' || r.loopStatus === 'Active Listing') },
         ].map(k => (

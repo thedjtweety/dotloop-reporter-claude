@@ -90,7 +90,7 @@ function AgentDrillDown({
   const agentRecords = records.filter(r =>
     (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
   );
-  const closedRecords = agentRecords.filter(r => r.loopStatus === 'Closed');
+  const closedRecords = agentRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold');
   const activeRecords = agentRecords.filter(r => r.loopStatus === 'Active' || r.loopStatus === 'Active Listing');
   const ucRecords = agentRecords.filter(r => r.loopStatus === 'Under Contract');
 
@@ -215,7 +215,7 @@ function AgentDrillDown({
                       <td className="py-2 pr-3 text-foreground truncate max-w-[160px]">{r.address || r.loopName || '—'}</td>
                       <td className="py-2 pr-3">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          r.loopStatus === 'Closed' ? 'bg-emerald-500/20 text-emerald-400' :
+                          r.loopStatus === 'Closed' || r.loopStatus === 'Sold' ? 'bg-emerald-500/20 text-emerald-400' :
                           r.loopStatus === 'Under Contract' ? 'bg-yellow-500/20 text-yellow-400' :
                           'bg-secondary text-muted-foreground'
                         }`}>{r.loopStatus || '—'}</span>
@@ -370,8 +370,8 @@ export default function AgentsPage() {
         {[
           { label: 'Total Agents', value: enriched.length.toString(), icon: <Users className="w-4 h-4 text-blue-400" />, color: 'text-blue-400', records: filteredRecords },
           { label: 'Combined GCI', value: compactCurrency(totalGCI), icon: <DollarSign className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', records: filteredRecords.filter(r => (r.commissionTotal || 0) > 0) },
-          { label: 'Avg Close Rate', value: `${avgCloseRate.toFixed(0)}%`, icon: <Target className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
-          { label: 'Avg Days to Close', value: `${avgDays.toFixed(0)}d`, icon: <Clock className="w-4 h-4 text-purple-400" />, color: 'text-purple-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Avg Close Rate', value: `${avgCloseRate.toFixed(0)}%`, icon: <Target className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
+          { label: 'Avg Days to Close', value: `${avgDays.toFixed(0)}d`, icon: <Clock className="w-4 h-4 text-purple-400" />, color: 'text-purple-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
         ].map(kpi => (
           <div key={kpi.label}
             onClick={() => setDrillTarget({ title: kpi.label, records: kpi.records })}
@@ -621,7 +621,7 @@ export default function AgentsPage() {
                           const recs = filteredRecords.filter(r =>
                             (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
                           );
-                          const closed = recs.filter(r => r.loopStatus === 'Closed');
+                          const closed = recs.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold');
                           const record = (closed.length > 0 ? closed : recs)
                             .sort((a, b) => new Date(b.closingDate || '').getTime() - new Date(a.closingDate || '').getTime())[0];
                           if (record) {

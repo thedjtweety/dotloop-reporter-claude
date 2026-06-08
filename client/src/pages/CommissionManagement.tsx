@@ -267,7 +267,7 @@ export default function CommissionManagement() {
 
   const totalGCI = useMemo(() => filteredRecords.reduce((s, r) => s + (r.commissionTotal || 0), 0), [filteredRecords]);
   const totalCompanyDollar = useMemo(() => filteredRecords.reduce((s, r) => s + (r.companyDollar || 0), 0), [filteredRecords]);
-  const totalClosed = useMemo(() => filteredRecords.filter(r => r.loopStatus === 'Closed').length, [filteredRecords]);
+  const totalClosed = useMemo(() => filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold').length, [filteredRecords]);
 
   const handleDelete = (id: string) => setPlans(prev => prev.filter(p => p.id !== id));
   const handleCopy = (plan: CommissionPlan) =>
@@ -311,7 +311,7 @@ export default function CommissionManagement() {
           {[
             { label: 'Total GCI', value: formatCurrency(totalGCI), icon: <DollarSign className="w-4 h-4 text-emerald-400" />, records: filteredRecords.filter(r => (r.commissionTotal || 0) > 0) },
             { label: 'Company Dollar', value: formatCurrency(totalCompanyDollar), icon: <TrendingUp className="w-4 h-4 text-blue-400" />, records: filteredRecords.filter(r => (r.companyDollar || 0) > 0) },
-            { label: 'Closed Deals', value: String(totalClosed), icon: <CheckCircle2 className="w-4 h-4 text-purple-400" />, records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+            { label: 'Closed Deals', value: String(totalClosed), icon: <CheckCircle2 className="w-4 h-4 text-purple-400" />, records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
           ].map(k => (
             <div key={k.label} onClick={() => setDrillTarget({ title: k.label, records: k.records })} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors">
               <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>

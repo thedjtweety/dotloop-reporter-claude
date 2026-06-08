@@ -147,7 +147,7 @@ export default function LeadROIPage() {
           },
         ].map(k => (
           <div key={k.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/50 transition-colors"
-            onClick={() => setDrillTarget({ title: k.label, records: filteredRecords.filter(r => r.loopStatus === 'Closed') })}>
+            onClick={() => setDrillTarget({ title: k.label, records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') })}>
             <div className="p-2 bg-secondary rounded-lg">{k.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{k.label}</p>
@@ -249,7 +249,7 @@ export default function LeadROIPage() {
                     className="border-b border-border/60 hover:bg-secondary/30 transition-colors cursor-pointer"
                     onClick={() => {
                       setHighlightSource(h => h === row.source ? null : row.source);
-                      setDrillTarget({ title: `${row.source} — Lead Source`, records: filteredRecords.filter(r => r.loopStatus === 'Closed' && (r.leadSource || 'Unknown') === row.source) });
+                      setDrillTarget({ title: `${row.source} — Lead Source`, records: filteredRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold' && (r.leadSource || 'Unknown') === row.source) });
                     }}
                   >
                     <td className="px-4 py-3">

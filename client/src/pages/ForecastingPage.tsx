@@ -112,8 +112,8 @@ export default function ForecastingPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Projected Annual GCI', value: formatCurrency(projectedAnnualGCI), sub: `${scenario} scenario`, icon: '📈', color: 'text-emerald-400', records: allRecords.filter(r => r.loopStatus === 'Closed') },
-          { label: 'GCI Earned YTD', value: formatCurrency(earnedGCI), sub: `${currentMonth + 1} months`, icon: '$', color: 'text-blue-400', records: allRecords.filter(r => r.loopStatus === 'Closed' && r.closingDate && new Date(r.closingDate).getFullYear() === new Date().getFullYear()) },
+          { label: 'Projected Annual GCI', value: formatCurrency(projectedAnnualGCI), sub: `${scenario} scenario`, icon: '📈', color: 'text-emerald-400', records: allRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold') },
+          { label: 'GCI Earned YTD', value: formatCurrency(earnedGCI), sub: `${currentMonth + 1} months`, icon: '$', color: 'text-blue-400', records: allRecords.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold' && r.closingDate && new Date(r.closingDate).getFullYear() === new Date().getFullYear()) },
           { label: 'Remaining Months', value: remainingMonths.toString(), sub: 'to year end', icon: '📅', color: 'text-purple-400', records: allRecords },
           { label: 'Active Pipeline', value: pipelineStages[0].count + pipelineStages[1].count, sub: 'deals in progress', icon: '◎', color: 'text-orange-400', records: allRecords.filter(r => { const s = r.loopStatus?.toLowerCase() || ''; return s.includes('active') || s.includes('contract') || s.includes('pending'); }) },
         ].map(card => (
@@ -281,7 +281,7 @@ export default function ForecastingPage() {
                       <td className="py-2 pr-4 text-foreground">{r.address || r.loopName || '—'}</td>
                       <td className="py-2 pr-4">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          r.loopStatus === 'Closed' ? 'bg-emerald-500/20 text-emerald-400'
+                          r.loopStatus === 'Closed' || r.loopStatus === 'Sold' ? 'bg-emerald-500/20 text-emerald-400'
                           : r.loopStatus === 'Under Contract' ? 'bg-blue-500/20 text-blue-400'
                           : 'bg-secondary text-muted-foreground'
                         }`}>{r.loopStatus || '—'}</span>

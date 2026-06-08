@@ -138,6 +138,23 @@ function SectionLabel({ children, sub }: { children: React.ReactNode; sub?: stri
   );
 }
 
+// ─── Status helpers (demo uses 'Sold', real CSVs use 'Closed') ────────────────
+
+function isClosed(r: { loopStatus?: string }) {
+  const s = r.loopStatus || '';
+  return s === 'Closed' || s === 'Sold';
+}
+function isActive(r: { loopStatus?: string }) {
+  const s = r.loopStatus || '';
+  return s === 'Active' || s === 'Active Listing' || s === 'Active Listings';
+}
+function isUnderContract(r: { loopStatus?: string }) {
+  return (r.loopStatus || '') === 'Under Contract';
+}
+function isArchived(r: { loopStatus?: string }) {
+  return (r.loopStatus || '') === 'Archived';
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -150,6 +167,12 @@ export default function Dashboard() {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const visibleActions = ACTION_ITEMS.filter(a => !dismissed.has(a.id));
+
+  // ── Pre-filtered record sets (used for drill-down modals) ──
+  const closedRecs   = filteredRecords.filter(isClosed);
+  const activeRecs   = filteredRecords.filter(isActive);
+  const ucRecs       = filteredRecords.filter(isUnderContract);
+  const archivedRecs = filteredRecords.filter(isArchived);
 
   // ── Metrics from context ──
   const totalTx      = metrics?.totalTransactions ?? 0;
@@ -171,7 +194,7 @@ export default function Dashboard() {
   const q2Closed = useMemo(() =>
     filteredRecords
       .filter(r => {
-        if (r.loopStatus !== 'Closed') return false;
+        if (!isClosed(r)) return false;
         const d = r.closingDate ? new Date(r.closingDate) : null;
         return d && d >= q2Start && d <= q2End;
       })
@@ -180,7 +203,7 @@ export default function Dashboard() {
 
   const pipelineGCI = useMemo(() =>
     filteredRecords
-      .filter(r => r.loopStatus === 'Under Contract')
+      .filter(isUnderContract)
       .reduce((s, r) => s + (r.commissionTotal || 0), 0),
   [filteredRecords]);
 
@@ -210,30 +233,30 @@ export default function Dashboard() {
   const pipelineBreakdown = useMemo(() => [
     {
       label: 'Sold / Closed', count: closed, color: '#10b981',
-      filter: (s: string) => s === 'Closed',
-      volume: filteredRecords.filter(r => r.loopStatus === 'Closed').reduce((s, r) => s + (r.salePrice || 0), 0),
+      records: closedRecs,
+      volume: closedRecs.reduce((s, r) => s + (r.salePrice || 0), 0),
     },
     {
       label: 'Active Listings', count: active, color: '#3b82f6',
-      filter: (s: string) => s === 'Active' || s === 'Active Listing',
-      volume: filteredRecords.filter(r => r.loopStatus === 'Active' || r.loopStatus === 'Active Listing').reduce((s, r) => s + (r.price || 0), 0),
+      records: activeRecs,
+      volume: activeRecs.reduce((s, r) => s + (r.price || 0), 0),
     },
     {
       label: 'Under Contract', count: underContract, color: '#f59e0b',
-      filter: (s: string) => s === 'Under Contract',
-      volume: filteredRecords.filter(r => r.loopStatus === 'Under Contract').reduce((s, r) => s + (r.salePrice || r.price || 0), 0),
+      records: ucRecs,
+      volume: ucRecs.reduce((s, r) => s + (r.salePrice || r.price || 0), 0),
     },
     {
       label: 'Archived', count: archived, color: '#64748b',
-      filter: (s: string) => s === 'Archived',
+      records: archivedRecs,
       volume: 0,
     },
-  ], [filteredRecords, closed, active, underContract, archived]);
+  ], [closedRecs, activeRecs, ucRecs, archivedRecs, closed, active, underContract, archived]);
 
   // ── Projected to close ──
   const ucVolume = useMemo(() =>
-    filteredRecords.filter(r => r.loopStatus === 'Under Contract').reduce((s, r) => s + (r.salePrice || r.price || 0), 0),
-  [filteredRecords]);
+    ucRecs.reduce((s, r) => s + (r.salePrice || r.price || 0), 0),
+  [ucRecs]);
 
   const projected = {
     deals:   { '30': Math.round(underContract * 0.4), '60': Math.round(underContract * 0.7), '90': Math.round(underContract * 0.9) },
@@ -352,12 +375,13 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5">
           {[
-            { label: 'Closed Q2 GCI',  value: compactCurrency(q2Closed),   sub: 'Year to date' },
-            { label: 'Pipeline GCI',   value: compactCurrency(pipelineGCI), sub: 'Under contract' },
-            { label: 'Q2 Target',      value: compactCurrency(q2Target),    sub: 'Brokerage goal' },
-            { label: 'Forecast EOQ',   value: compactCurrency(forecastEOQ), sub: `${riskAdjust[0]}% conversion` },
+            { label: 'Closed Q2 GCI',  value: compactCurrency(q2Closed),   sub: 'Year to date',            records: closedRecs },
+            { label: 'Pipeline GCI',   value: compactCurrency(pipelineGCI), sub: 'Under contract',          records: ucRecs },
+            { label: 'Q2 Target',      value: compactCurrency(q2Target),    sub: 'Brokerage goal',          records: filteredRecords },
+            { label: 'Forecast EOQ',   value: compactCurrency(forecastEOQ), sub: `${riskAdjust[0]}% conversion`, records: [...closedRecs, ...ucRecs] },
           ].map(m => (
-            <div key={m.label}>
+            <div key={m.label} className="cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setDrillTarget({ title: m.label, records: m.records })}>
               <p className="text-muted-foreground text-xs mb-1">{m.label}</p>
               <p className="text-foreground text-xl font-bold tabular-nums">{m.value}</p>
               <p className="text-muted-foreground text-xs">{m.sub}</p>
@@ -382,11 +406,13 @@ export default function Dashboard() {
         {/* Pipeline funnel */}
         <div className="flex gap-3 flex-wrap">
           {[
-            { label: 'Active',         count: active,        volume: filteredRecords.filter(r => r.loopStatus === 'Active' || r.loopStatus === 'Active Listing').reduce((s, r) => s + (r.price || 0), 0), color: 'text-blue-400' },
-            { label: 'Under Contract', count: underContract, volume: filteredRecords.filter(r => r.loopStatus === 'Under Contract').reduce((s, r) => s + (r.salePrice || 0), 0), color: 'text-yellow-400' },
-            { label: 'Closed',         count: closed,        volume: filteredRecords.filter(r => r.loopStatus === 'Closed').reduce((s, r) => s + (r.salePrice || 0), 0), color: 'text-emerald-400' },
+            { label: 'Active',         count: active,        records: activeRecs, volume: activeRecs.reduce((s, r) => s + (r.price || 0), 0),            color: 'text-blue-400' },
+            { label: 'Under Contract', count: underContract, records: ucRecs,     volume: ucRecs.reduce((s, r) => s + (r.salePrice || 0), 0),             color: 'text-yellow-400' },
+            { label: 'Closed',         count: closed,        records: closedRecs, volume: closedRecs.reduce((s, r) => s + (r.salePrice || 0), 0),         color: 'text-emerald-400' },
           ].map(f => (
-            <div key={f.label} className="flex-1 min-w-[100px] bg-secondary rounded-lg px-4 py-3 text-center">
+            <div key={f.label}
+              onClick={() => setDrillTarget({ title: `${f.label} — ${f.count} transactions`, records: f.records })}
+              className="flex-1 min-w-[100px] bg-secondary rounded-lg px-4 py-3 text-center cursor-pointer hover:opacity-80 transition-opacity">
               <p className={`text-2xl font-bold tabular-nums ${f.color}`}>{f.count}</p>
               <p className="text-foreground text-xs font-medium mt-0.5">{f.label}</p>
               <p className="text-muted-foreground text-xs mt-0.5">{compactCurrency(f.volume)}</p>
@@ -412,7 +438,7 @@ export default function Dashboard() {
             sub: `Avg ${compactCurrency(totalVolume / Math.max(closed, 1))} / deal`,
             icon: <DollarSign className="w-5 h-5 text-emerald-400" />,
             border: 'border-emerald-500/25',
-            drill: { title: 'Closed by Volume', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+            drill: { title: 'Closed by Volume', records: closedRecs },
           },
           {
             label: 'Closing Rate',
@@ -420,7 +446,7 @@ export default function Dashboard() {
             sub: `${closed} of ${totalTx} transactions`,
             icon: <Target className="w-5 h-5 text-yellow-400" />,
             border: 'border-yellow-500/25',
-            drill: { title: 'Closed Deals', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+            drill: { title: 'Closed Deals', records: closedRecs },
           },
           {
             label: 'Pipeline Status',
@@ -430,7 +456,7 @@ export default function Dashboard() {
             border: 'border-purple-500/25',
             drill: {
               title: 'Active Pipeline',
-              records: filteredRecords.filter(r => r.loopStatus === 'Under Contract' || r.loopStatus === 'Active' || r.loopStatus === 'Active Listing'),
+              records: [...ucRecs, ...activeRecs],
             },
           },
         ].map(card => (
@@ -459,10 +485,7 @@ export default function Dashboard() {
             {pipelineBreakdown.map(item => (
               <div
                 key={item.label}
-                onClick={() => setDrillTarget({
-                  title: item.label,
-                  records: filteredRecords.filter(r => item.filter(r.loopStatus || '')),
-                })}
+                onClick={() => setDrillTarget({ title: item.label, records: item.records })}
                 className="flex items-center justify-between border-l-4 pl-3 py-2.5 rounded-r-lg hover:bg-secondary cursor-pointer transition-colors"
                 style={{ borderLeftColor: item.color }}
               >
@@ -494,11 +517,13 @@ export default function Dashboard() {
               <TabsContent key={t} value={t}>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { label: 'Projected Deals',   value: projected.deals[t].toString(),      color: 'text-blue-400' },
-                    { label: 'Projected Revenue', value: compactCurrency(projected.revenue[t]), color: 'text-emerald-400' },
-                    { label: 'Close Rate',         value: `${closingRate.toFixed(0)}%`,        color: 'text-yellow-400' },
+                    { label: 'Projected Deals',   value: projected.deals[t].toString(),         color: 'text-blue-400',    records: ucRecs },
+                    { label: 'Projected Revenue', value: compactCurrency(projected.revenue[t]),  color: 'text-emerald-400', records: ucRecs },
+                    { label: 'Close Rate',         value: `${closingRate.toFixed(0)}%`,           color: 'text-yellow-400',  records: closedRecs },
                   ].map(m => (
-                    <div key={m.label} className="bg-secondary rounded-lg p-3 text-center">
+                    <div key={m.label}
+                      onClick={() => setDrillTarget({ title: m.label, records: m.records })}
+                      className="bg-secondary rounded-lg p-3 text-center cursor-pointer hover:opacity-80 transition-opacity">
                       <p className={`text-xl font-bold tabular-nums ${m.color}`}>{m.value}</p>
                       <p className="text-muted-foreground text-xs mt-1 leading-tight">{m.label}</p>
                     </div>
@@ -529,7 +554,14 @@ export default function Dashboard() {
           {weekDays.map(day => (
             <div
               key={day.label}
-              className={`rounded-xl p-3 text-center transition-colors ${
+              onClick={() => day.count > 0 && setDrillTarget({
+                title: `Closing ${day.label} (${day.day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`,
+                records: filteredRecords.filter(r => {
+                  const d = r.closingDate ? new Date(r.closingDate) : null;
+                  return d && !isNaN(d.getTime()) && isSameDay(d, day.day);
+                }),
+              })}
+              className={`rounded-xl p-3 text-center transition-colors ${day.count > 0 ? 'cursor-pointer hover:opacity-80' : ''} ${
                 day.isToday
                   ? 'bg-blue-600/15 border border-blue-500/40'
                   : 'bg-secondary border border-transparent'
@@ -668,12 +700,14 @@ export default function Dashboard() {
         <SectionLabel>Brokerage Health</SectionLabel>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
-            { label: 'Net to Brokerage', value: compactCurrency(companyDollar),           sub: 'Company dollar YTD', color: 'text-emerald-400' },
-            { label: 'Avg GCI per Deal',  value: compactCurrency(avgGCI),                  sub: `Based on ${totalTx} deals`,   color: 'text-blue-400' },
-            { label: 'Caps Collected',    value: compactCurrency(totalGCI * 0.08),          sub: 'Est. from GCI',         color: 'text-yellow-400' },
-            { label: 'Agent Retention',   value: '96%',                                     sub: '1 agent lost YTD',      color: 'text-purple-400' },
+            { label: 'Net to Brokerage', value: compactCurrency(companyDollar),  sub: 'Company dollar YTD',    color: 'text-emerald-400', records: closedRecs },
+            { label: 'Avg GCI per Deal',  value: compactCurrency(avgGCI),         sub: `Based on ${totalTx} deals`, color: 'text-blue-400',    records: closedRecs },
+            { label: 'Caps Collected',    value: compactCurrency(totalGCI * 0.08), sub: 'Est. from GCI',         color: 'text-yellow-400',  records: closedRecs },
+            { label: 'Agent Retention',   value: '96%',                            sub: '1 agent lost YTD',      color: 'text-purple-400',  records: filteredRecords },
           ].map(m => (
-            <div key={m.label}>
+            <div key={m.label}
+              onClick={() => setDrillTarget({ title: m.label, records: m.records })}
+              className="cursor-pointer hover:opacity-80 transition-opacity">
               <p className="text-muted-foreground text-xs mb-1">{m.label}</p>
               <p className={`text-2xl font-bold tabular-nums ${m.color}`}>{m.value}</p>
               <p className="text-muted-foreground text-xs mt-1">{m.sub}</p>
