@@ -181,7 +181,11 @@ export default function TeamsPage() {
                 contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }}
                 formatter={(v: number) => sortBy === 'closedDeals' ? [v, 'Deals'] : [formatCurrency(v), '']}
               />
-              <Bar dataKey={sortBy} radius={[4, 4, 0, 0]}>
+              <Bar dataKey={sortBy} radius={[4, 4, 0, 0]} cursor="pointer"
+                onClick={(data: any) => {
+                  const names: string[] = data?.agentNames || [];
+                  setDrillTarget({ title: `${data.name} — Transactions`, records: filteredRecords.filter(r => names.some(n => (r.agents || '').includes(n))) });
+                }}>
                 {sorted.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Bar>
             </BarChart>

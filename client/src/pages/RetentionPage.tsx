@@ -185,6 +185,8 @@ export default function RetentionPage() {
   // Tenure distribution
   const tenureDist = TENURE_BUCKETS.map(b => ({
     label: b.label,
+    min: b.min,
+    max: b.max,
     count: agents.filter(a => a.tenureMonths >= b.min && a.tenureMonths < b.max).length,
   }));
 
@@ -308,7 +310,11 @@ export default function RetentionPage() {
                 contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
                 formatter={(v: number) => [v, 'Agents']}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} cursor="pointer"
+                onClick={(data: any) => {
+                  const names = agents.filter(a => a.tenureMonths >= data.min && a.tenureMonths < data.max).map(a => a.agentName);
+                  setDrillTarget({ title: `Tenure ${data.label} — Transactions`, records: filteredRecords.filter(r => names.some(n => (r.agents || '').includes(n))) });
+                }}>
                 {tenureDist.map((b, i) => (
                   <Cell key={i} fill={b.label === '< 6 mo' ? '#ef4444' : b.label === '6–12 mo' ? '#f59e0b' : '#10b981'} />
                 ))}

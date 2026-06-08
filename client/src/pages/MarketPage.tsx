@@ -61,6 +61,8 @@ export default function MarketPage() {
   ];
   const priceData = priceRanges.map(r => ({
     label: r.label,
+    min: r.min,
+    max: r.max,
     count: allRecords.filter(rec => {
       const p = rec.salePrice || rec.price || 0;
       return p >= r.min && p < r.max;
@@ -220,7 +222,8 @@ export default function MarketPage() {
                 contentStyle={{ background: '#0f1923', border: '1px solid #1e2d3d', borderRadius: 8 }}
                 labelStyle={{ color: '#fff' }}
               />
-              <Bar dataKey="deals" fill="#10b981" radius={[4, 4, 0, 0]} name="Deals" />
+              <Bar dataKey="deals" fill="#10b981" radius={[4, 4, 0, 0]} name="Deals" cursor="pointer"
+                onClick={(data: any) => setDrillTarget({ title: `${data.month} — Transactions`, records: allRecords.filter(r => { const d = r.closingDate ? new Date(r.closingDate) : null; return d && d.toLocaleString('default', { month: 'short' }) === data.month; }) })} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -277,7 +280,8 @@ export default function MarketPage() {
               <XAxis dataKey="label" stroke="#4b5563" tick={{ fill: '#9ca3af', fontSize: 11 }} />
               <YAxis stroke="#4b5563" tick={{ fill: '#9ca3af', fontSize: 12 }} />
               <Tooltip contentStyle={{ background: '#0f1923', border: '1px solid #1e2d3d', borderRadius: 8 }} labelStyle={{ color: '#fff' }} />
-              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Deals" />
+              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Deals" cursor="pointer"
+                onClick={(data: any) => setDrillTarget({ title: `${data.label} — Transactions`, records: allRecords.filter(rec => { const p = rec.salePrice || rec.price || 0; return p >= data.min && p < data.max; }) })} />
             </BarChart>
           </ResponsiveContainer>
         </div>

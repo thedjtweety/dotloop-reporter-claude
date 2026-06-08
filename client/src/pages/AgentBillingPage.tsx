@@ -233,6 +233,7 @@ export default function AgentBillingPage() {
   // Chart data — billed by agent (top 8)
   const chartData = sortedSummaries.slice(0, 8).map(a => ({
     name: a.agentName.split(' ')[0],
+    fullName: a.agentName,
     paid: a.totalPaid,
     pending: a.totalPending + a.totalOverdue,
     color: a.color,
@@ -318,8 +319,10 @@ export default function AgentBillingPage() {
               contentStyle={{ background: 'var(--background)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--foreground)' }}
               formatter={(v: number, name: string) => [formatCurrency(v), name === 'paid' ? 'Paid' : 'Outstanding']}
             />
-            <Bar dataKey="paid" name="paid" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="pending" name="pending" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="paid" name="paid" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} cursor="pointer"
+              onClick={(data: any) => data?.fullName && setDrillTarget({ title: `${data.fullName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(data.fullName)) })} />
+            <Bar dataKey="pending" name="pending" stackId="a" fill="#f59e0b" radius={[4, 4, 0, 0]} cursor="pointer"
+              onClick={(data: any) => data?.fullName && setDrillTarget({ title: `${data.fullName} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(data.fullName)) })} />
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -28,15 +28,20 @@ export default function TimelinePage() {
     { label: '120+', min: 120, max: Infinity },
   ];
 
+  const inBucket = (r: any, min: number, max: number) => {
+    if (!r.closingDate) return false;
+    const close = new Date(r.closingDate);
+    const open = r.createdDate ? new Date(r.createdDate) : null;
+    if (!open) return false;
+    const days = (close.getTime() - open.getTime()) / (1000 * 60 * 60 * 24);
+    return days >= min && days < max;
+  };
+
   const dtcData = dtcBuckets.map(b => ({
     label: b.label,
-    count: closedRecords.filter(r => {
-      const close = new Date(r.closingDate!);
-      const open = r.createdDate ? new Date(r.createdDate) : null;
-      if (!open) return false;
-      const days = (close.getTime() - open.getTime()) / (1000 * 60 * 60 * 24);
-      return days >= b.min && days < b.max;
-    }).length,
+    min: b.min,
+    max: b.max,
+    count: closedRecords.filter(r => inBucket(r, b.min, b.max)).length,
   }));
 
   const avgDaysToClose = (() => {
@@ -187,7 +192,8 @@ export default function TimelinePage() {
                   <XAxis dataKey="label" stroke="#4b5563" tick={{ fill: '#9ca3af', fontSize: 11 }} />
                   <YAxis stroke="#4b5563" tick={{ fill: '#9ca3af', fontSize: 12 }} />
                   <Tooltip contentStyle={{ background: '#0f1923', border: '1px solid #1e2d3d', borderRadius: 8 }} labelStyle={{ color: '#fff' }} />
-                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name="Transactions" />
+                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name="Transactions" cursor="pointer"
+                    onClick={(data: any) => setDrillTarget({ title: `${data.label} days to close`, records: closedRecords.filter(r => inBucket(r, data.min, data.max)) })} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -224,7 +230,8 @@ export default function TimelinePage() {
               <YAxis yAxisId="left" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="right" orientation="right" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} />
-              <Bar yAxisId="left" dataKey="deals" fill="#10b981" radius={[4, 4, 0, 0]} name="Deals Closed" />
+              <Bar yAxisId="left" dataKey="deals" fill="#10b981" radius={[4, 4, 0, 0]} name="Deals Closed" cursor="pointer"
+                onClick={(data: any) => setDrillTarget({ title: `${data.month} — Closed`, records: allRecords.filter(r => { const d = r.closingDate ? new Date(r.closingDate) : null; return d && d.toLocaleString('default', { month: 'short' }) === data.month && (r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold')); }) })} />
               <Bar yAxisId="right" dataKey="avgDays" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Avg Days to Close" opacity={0.7} />
             </BarChart>
           </ResponsiveContainer>

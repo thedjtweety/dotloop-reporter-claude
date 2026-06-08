@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -262,6 +263,7 @@ export default function AgentsPage() {
   const [search, setSearch] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [drillDown, setDrillDown] = useState<EnrichedAgent | null>(null);
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
   const [chartMetric, setChartMetric] = useState<'totalCommission' | 'closedDeals' | 'totalSalesVolume'>('totalCommission');
 
   // Enrich with color, initials, rank (ranked by totalCommission desc)
@@ -294,6 +296,7 @@ export default function AgentsPage() {
 
   const chartData = sorted.slice(0, 10).map(a => ({
     name: a.agentName.split(' ')[0],
+    fullName: a.agentName,
     value: a[chartMetric] as number,
     color: a.color,
   }));
@@ -365,12 +368,14 @@ export default function AgentsPage() {
       {/* ── KPI bar ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Agents', value: enriched.length.toString(), icon: <Users className="w-4 h-4 text-blue-400" />, color: 'text-blue-400' },
-          { label: 'Combined GCI', value: compactCurrency(totalGCI), icon: <DollarSign className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400' },
-          { label: 'Avg Close Rate', value: `${avgCloseRate.toFixed(0)}%`, icon: <Target className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400' },
-          { label: 'Avg Days to Close', value: `${avgDays.toFixed(0)}d`, icon: <Clock className="w-4 h-4 text-purple-400" />, color: 'text-purple-400' },
+          { label: 'Total Agents', value: enriched.length.toString(), icon: <Users className="w-4 h-4 text-blue-400" />, color: 'text-blue-400', records: filteredRecords },
+          { label: 'Combined GCI', value: compactCurrency(totalGCI), icon: <DollarSign className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', records: filteredRecords.filter(r => (r.commissionTotal || 0) > 0) },
+          { label: 'Avg Close Rate', value: `${avgCloseRate.toFixed(0)}%`, icon: <Target className="w-4 h-4 text-yellow-400" />, color: 'text-yellow-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'Avg Days to Close', value: `${avgDays.toFixed(0)}d`, icon: <Clock className="w-4 h-4 text-purple-400" />, color: 'text-purple-400', records: filteredRecords.filter(r => r.loopStatus === 'Closed') },
         ].map(kpi => (
-          <div key={kpi.label} className="bg-background border border-border rounded-xl p-4 flex items-center gap-3">
+          <div key={kpi.label}
+            onClick={() => setDrillTarget({ title: kpi.label, records: kpi.records })}
+            className="bg-background border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-secondary/60 transition-colors">
             <div className="p-2 rounded-lg bg-secondary">{kpi.icon}</div>
             <div>
               <p className="text-muted-foreground text-xs">{kpi.label}</p>
@@ -461,7 +466,12 @@ export default function AgentsPage() {
                 chartMetric === 'closedDeals' ? [v, 'Deals'] : [formatCurrency(v), chartMetric === 'totalCommission' ? 'GCI' : 'Volume']
               }
             />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="value" radius={[4, 4, 0, 0]} cursor="pointer"
+              onClick={(data: any) => {
+                const name = data?.fullName as string;
+                if (!name) return;
+                setDrillTarget({ title: `${name} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').toLowerCase().includes(name.toLowerCase())) });
+              }}>
               {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
             </Bar>
           </BarChart>
@@ -677,6 +687,8 @@ export default function AgentsPage() {
           records={filteredRecords}
         />
       )}
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }

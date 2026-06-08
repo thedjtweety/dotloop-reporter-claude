@@ -269,7 +269,8 @@ export default function ComparePage() {
                       />
                       <Legend wrapperStyle={{ fontSize: 11, color: '#9ca3af' }} />
                       {selectedAgents.map(a => (
-                        <Bar key={a.name} dataKey={a.name} fill={a.color} radius={[4, 4, 0, 0]} />
+                        <Bar key={a.name} dataKey={a.name} fill={a.color} radius={[4, 4, 0, 0]} cursor="pointer"
+                          onClick={() => setDrillTarget({ title: `${a.name} — Transactions`, records: filteredRecords.filter(r => (r.agents || '').includes(a.name)) })} />
                       ))}
                     </BarChart>
                   </ResponsiveContainer>

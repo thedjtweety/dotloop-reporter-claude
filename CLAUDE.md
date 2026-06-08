@@ -598,6 +598,9 @@ interface DrillTarget {
 }
 ```
 
+### Sizing
+The modal fills most of the screen: `DialogContent` uses `max-w-6xl w-[95vw] min-w-[800px]` with a fixed `height: 90vh`. The table has `min-width: 760px` and explicit per-column min-widths so columns never collapse on narrow content.
+
 ### Features
 - Pagination: 25/50/100 rows, page size saved to localStorage
 - Search: real-time filtering on address, agent, status

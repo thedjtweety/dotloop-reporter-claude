@@ -238,7 +238,11 @@ export default function TrendsPage() {
                 labelStyle={{ color: '#fff' }}
                 formatter={(v: any) => [formatMetric(v), metricLabel[metric]]}
               />
-              <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} cursor="pointer"
+                onClick={(data: any) => {
+                  const y = parseInt(data.year);
+                  setDrillTarget({ title: `${data.year} Transactions`, records: allRecords.filter(r => { const d = r.closingDate ? new Date(r.closingDate) : null; return d && d.getFullYear() === y; }) });
+                }} />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -279,7 +283,11 @@ export default function TrendsPage() {
               <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => metric === 'deals' ? v : `$${(v/1000).toFixed(0)}K`} />
               <Tooltip contentStyle={{ background: '#0d1117', border: '1px solid #1e2d3d', borderRadius: 8 }} />
               {Array.from(selectedYears).map((y, i) => (
-                <Bar key={y} dataKey={`${y}`} fill={YEAR_COLORS[i % YEAR_COLORS.length]} radius={[4, 4, 0, 0]} name={`${y}`} />
+                <Bar key={y} dataKey={`${y}`} fill={YEAR_COLORS[i % YEAR_COLORS.length]} radius={[4, 4, 0, 0]} name={`${y}`} cursor="pointer"
+                  onClick={(data: any) => {
+                    const q = parseInt(String(data.quarter).replace('Q', ''));
+                    setDrillTarget({ title: `${y} ${data.quarter} Transactions`, records: allRecords.filter(r => { const d = r.closingDate ? new Date(r.closingDate) : null; return d && d.getFullYear() === y && Math.floor(d.getMonth() / 3) + 1 === q; }) });
+                  }} />
               ))}
             </BarChart>
           </ResponsiveContainer>

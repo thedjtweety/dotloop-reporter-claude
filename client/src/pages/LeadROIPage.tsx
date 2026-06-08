@@ -179,8 +179,10 @@ export default function LeadROIPage() {
               formatter={(v: number, name: string) => [formatCurrency(v), name === 'gci' ? 'GCI' : 'Spend']}
             />
             <Legend wrapperStyle={{ fontSize: 11, color: 'var(--muted-foreground)' }} />
-            <Bar dataKey="gci" name="GCI" fill="#10b981" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="spend" name="Spend" fill="#ef4444" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="gci" name="GCI" fill="#10b981" radius={[3, 3, 0, 0]} cursor="pointer"
+              onClick={(data: any) => setDrillTarget({ title: `${data.source} — Lead Source`, records: filteredRecords.filter(r => (r.leadSource || 'Unknown') === data.source) })} />
+            <Bar dataKey="spend" name="Spend" fill="#ef4444" radius={[3, 3, 0, 0]} cursor="pointer"
+              onClick={(data: any) => setDrillTarget({ title: `${data.source} — Lead Source`, records: filteredRecords.filter(r => (r.leadSource || 'Unknown') === data.source) })} />
           </BarChart>
         </ResponsiveContainer>
       </div>

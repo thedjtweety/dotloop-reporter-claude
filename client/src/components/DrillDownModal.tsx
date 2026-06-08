@@ -190,13 +190,13 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
 
   if (!target) return null;
 
-  const SORT_COLUMNS: { field: SortField; label: string; cls: string }[] = [
-    { field: 'address', label: 'Address', cls: 'text-left pl-6 pr-4 py-3' },
-    { field: 'agents', label: 'Agent', cls: 'text-left pr-4 py-3' },
-    { field: 'loopStatus', label: 'Status', cls: 'text-left pr-4 py-3' },
-    { field: 'closingDate', label: 'Closing Date', cls: 'text-left pr-4 py-3' },
-    { field: 'salePrice', label: 'Sale Price', cls: 'text-right pr-4 py-3' },
-    { field: 'commissionTotal', label: 'GCI', cls: 'text-right pr-6 py-3' },
+  const SORT_COLUMNS: { field: SortField; label: string; cls: string; minWidth: number }[] = [
+    { field: 'address', label: 'Address', cls: 'text-left pl-6 pr-4 py-3', minWidth: 200 },
+    { field: 'agents', label: 'Agent', cls: 'text-left pr-4 py-3', minWidth: 140 },
+    { field: 'loopStatus', label: 'Status', cls: 'text-left pr-4 py-3', minWidth: 120 },
+    { field: 'closingDate', label: 'Closing Date', cls: 'text-left pr-4 py-3', minWidth: 120 },
+    { field: 'salePrice', label: 'Sale Price', cls: 'text-right pr-4 py-3', minWidth: 120 },
+    { field: 'commissionTotal', label: 'GCI', cls: 'text-right pr-6 py-3', minWidth: 120 },
   ];
 
   // ---------- LEVEL 2 ----------
@@ -423,16 +423,17 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
               <button onClick={clearFilters} className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 underline">Clear filters</button>
             </div>
           ) : (
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[640px]" style={{ minWidth: 760 }}>
               <thead className="sticky top-0 bg-background z-10 border-b border-border">
                 <tr className="text-muted-foreground text-xs">
                   {SORT_COLUMNS.map(col => (
                     <th key={col.field} className={`${col.cls} font-medium cursor-pointer hover:text-foreground transition-colors select-none`}
+                      style={{ minWidth: col.minWidth }}
                       onClick={() => handleSort(col.field)}>
                       {col.label}<SortIcon field={col.field} />
                     </th>
                   ))}
-                  <th className="w-8 pr-4 py-3" />
+                  <th className="w-8 pr-4 py-3" style={{ minWidth: 40, width: 40 }} />
                 </tr>
               </thead>
               <tbody>
@@ -506,7 +507,7 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
 
   return (
     <Dialog open={!!target} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl w-[95vw] bg-background border border-border p-0 flex flex-col overflow-hidden" style={{ maxHeight: '85vh' }}>
+      <DialogContent className="max-w-6xl w-[95vw] min-w-[800px] bg-background border border-border p-0 flex flex-col overflow-hidden" style={{ height: '90vh' }}>
         {selectedRecord ? <Level2View /> : <Level1View />}
       </DialogContent>
     </Dialog>

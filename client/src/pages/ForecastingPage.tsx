@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DotloopRecord } from '@/lib/csvParser';
+import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -16,6 +17,7 @@ export default function ForecastingPage() {
   const [period, setPeriod] = useState('Q4');
   const [activeTab, setActiveTab] = useState<'pipeline' | 'revenue' | 'agent' | 'market'>('pipeline');
   const [drillAgent, setDrillAgent] = useState<{ name: string; records: DotloopRecord[] } | null>(null);
+  const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 
   const currentMonth = new Date().getMonth();
 
@@ -52,16 +54,16 @@ export default function ForecastingPage() {
 
   // Pipeline stages from records
   const pipelineStages = [
-    { stage: 'Active', count: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('active')).length, color: '#10b981' },
-    { stage: 'Under Contract', count: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('contract') || r.loopStatus?.toLowerCase().includes('pending')).length, color: '#3b82f6' },
-    { stage: 'Closing Soon', count: allRecords.filter(r => {
+    { stage: 'Active', records: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('active')), color: '#10b981' },
+    { stage: 'Under Contract', records: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('contract') || r.loopStatus?.toLowerCase().includes('pending')), color: '#3b82f6' },
+    { stage: 'Closing Soon', records: allRecords.filter(r => {
       const d = r.closingDate ? new Date(r.closingDate) : null;
       if (!d) return false;
       const diff = (d.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
       return diff >= 0 && diff <= 30;
-    }).length, color: '#f59e0b' },
-    { stage: 'Closed', count: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold')).length, color: '#8b5cf6' },
-  ];
+    }), color: '#f59e0b' },
+    { stage: 'Closed', records: allRecords.filter(r => r.loopStatus?.toLowerCase().includes('closed') || r.loopStatus?.toLowerCase().includes('sold')), color: '#8b5cf6' },
+  ].map(s => ({ ...s, count: s.records.length }));
 
   if (!hasData) {
     return (
@@ -110,12 +112,14 @@ export default function ForecastingPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Projected Annual GCI', value: formatCurrency(projectedAnnualGCI), sub: `${scenario} scenario`, icon: '📈', color: 'text-emerald-400' },
-          { label: 'GCI Earned YTD', value: formatCurrency(earnedGCI), sub: `${currentMonth + 1} months`, icon: '$', color: 'text-blue-400' },
-          { label: 'Remaining Months', value: remainingMonths.toString(), sub: 'to year end', icon: '📅', color: 'text-purple-400' },
-          { label: 'Active Pipeline', value: pipelineStages[0].count + pipelineStages[1].count, sub: 'deals in progress', icon: '◎', color: 'text-orange-400' },
+          { label: 'Projected Annual GCI', value: formatCurrency(projectedAnnualGCI), sub: `${scenario} scenario`, icon: '📈', color: 'text-emerald-400', records: allRecords.filter(r => r.loopStatus === 'Closed') },
+          { label: 'GCI Earned YTD', value: formatCurrency(earnedGCI), sub: `${currentMonth + 1} months`, icon: '$', color: 'text-blue-400', records: allRecords.filter(r => r.loopStatus === 'Closed' && r.closingDate && new Date(r.closingDate).getFullYear() === new Date().getFullYear()) },
+          { label: 'Remaining Months', value: remainingMonths.toString(), sub: 'to year end', icon: '📅', color: 'text-purple-400', records: allRecords },
+          { label: 'Active Pipeline', value: pipelineStages[0].count + pipelineStages[1].count, sub: 'deals in progress', icon: '◎', color: 'text-orange-400', records: allRecords.filter(r => { const s = r.loopStatus?.toLowerCase() || ''; return s.includes('active') || s.includes('contract') || s.includes('pending'); }) },
         ].map(card => (
-          <div key={card.label} className="bg-secondary border border-border rounded-xl p-4">
+          <div key={card.label}
+            onClick={() => setDrillTarget({ title: card.label, records: card.records })}
+            className="bg-secondary border border-border rounded-xl p-4 cursor-pointer hover:bg-secondary/60 transition-colors">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{card.icon}</span>
               <span className="text-muted-foreground text-sm">{card.label}</span>
@@ -147,7 +151,9 @@ export default function ForecastingPage() {
       {/* Pipeline stages */}
       <div className="grid grid-cols-4 gap-4 mb-6">
         {pipelineStages.map(stage => (
-          <div key={stage.stage} className="bg-secondary border border-border rounded-xl p-4">
+          <div key={stage.stage}
+            onClick={() => setDrillTarget({ title: `${stage.stage} — Transactions`, records: stage.records })}
+            className="bg-secondary border border-border rounded-xl p-4 cursor-pointer hover:bg-secondary/60 transition-colors">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-3 h-3 rounded-full" style={{ background: stage.color }} />
               <span className="text-muted-foreground text-sm">{stage.stage}</span>
@@ -234,7 +240,17 @@ export default function ForecastingPage() {
               formatter={(v: any) => [formatCurrency(v), '']}
             />
             <ReferenceLine x={MONTHS[currentMonth]} stroke="#4b5563" strokeDasharray="4 4" label={{ value: 'Today', fill: '#9ca3af', fontSize: 11 }} />
-            <Bar dataKey="actual" fill="#10b981" radius={[4, 4, 0, 0]} name="Actual" />
+            <Bar dataKey="actual" fill="#10b981" radius={[4, 4, 0, 0]} name="Actual" cursor="pointer"
+              onClick={(data: any) => {
+                const month = data?.month as string;
+                const mi = MONTHS.indexOf(month);
+                if (mi < 0) return;
+                const recs = allRecords.filter(r => {
+                  const d = r.closingDate ? new Date(r.closingDate) : null;
+                  return d && d.getMonth() === mi && d.getFullYear() === new Date().getFullYear();
+                });
+                setDrillTarget({ title: `${month} ${new Date().getFullYear()} — Transactions`, records: recs });
+              }} />
             <Bar dataKey="forecast" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Forecast" opacity={0.7} />
           </BarChart>
         </ResponsiveContainer>
@@ -283,6 +299,8 @@ export default function ForecastingPage() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
     </div>
   );
 }
