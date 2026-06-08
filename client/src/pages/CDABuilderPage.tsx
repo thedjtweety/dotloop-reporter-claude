@@ -1,6 +1,7 @@
 // @ts-nocheck
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { CDAPrefill, CDA_PREFILL_KEY } from '@/lib/cdaPrefill';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -133,6 +134,41 @@ export default function CDABuilderPage() {
     { id: '1', description: 'Transaction Coordinator Fee', amount: 0, side: 'both', type: 'flat' },
     { id: '2', description: 'E&O Insurance', amount: 0, side: 'both', type: 'flat' },
   ]);
+
+  const [prefillBanner, setPrefillBanner] = useState<string | null>(null);
+
+  // Read one-click prefill from localStorage (set by CDAButton on transaction rows)
+  useEffect(() => {
+    const raw = localStorage.getItem(CDA_PREFILL_KEY);
+    if (!raw) return;
+    try {
+      const prefill = JSON.parse(raw) as CDAPrefill;
+      localStorage.removeItem(CDA_PREFILL_KEY);
+      setMode('scratch');
+      setFormData(prev => ({
+        ...prev,
+        propertyAddress: prefill.address || prev.propertyAddress,
+        city: prefill.city || prev.city,
+        state: prefill.state || prev.state,
+        mlsNumber: prefill.mlsNumber || prev.mlsNumber,
+        salePrice: prefill.salePrice || prev.salePrice,
+        closingDate: prefill.closingDate || prev.closingDate,
+        transactionType: prefill.transactionType
+          ? (String(prefill.transactionType).toLowerCase().includes('lease') ? 'lease' : 'sale')
+          : prev.transactionType,
+        totalCommissionRate: prefill.commissionRate || prev.totalCommissionRate,
+      }));
+      if (prefill.agentName) {
+        setAgents(prev => {
+          const next = [...prev];
+          next[0] = { ...next[0], name: prefill.agentName };
+          return next;
+        });
+      }
+      setPrefillBanner(prefill.address ? `Pre-filled from: ${prefill.address}` : 'Pre-filled from transaction');
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-populate from selected transaction
   const handleTransactionSelect = (transactionId: string) => {
@@ -267,6 +303,13 @@ export default function CDABuilderPage() {
             Build industry-standard CDA documents with automatic waterfall commission calculations. Supports referral fees, franchise fees, agent/broker splits, and flat-fee deductions.
           </p>
         </div>
+
+        {prefillBanner && (
+          <div className="flex items-center justify-between px-4 py-2 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-emerald-400 text-sm mb-4">
+            <span>✓ {prefillBanner}</span>
+            <button onClick={() => setPrefillBanner(null)} className="text-emerald-400/60 hover:text-emerald-400">×</button>
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-8">
           {/* Main Form */}

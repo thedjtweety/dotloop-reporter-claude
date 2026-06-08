@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
+import { AgentDetailModal } from '@/components/AgentDetailModal';
+import { useAgentDetail } from '@/hooks/useAgentDetail';
 import {
   FileText, AlertCircle, TrendingUp, Users, Clock, X,
   DollarSign, BarChart2, Activity, CheckCircle2, Trophy,
@@ -143,6 +145,7 @@ function SectionLabel({ children, sub }: { children: React.ReactNode; sub?: stri
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { filteredRecords, metrics, agentMetrics, hasData, activateDemoMode } = useTransactionData();
+  const { agentTarget, openAgent, closeAgent } = useAgentDetail();
 
   const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
   const [projectedTab, setProjectedTab] = useState<'30' | '60' | '90'>('30');
@@ -702,7 +705,8 @@ export default function Dashboard() {
       </section>
 
       {/* ── Drill-down modal ── */}
-      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} onAgentClick={(name) => openAgent(name, filteredRecords, agentMetrics)} />
+      <AgentDetailModal target={agentTarget} onClose={closeAgent} />
     </div>
   );
 }

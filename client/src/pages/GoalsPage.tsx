@@ -4,6 +4,8 @@ import { useCDAPanel } from '@/contexts/CDAContext';
 import { formatCurrency } from '@/lib/formatUtils';
 import { Target, Plus, Search, ChevronDown, ChevronUp, TrendingDown, TrendingUp, ClipboardList } from 'lucide-react';
 import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
+import { AgentDetailModal } from '@/components/AgentDetailModal';
+import { useAgentDetail } from '@/hooks/useAgentDetail';
 
 interface AgentGoal {
   agentName: string;
@@ -34,6 +36,7 @@ export default function GoalsPage() {
   const [year, setYear] = useState(YEAR);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
+  const { agentTarget, openAgent, closeAgent } = useAgentDetail();
 
   // Build goals from agent metrics with simulated targets
   const goals: AgentGoal[] = agentMetrics.map(a => {
@@ -268,7 +271,8 @@ export default function GoalsPage() {
         )}
       </div>
 
-      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} onAgentClick={(name) => openAgent(name, filteredRecords, agentMetrics)} />
+      <AgentDetailModal target={agentTarget} onClose={closeAgent} />
     </div>
   );
 }

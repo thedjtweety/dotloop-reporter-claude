@@ -17,6 +17,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AgentDetailModal } from '@/components/AgentDetailModal';
+import { useAgentDetail } from '@/hooks/useAgentDetail';
+import { storeCDAPrefill } from '@/lib/cdaPrefill';
+import { useLocation } from 'wouter';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -78,170 +82,6 @@ function exportAgentCSV(agents: EnrichedAgent[]) {
   URL.revokeObjectURL(url);
 }
 
-// ─── Drill-down modal ─────────────────────────────────────────────────────────
-
-function AgentDrillDown({
-  agent, onClose, records,
-}: { agent: EnrichedAgent; onClose: () => void; records: any[] }) {
-  const { openCDA } = useCDAPanel();
-  const [tab, setTab] = useState<'transactions' | 'stats'>('stats');
-
-  const agentRecords = records.filter(r =>
-    (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
-  );
-  const closedRecords = agentRecords.filter(r => r.loopStatus === 'Closed');
-  const activeRecords = agentRecords.filter(r => r.loopStatus === 'Active' || r.loopStatus === 'Active Listing');
-  const ucRecords = agentRecords.filter(r => r.loopStatus === 'Under Contract');
-
-  const radarData = [
-    { metric: 'Volume', value: Math.min((agent.totalSalesVolume / 2_000_000) * 100, 100) },
-    { metric: 'GCI', value: Math.min((agent.totalCommission / 100_000) * 100, 100) },
-    { metric: 'Deals', value: Math.min((agent.closedDeals / 20) * 100, 100) },
-    { metric: 'Close %', value: agent.closingRate },
-    { metric: 'Avg Price', value: Math.min((agent.averageSalesPrice / 1_500_000) * 100, 100) },
-    { metric: 'Speed', value: Math.max(0, 100 - (agent.averageDaysToClose / 60) * 100) },
-  ];
-
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl bg-background border-border text-foreground max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shrink-0"
-              style={{ background: agent.color + '25', color: agent.color }}
-            >
-              {agent.initials}
-            </div>
-            <div>
-              <DialogTitle className="text-foreground text-lg">{agent.agentName}</DialogTitle>
-              <p className="text-muted-foreground text-sm">#{agent.rank} · {agentRecords.length} transactions</p>
-            </div>
-          </div>
-        </DialogHeader>
-
-        {/* KPI strip */}
-        <div className="grid grid-cols-4 gap-3 mb-2">
-          {[
-            { label: 'Closed Deals', value: String(agent.closedDeals), color: 'text-emerald-400' },
-            { label: 'Total GCI', value: compactCurrency(agent.totalCommission), color: 'text-emerald-400' },
-            { label: 'Sales Volume', value: compactCurrency(agent.totalSalesVolume), color: 'text-blue-400' },
-            { label: 'Avg Days', value: `${agent.averageDaysToClose.toFixed(0)}d`, color: 'text-yellow-400' },
-          ].map(m => (
-            <div key={m.label} className="bg-secondary rounded-lg p-3 text-center">
-              <p className="text-muted-foreground text-xs mb-1">{m.label}</p>
-              <p className={`font-bold text-lg ${m.color}`}>{m.value}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Buy/sell split bar */}
-        <div className="mb-3">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Buy Side ({agent.buySidePercentage.toFixed(0)}%)</span>
-            <span>Sell Side ({agent.sellSidePercentage.toFixed(0)}%)</span>
-          </div>
-          <div className="flex h-2.5 rounded-full overflow-hidden bg-secondary">
-            <div className="h-full bg-blue-500 transition-all" style={{ width: `${agent.buySidePercentage}%` }} />
-            <div className="h-full bg-emerald-500 transition-all flex-1" />
-          </div>
-        </div>
-
-        <Tabs value={tab} onValueChange={v => setTab(v as 'transactions' | 'stats')} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="bg-secondary mb-3 w-fit">
-            <TabsTrigger value="stats" className="text-xs">Performance</TabsTrigger>
-            <TabsTrigger value="transactions" className="text-xs">Transactions ({agentRecords.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="stats" className="flex-1">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Radar */}
-              <div>
-                <p className="text-muted-foreground text-xs mb-2">Performance Radar</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-                    <PolarGrid stroke="var(--border)" />
-                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-                    <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar dataKey="value" stroke={agent.color} fill={agent.color} fillOpacity={0.2} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              {/* Pipeline status */}
-              <div>
-                <p className="text-muted-foreground text-xs mb-2">Pipeline Status</p>
-                <div className="space-y-2.5">
-                  {[
-                    { label: 'Closed', count: closedRecords.length, color: '#10b981', volume: closedRecords.reduce((s, r) => s + (r.salePrice || 0), 0) },
-                    { label: 'Under Contract', count: ucRecords.length, color: '#f59e0b', volume: ucRecords.reduce((s, r) => s + (r.salePrice || 0), 0) },
-                    { label: 'Active', count: activeRecords.length, color: '#3b82f6', volume: activeRecords.reduce((s, r) => s + (r.price || 0), 0) },
-                    { label: 'Avg Days to Close', count: agent.averageDaysToClose, color: '#8b5cf6', volume: 0, suffix: 'd' },
-                  ].map(s => (
-                    <div key={s.label} className="flex items-center justify-between bg-secondary rounded-lg px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full" style={{ background: s.color }} />
-                        <span className="text-foreground text-xs">{s.label}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="font-bold text-sm" style={{ color: s.color }}>
-                          {s.suffix ? `${s.count.toFixed(0)}${s.suffix}` : s.count}
-                        </span>
-                        {s.volume > 0 && <p className="text-muted-foreground text-[10px]">{compactCurrency(s.volume)}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="transactions" className="flex-1 min-h-0">
-            <ScrollArea className="h-[280px]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground text-xs">
-                    <th className="text-left pb-2 pr-3">Loop / Address</th>
-                    <th className="text-left pb-2 pr-3">Status</th>
-                    <th className="text-right pb-2 pr-3">Price</th>
-                    <th className="text-right pb-2 pr-3">Closing</th>
-                    <th className="text-right pb-2 pr-3">GCI</th>
-                    <th className="text-right pb-2">CDA</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {agentRecords.slice(0, 50).map((r: any, i: number) => (
-                    <tr key={i} className="border-b border-border/50 hover:bg-secondary/50">
-                      <td className="py-2 pr-3 text-foreground truncate max-w-[160px]">{r.address || r.loopName || '—'}</td>
-                      <td className="py-2 pr-3">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                          r.loopStatus === 'Closed' ? 'bg-emerald-500/20 text-emerald-400' :
-                          r.loopStatus === 'Under Contract' ? 'bg-yellow-500/20 text-yellow-400' :
-                          'bg-secondary text-muted-foreground'
-                        }`}>{r.loopStatus || '—'}</span>
-                      </td>
-                      <td className="py-2 pr-3 text-right text-muted-foreground text-xs">{formatCurrency(r.salePrice || r.price || 0)}</td>
-                      <td className="py-2 pr-3 text-right text-muted-foreground text-xs">{r.closingDate || '—'}</td>
-                      <td className="py-2 pr-3 text-right text-emerald-400 text-xs">{formatCurrency(r.commissionTotal || 0)}</td>
-                      <td className="py-2 text-right">
-                        <button
-                          onClick={() => openCDA(r, r.address || r.loopName || 'Transaction')}
-                          className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-blue-400/10"
-                        >
-                          <ClipboardList className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 // ─── Sort icon ────────────────────────────────────────────────────────────────
 
 function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: SortField; sortDir: SortDir }) {
@@ -255,14 +95,17 @@ function SortIcon({ field, sortField, sortDir }: { field: SortField; sortField: 
 
 export default function AgentsPage() {
   const { agentMetrics, filteredRecords, hasData, activateDemoMode } = useTransactionData();
-  const { openCDA, openCDAWithData } = useCDAPanel();
+  const { agentTarget, openAgent, closeAgent } = useAgentDetail();
+  const [, navigate] = useLocation();
 
   const [sortField, setSortField] = useState<SortField>('totalCommission');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [search, setSearch] = useState('');
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
-  const [drillDown, setDrillDown] = useState<EnrichedAgent | null>(null);
   const [chartMetric, setChartMetric] = useState<'totalCommission' | 'closedDeals' | 'totalSalesVolume'>('totalCommission');
+
+  const showAgent = (name: string) => openAgent(name, filteredRecords, agentMetrics);
+  const cdaForRecord = (r: any) => { storeCDAPrefill(r); navigate('/cda-builder'); };
 
   // Enrich with color, initials, rank (ranked by totalCommission desc)
   const enriched: EnrichedAgent[] = useMemo(() => {
@@ -294,6 +137,7 @@ export default function AgentsPage() {
 
   const chartData = sorted.slice(0, 10).map(a => ({
     name: a.agentName.split(' ')[0],
+    fullName: a.agentName,
     value: a[chartMetric] as number,
     color: a.color,
   }));
@@ -393,7 +237,7 @@ export default function AgentsPage() {
               return (
                 <div
                   key={agent.agentName}
-                  onClick={() => setDrillDown(agent)}
+                  onClick={() => showAgent(agent.agentName)}
                   className={`flex-1 max-w-[220px] cursor-pointer group`}
                 >
                   <div className={`bg-secondary border ${meta.border} rounded-xl p-4 text-center ${meta.pos} transition-all hover:scale-[1.02] hover:shadow-lg`}>
@@ -461,7 +305,8 @@ export default function AgentsPage() {
                 chartMetric === 'closedDeals' ? [v, 'Deals'] : [formatCurrency(v), chartMetric === 'totalCommission' ? 'GCI' : 'Volume']
               }
             />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+            <Bar dataKey="value" radius={[4, 4, 0, 0]} cursor="pointer"
+              onClick={(data: any) => { if (data?.fullName) showAgent(data.fullName); }}>
               {chartData.map((e, i) => <Cell key={i} fill={e.color} />)}
             </Bar>
           </BarChart>
@@ -561,7 +406,7 @@ export default function AgentsPage() {
                       >
                         {agent.initials}
                       </div>
-                      <span className="text-foreground font-medium">{agent.agentName}</span>
+                      <span onClick={() => showAgent(agent.agentName)} className="text-foreground font-medium hover:text-blue-400 hover:underline cursor-pointer">{agent.agentName}</span>
                       {agent.rank <= 3 && (
                         <span className={`text-[10px] font-bold ${agent.rank === 1 ? 'text-yellow-400' : agent.rank === 2 ? 'text-slate-400' : 'text-orange-400'}`}>
                           #{agent.rank}
@@ -600,7 +445,7 @@ export default function AgentsPage() {
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-end gap-1.5 text-muted-foreground">
                       <button
-                        onClick={() => setDrillDown(agent)}
+                        onClick={() => showAgent(agent.agentName)}
                         className="p-1.5 rounded hover:bg-secondary hover:text-foreground transition-colors"
                         title="View details"
                       >
@@ -611,36 +456,11 @@ export default function AgentsPage() {
                           const recs = filteredRecords.filter(r =>
                             (r.agents || '').toLowerCase().includes(agent.agentName.toLowerCase())
                           );
-                          const closed = recs.filter(r => r.loopStatus === 'Closed');
+                          const closed = recs.filter(r => r.loopStatus === 'Closed' || r.loopStatus === 'Sold');
                           const record = (closed.length > 0 ? closed : recs)
                             .sort((a, b) => new Date(b.closingDate || '').getTime() - new Date(a.closingDate || '').getTime())[0];
-                          if (record) {
-                            openCDA(record, `Agent: ${agent.agentName}`);
-                          } else {
-                            openCDAWithData({
-                              propertyAddress: '',
-                              salePrice: agent.averageSalesPrice,
-                              sellerName: '',
-                              totalCommissionRate: 3,
-                              totalGrossCommission: agent.averageSalesPrice * 0.03,
-                              sellingSplitPercent: 50,
-                              listingSplitPercent: 50,
-                              sellingGrossCommission: agent.averageSalesPrice * 0.015,
-                              listingGrossCommission: agent.averageSalesPrice * 0.015,
-                              sellingAgent1Name: agent.agentName,
-                              sellingAgent1SplitPercent: 80,
-                              sellingAgent1Commission: agent.averageSalesPrice * 0.015 * 0.8,
-                              sellingBrokerSplitPercent: 20,
-                              sellingBrokerageCommission: agent.averageSalesPrice * 0.015 * 0.2,
-                              sellingCommissionAfterFees: agent.averageSalesPrice * 0.015 * 0.8,
-                              listingAgent1Name: agent.agentName,
-                              listingAgent1SplitPercent: 80,
-                              listingAgent1Commission: agent.averageSalesPrice * 0.015 * 0.8,
-                              listingBrokerSplitPercent: 20,
-                              listingBrokerageCommission: agent.averageSalesPrice * 0.015 * 0.2,
-                              listingCommissionAfterFees: agent.averageSalesPrice * 0.015 * 0.8,
-                            }, `Agent: ${agent.agentName}`);
-                          }
+                          if (record) cdaForRecord(record);
+                          else navigate('/cda-builder');
                         }}
                         className="p-1.5 rounded hover:bg-secondary hover:text-blue-400 transition-colors"
                         title="Open CDA"
@@ -669,14 +489,8 @@ export default function AgentsPage() {
         )}
       </div>
 
-      {/* ── Drill-down ── */}
-      {drillDown && (
-        <AgentDrillDown
-          agent={drillDown}
-          onClose={() => setDrillDown(null)}
-          records={filteredRecords}
-        />
-      )}
+      {/* ── Agent detail ── */}
+      <AgentDetailModal target={agentTarget} onClose={closeAgent} onCDA={cdaForRecord} />
     </div>
   );
 }

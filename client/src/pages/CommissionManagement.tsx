@@ -13,6 +13,8 @@ import CommissionAuditReport from '@/components/CommissionAuditReport';
 import CommissionCalculator from '@/components/CommissionCalculator';
 import { formatCurrency } from '@/lib/formatUtils';
 import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
+import { AgentDetailModal } from '@/components/AgentDetailModal';
+import { useAgentDetail } from '@/hooks/useAgentDetail';
 
 // ─── Plan data ────────────────────────────────────────────────────────────────
 
@@ -261,6 +263,7 @@ function PlanCard({ plan, onEdit, onCopy, onDelete }: {
 export default function CommissionManagement() {
   const [, setLocation] = useLocation();
   const { filteredRecords, agentMetrics, hasData } = useTransactionData();
+  const { agentTarget, openAgent, closeAgent } = useAgentDetail();
   const [plans, setPlans] = useState<CommissionPlan[]>(DEFAULT_PLANS);
   const [activeTab, setActiveTab] = useState('plans');
   const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
@@ -385,7 +388,8 @@ export default function CommissionManagement() {
         </TabsContent>
       </Tabs>
 
-      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
+      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} onAgentClick={(name) => openAgent(name, filteredRecords, agentMetrics)} />
+      <AgentDetailModal target={agentTarget} onClose={closeAgent} />
     </div>
   );
 }
