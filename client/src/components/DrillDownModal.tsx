@@ -3,6 +3,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Download, Search, X, ChevronRight, Copy, Check, ArrowLeft } from 'lucide-react';
 import { DotloopRecord } from '@/lib/csvParser';
 import { formatCurrency } from '@/lib/formatUtils';
+import { CDAButton } from '@/components/CDAButton';
 
 export interface DrillTarget {
   title: string;
@@ -13,6 +14,7 @@ export interface DrillTarget {
 interface DrillDownModalProps {
   target: DrillTarget | null;
   onClose: () => void;
+  onAgentClick?: (agentName: string) => void;
 }
 
 type SortField = 'address' | 'agents' | 'loopStatus' | 'closingDate' | 'salePrice' | 'commissionTotal';
@@ -56,7 +58,7 @@ function fmtDate(d?: string, opts?: Intl.DateTimeFormatOptions): string {
   return date.toLocaleDateString('en-US', opts ?? { month: 'short', day: '2-digit', year: 'numeric' });
 }
 
-export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
+export function DrillDownModal({ target, onClose, onAgentClick }: DrillDownModalProps) {
   // Level 1 state
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -433,6 +435,7 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
                       {col.label}<SortIcon field={col.field} />
                     </th>
                   ))}
+                  <th className="pr-4 py-3 w-16" />
                   <th className="w-8 pr-4 py-3" style={{ minWidth: 40, width: 40 }} />
                 </tr>
               </thead>
@@ -446,7 +449,18 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
                         {r.address || r.loopName || '—'}
                       </span>
                     </td>
-                    <td className="pr-4 py-3 text-muted-foreground text-xs">{r.agents || '—'}</td>
+                    <td className="pr-4 py-3 text-xs">
+                      {onAgentClick
+                        ? (r.agents || '—').split(',').map(a => a.trim()).filter(Boolean).map((name, ai) => (
+                            <span key={ai}
+                              onClick={e => { e.stopPropagation(); onAgentClick(name); }}
+                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer mr-1">
+                              {name}
+                            </span>
+                          ))
+                        : <span className="text-muted-foreground">{r.agents || '—'}</span>
+                      }
+                    </td>
                     <td className="pr-4 py-3"><StatusBadge status={r.loopStatus || ''} /></td>
                     <td className="pr-4 py-3 text-muted-foreground text-xs tabular-nums">{fmtDate(r.closingDate)}</td>
                     <td className="pr-4 py-3 text-right text-muted-foreground text-xs tabular-nums">
@@ -454,6 +468,9 @@ export function DrillDownModal({ target, onClose }: DrillDownModalProps) {
                     </td>
                     <td className="pr-6 py-3 text-right text-emerald-400 text-xs tabular-nums font-medium">
                       {r.commissionTotal ? formatCurrency(r.commissionTotal) : '—'}
+                    </td>
+                    <td className="pr-4 py-3" onClick={e => e.stopPropagation()}>
+                      <CDAButton record={r} />
                     </td>
                     <td className="pr-4 py-3 text-right">
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />

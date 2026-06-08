@@ -22,6 +22,8 @@ import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 import { DateRange } from 'react-day-picker';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { calculateAgentMetrics } from '@/lib/csvParser';
+import { AgentDetailModal } from '@/components/AgentDetailModal';
+import { useAgentDetail } from '@/hooks/useAgentDetail';
 
 interface AgentCommissionSummary {
   agentName: string;
@@ -37,6 +39,7 @@ interface AgentCommissionSummary {
 export default function NetCommissionReportPage() {
   const [, setLocation] = useLocation();
   const { allRecords, agentMetrics, commissionPlans, agentAssignments, hasData } = useTransactionData();
+  const { agentTarget, openAgent, closeAgent } = useAgentDetail();
   
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [agents, setAgents] = useState<AgentCommissionSummary[]>([]);
@@ -345,12 +348,11 @@ export default function NetCommissionReportPage() {
             </div>
 
             {/* Report Table */}
-            <NetCommissionReport agents={filteredAgents} />
+            <NetCommissionReport agents={filteredAgents} onAgentClick={(name) => openAgent(name, allRecords, agentMetrics)} />
           </div>
         )}
       </main>
-
-      <TxDrillModal target={drillTarget} onClose={() => setDrillTarget(null)} />
+      <AgentDetailModal target={agentTarget} onClose={closeAgent} />
     </div>
   );
 }
