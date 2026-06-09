@@ -56,14 +56,16 @@ router.get('/connect', requireAuth, async (req: Request, res: Response) => {
 
     const cookieOpts = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 10 * 60 * 1000, // 10 minutes
+      secure: false,           // false for localhost — Dotloop redirects back over HTTP in dev
       sameSite: 'lax' as const,
+      maxAge: 10 * 60 * 1000, // 10 minutes
     };
-    res.cookie('dl_oauth_state', state,          cookieOpts);
-    res.cookie('dl_tenant_id',   req.tenantId!,  cookieOpts);
-    res.cookie('dl_user_id',     req.userId!,    cookieOpts);
-    console.log('[dotloop/connect] cookies set, building redirect URL...');
+    res.cookie('dl_oauth_state', state,         cookieOpts);
+    res.cookie('dl_tenant_id',   req.tenantId!, cookieOpts);
+    res.cookie('dl_user_id',     req.userId!,   cookieOpts);
+    console.log('[dotloop/connect] cookies set — state:', state.slice(0, 8) + '...',
+      'tenant:', req.tenantId, 'user:', req.userId);
+    console.log('[dotloop/connect] building redirect URL...');
 
     const params = new URLSearchParams({
       response_type: 'code',
@@ -87,42 +89,43 @@ router.get('/connect', requireAuth, async (req: Request, res: Response) => {
 // ─── GET /callback ────────────────────────────────────────────────────────────
 
 router.get('/callback', async (req: Request, res: Response) => {
+  console.log('[callback] ── handler reached ──');
   try {
     const { code, state, error: oauthError } = req.query as Record<string, string>;
 
+    console.log('[callback] code:', code ? code.slice(0, 6) + '...' : 'MISSING');
+    console.log('[callback] state from query:', state ?? 'MISSING');
+    console.log('[callback] state from cookie:', (req.cookies as Record<string, string>)?.dl_oauth_state ?? 'MISSING');
+    console.log('[callback] dl_tenant_id cookie:', (req.cookies as Record<string, string>)?.dl_tenant_id ?? 'MISSING');
+    console.log('[callback] dl_user_id cookie:',   (req.cookies as Record<string, string>)?.dl_user_id   ?? 'MISSING');
+    console.log('[callback] all cookies:', Object.keys(req.cookies ?? {}));
+
     if (oauthError) {
-      console.warn('[dotloop-auth] OAuth error from Dotloop:', oauthError);
+      console.warn('[callback] OAuth error from Dotloop:', oauthError);
       res.redirect('/settings?error=auth_failed');
       return;
     }
 
-    // CSRF state validation — check session or cookie fallback
-    const expectedState =
-      (req as any).session?.dotloopOAuthState ||
-      (req.cookies as Record<string, string>)?.dl_oauth_state;
+    // CSRF state validation
+    const expectedState = (req.cookies as Record<string, string>)?.dl_oauth_state;
 
     if (!state || !expectedState || state !== expectedState) {
-      console.error('[dotloop-auth] State mismatch — possible CSRF attack');
-      res.status(400).json({ error: 'Invalid OAuth state parameter' });
+      console.error('[callback] STATE MISMATCH — query:', state, '| cookie:', expectedState);
+      res.status(400).json({ error: 'Invalid OAuth state parameter', query: state, cookie: expectedState });
       return;
     }
+    console.log('[callback] state OK');
 
-    // Clear state from session + cookie
-    if ((req as any).session) {
-      delete (req as any).session.dotloopOAuthState;
-    }
     res.clearCookie('dl_oauth_state');
 
-    // tenantId/userId were stored in the state cookie during /connect
-    // Re-derive from the callback's cookie (no second auth needed — Dotloop signed the code)
-    // We stored the user context in a cookie at /connect time; read it back
     const tenantId = (req.cookies as Record<string, string>)?.dl_tenant_id;
     const userId   = (req.cookies as Record<string, string>)?.dl_user_id;
     if (!tenantId || !userId) {
-      console.error('[dotloop-auth] Missing tenant/user cookies in callback');
+      console.error('[callback] Missing tenant/user cookies — tenantId:', tenantId, 'userId:', userId);
       res.redirect('/settings?error=auth_failed');
       return;
     }
+    console.log('[callback] tenant:', tenantId, 'user:', userId);
     res.clearCookie('dl_tenant_id');
     res.clearCookie('dl_user_id');
 

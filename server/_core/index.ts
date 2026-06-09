@@ -1,6 +1,7 @@
 import "dotenv/config";
 // Commission system fixed: v2.0 - All ghost template errors removed, public procedures enabled
 import express from "express";
+import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -42,6 +43,9 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
   
+  // Cookie parser — must be before any route that reads req.cookies
+  app.use(cookieParser());
+
   // Security middleware - apply early
   app.use(corsMiddleware);
   app.use(securityHeaders);
