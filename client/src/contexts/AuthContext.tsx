@@ -33,6 +33,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   session: Session | null;
   loading: boolean;
+  isAuthenticated: boolean;
   signUp: (
     email: string,
     password: string,
@@ -170,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAuthenticated: !!session, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

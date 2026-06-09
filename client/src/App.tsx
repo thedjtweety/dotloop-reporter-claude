@@ -1,14 +1,14 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ModalProvider } from "./contexts/ModalContext";
 import { TransactionDataProvider } from "./contexts/TransactionDataContext";
 import SidebarLayout from "./components/SidebarLayout";
 import { CDAProvider } from "./contexts/CDAContext";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
 
@@ -116,14 +116,38 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
 ];
 
 /**
- * ProtectedRoute — redirects to /login if user is not authenticated.
- * Loading state shows nothing so there's no flash of the login page.
- * The sidebar app still works in demo mode (hasData from CSV) even without
- * a Supabase account — auth is soft-gated to avoid breaking the existing flow.
+ * Full-page spinner shown while auth state is loading.
  */
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  // Auth is optional for now — the app still works without it (demo / CSV mode)
-  // When auth is fully enforced in Phase 3, change `|| true` to a real check
+function AuthLoadingSpinner() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading…</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * ProtectedRoute — redirects to /login when not authenticated.
+ * /upload is exempt so demo / CSV mode still works without an account.
+ */
+function ProtectedRoute({ component: Component, path }: { component: React.ComponentType; path: string }) {
+  const { isAuthenticated, loading } = useAuth();
+  const [, navigate] = useLocation();
+
+  // /upload is the public demo / CSV entry point — never redirect
+  const isPublicPath = path === '/upload';
+
+  if (loading) return <AuthLoadingSpinner />;
+
+  if (!isAuthenticated && !isPublicPath) {
+    // Redirect to login; store intended destination
+    navigate('/login');
+    return null;
+  }
+
   return (
     <SidebarLayout>
       <Component />
@@ -134,10 +158,10 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 function Router() {
   return (
     <Switch>
-      {/* All sidebar routes (soft-protected — auth not enforced yet) */}
+      {/* All sidebar routes — protected except /upload (demo entry point) */}
       {SIDEBAR_ROUTES.map(({ path, component: Component }) => (
         <Route key={path} path={path}>
-          <ProtectedRoute component={Component} />
+          <ProtectedRoute component={Component} path={path} />
         </Route>
       ))}
 

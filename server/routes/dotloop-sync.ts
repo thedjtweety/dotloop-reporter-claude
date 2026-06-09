@@ -11,18 +11,30 @@ import { syncTenant } from '../lib/dotloop-sync';
 
 const router = Router();
 
-function getSessionUser(req: Request): { tenantId: string; userId: string } | null {
-  const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-  const userId   = (req as any).userId   || req.headers['x-user-id']   as string;
-  if (!tenantId || !userId) return null;
-  return { tenantId, userId };
+async function getSessionUserFromSupabase(req: Request): Promise<{ tenantId: string; userId: string } | null> {
+  const tenantId = (req as any).tenantId as string | undefined;
+  const userId   = (req as any).userId   as string | undefined;
+  if (tenantId && userId) return { tenantId, userId };
+
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return null;
+
+  try {
+    const db = getSupabaseAdmin();
+    const { data: { user }, error } = await db.auth.getUser(token);
+    if (error || !user) return null;
+    const { data: userRow } = await db
+      .from('users').select('id, tenant_id').eq('supabase_uid', user.id).maybeSingle();
+    if (!userRow) return null;
+    return { tenantId: userRow.tenant_id as string, userId: userRow.id as string };
+  } catch { return null; }
 }
 
 // ─── POST /sync ───────────────────────────────────────────────────────────────
 
 router.post('/sync', async (req: Request, res: Response) => {
   try {
-    const session = getSessionUser(req);
+    const session = await getSessionUserFromSupabase(req);
     if (!session) {
       res.status(401).json({ error: 'Authentication required' });
       return;
@@ -63,7 +75,7 @@ router.post('/sync', async (req: Request, res: Response) => {
 
 router.get('/sync/status', async (req: Request, res: Response) => {
   try {
-    const session = getSessionUser(req);
+    const session = await getSessionUserFromSupabase(req);
     if (!session) {
       res.status(401).json({ error: 'Authentication required' });
       return;

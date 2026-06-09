@@ -6,12 +6,13 @@ import {
   UserPlus, MapPin, Clock, ClipboardList, Settings, ChevronLeft,
   ChevronRight, Sun, Moon, ChevronDown, Calendar, X, History,
   Trash2, Gauge, Heart, Receipt, Calculator, Copy, ListTodo,
-  ShieldCheck, ShieldAlert, Percent, Eye, Monitor,
+  ShieldCheck, ShieldAlert, Percent, Eye, Monitor, LogIn, UserCircle, LogOut,
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useTransactionData, DateRangeFilter } from '../contexts/TransactionDataContext';
 import { useCDAPanel } from '../contexts/CDAContext';
 import { useSettings } from '@/hooks/useSettings';
+import { useAuth } from '../contexts/AuthContext';
 import supabase from '@/lib/supabase';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
@@ -160,6 +161,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   const { openCDAHistory } = useCDAPanel();
   const { theme, toggleTheme } = useTheme();
+  const { user, isAuthenticated, signOut } = useAuth();
 
   // Dotloop sync status (live badge)
   const [syncStatus, setSyncStatus] = useState<{
@@ -538,6 +540,51 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
       {/* Main content */}
       <main className="flex-1 flex flex-col overflow-y-auto bg-background">
+
+        {/* ── Topbar ── */}
+        <div className="sticky top-0 z-10 flex items-center justify-end gap-2 px-6 py-2 border-b border-border bg-background/90 backdrop-blur-sm shrink-0">
+          {isAuthenticated && user ? (
+            // Authenticated — show user info + sign out
+            <div className="flex items-center gap-2">
+              {user.brokerageName && (
+                <span className="text-xs text-muted-foreground hidden sm:block">{user.brokerageName}</span>
+              )}
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary border border-border">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                  <span className="text-white text-[9px] font-bold">{user.email.charAt(0).toUpperCase()}</span>
+                </div>
+                <span className="text-xs text-foreground hidden sm:block max-w-[140px] truncate">{user.email}</span>
+              </div>
+              <button
+                onClick={() => { void signOut(); setLocation('/login'); }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary border border-border transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:block">Sign out</span>
+              </button>
+            </div>
+          ) : (
+            // Not authenticated — show sign in / sign up buttons
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setLocation('/login')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary border border-border transition-colors"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign in
+              </button>
+              <button
+                onClick={() => setLocation('/signup')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
+              >
+                <UserCircle className="w-3.5 h-3.5" />
+                Create account
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="flex-1 p-6">
           {children}
         </div>

@@ -35,21 +35,57 @@ function basicAuth(clientId: string, clientSecret: string) {
   return 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 }
 
-/** Read tenant/user from session or request headers (stub — replace with real session middleware) */
+/** Read tenant/user from session, request headers, or JWT cookie/query param */
 function getSessionUser(req: Request): { tenantId: string; userId: string } | null {
+  // Already attached by requireAuth middleware
   const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
   const userId   = (req as any).userId   || req.headers['x-user-id']   as string;
-  if (!tenantId || !userId) return null;
-  return { tenantId, userId };
+  if (tenantId && userId) return { tenantId, userId };
+  return null;
+}
+
+/**
+ * Async version: verify Supabase token from query param or Authorization header,
+ * then look up the user's tenant in the DB.
+ * Returns null if not authenticated or not found.
+ */
+async function getSessionUserFromSupabase(req: Request): Promise<{ tenantId: string; userId: string } | null> {
+  // 1. Try the fast path (requireAuth middleware already ran)
+  const quick = getSessionUser(req);
+  if (quick) return quick;
+
+  // 2. Supabase access token from query param (browser redirect) or Authorization header
+  const token =
+    (req.query as Record<string, string>)?.token ||
+    req.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) return null;
+
+  try {
+    const db = getSupabaseAdmin();
+    const { data: { user }, error } = await db.auth.getUser(token);
+    if (error || !user) return null;
+
+    const { data: userRow } = await db
+      .from('users')
+      .select('id, tenant_id')
+      .eq('supabase_uid', user.id)
+      .maybeSingle();
+
+    if (!userRow) return null;
+    return { tenantId: userRow.tenant_id as string, userId: userRow.id as string };
+  } catch {
+    return null;
+  }
 }
 
 // ─── GET /connect ─────────────────────────────────────────────────────────────
 
-router.get('/connect', (req: Request, res: Response) => {
+router.get('/connect', async (req: Request, res: Response) => {
   try {
-    const session = getSessionUser(req);
+    const session = await getSessionUserFromSupabase(req);
     if (!session) {
-      res.status(401).json({ error: 'Authentication required' });
+      res.redirect('/login?error=auth_required');
       return;
     }
 
@@ -110,7 +146,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     }
     res.clearCookie('dl_oauth_state');
 
-    const session = getSessionUser(req);
+    const session = await getSessionUserFromSupabase(req);
     if (!session) {
       res.redirect('/settings?error=auth_failed');
       return;
@@ -200,7 +236,7 @@ router.get('/callback', async (req: Request, res: Response) => {
 
 router.post('/disconnect', async (req: Request, res: Response) => {
   try {
-    const session = getSessionUser(req);
+    const session = await getSessionUserFromSupabase(req);
     if (!session) {
       res.status(401).json({ error: 'Authentication required' });
       return;
@@ -218,7 +254,7 @@ router.post('/disconnect', async (req: Request, res: Response) => {
 
 router.get('/status', async (req: Request, res: Response) => {
   try {
-    const session = getSessionUser(req);
+    const session = await getSessionUserFromSupabase(req);
     if (!session) {
       res.json({ connected: false, lastSynced: null, syncStatus: 'disconnected', loopsSynced: 0, profileName: null });
       return;

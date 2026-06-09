@@ -11,6 +11,7 @@ import {
   Wifi, Copy, Image, Eye, EyeOff, LogOut, Webhook,
 } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
+import supabase from '@/lib/supabase';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -739,7 +740,10 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
     let cancelled = false;
     async function fetchStatus() {
       try {
-        const res = await fetch('/api/dotloop/status', { credentials: 'include' });
+        const { data: { session } } = await supabase.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+        const res = await fetch('/api/dotloop/status', { credentials: 'include', headers });
         if (!res.ok) { setLoading(false); return; }
         const data = await res.json() as {
           connected: boolean;
@@ -757,13 +761,26 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
   }, []);
 
   async function handleConnect() {
-    window.location.href = '/api/dotloop/connect';
+    // Get the Supabase access token so the backend can identify this user
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (token) {
+      window.location.href = `/api/dotloop/connect?token=${encodeURIComponent(token)}`;
+    } else {
+      // Not signed in — redirect to login first
+      window.location.href = '/login?error=auth_required';
+    }
   }
 
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
-      await fetch('/api/dotloop/disconnect', { method: 'POST', credentials: 'include' });
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch('/api/dotloop/disconnect', {
+        method: 'POST',
+        credentials: 'include',
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
       setStatus({ connected: false });
     } catch { /* ignore */ }
     setDisconnecting(false);
@@ -772,7 +789,12 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
   async function handleSync() {
     setSyncing(true);
     try {
-      await fetch('/api/dotloop/sync', { method: 'POST', credentials: 'include' });
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch('/api/dotloop/sync', {
+        method: 'POST',
+        credentials: 'include',
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
     } catch { /* ignore */ }
     setTimeout(() => setSyncing(false), 3000);
   }
