@@ -12,6 +12,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useTransactionData, DateRangeFilter } from '../contexts/TransactionDataContext';
 import { useCDAPanel } from '../contexts/CDAContext';
 import { useSettings } from '@/hooks/useSettings';
+import supabase from '@/lib/supabase';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
@@ -159,6 +160,37 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
 
   const { openCDAHistory } = useCDAPanel();
   const { theme, toggleTheme } = useTheme();
+
+  // Dotloop sync status (live badge)
+  const [syncStatus, setSyncStatus] = useState<{
+    connected: boolean;
+    lastSynced?: string;
+    syncStatus?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchSyncStatus() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch('/api/dotloop/status', { credentials: 'include' });
+        if (!res.ok || cancelled) return;
+        const data = await res.json() as typeof syncStatus;
+        if (!cancelled) setSyncStatus(data);
+      } catch { /* ignore */ }
+    }
+    void fetchSyncStatus();
+    const interval = setInterval(() => { void fetchSyncStatus(); }, 30_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  async function handleManualSync() {
+    try {
+      await fetch('/api/dotloop/sync', { method: 'POST', credentials: 'include' });
+      setSyncStatus(prev => prev ? { ...prev, syncStatus: 'running' } : prev);
+    } catch { /* ignore */ }
+  }
 
   // Build team list: "All Teams" + unique agents from context
   const teamOptions = ['All Teams', ...teams.slice(0, 20)];
@@ -385,6 +417,33 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
             </div>
           ))}
         </nav>
+
+        {/* Dotloop Live Sync Status */}
+        {!collapsed && syncStatus?.connected && (
+          <div className="px-2 py-1.5 border-t border-border">
+            <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
+              <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full flex-none ${syncStatus.syncStatus === 'running' ? 'bg-blue-400 animate-pulse' : 'bg-emerald-400'}`} />
+                <span className="text-[10px] text-emerald-400 font-medium">
+                  {syncStatus.syncStatus === 'running' ? 'Syncing…' : 'Live'}
+                </span>
+                {syncStatus.lastSynced && syncStatus.syncStatus !== 'running' && (
+                  <span className="text-[9px] text-muted-foreground">
+                    · {new Date(syncStatus.lastSynced).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => { void handleManualSync(); }}
+                disabled={syncStatus.syncStatus === 'running'}
+                className="text-[9px] text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors"
+                title="Sync now"
+              >
+                ↻
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Data Summary */}
         {hasData && !collapsed && (

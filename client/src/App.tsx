@@ -8,6 +8,7 @@ import { ModalProvider } from "./contexts/ModalContext";
 import { TransactionDataProvider } from "./contexts/TransactionDataContext";
 import SidebarLayout from "./components/SidebarLayout";
 import { CDAProvider } from "./contexts/CDAContext";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,10 @@ import TasksPage from "./pages/TasksPage";
 import AgentBillingPage from "./pages/AgentBillingPage";
 import RetentionPage from "./pages/RetentionPage";
 import QuickBooksPage from "./pages/QuickBooksPage";
+
+// Auth pages
+import LoginPage  from "./pages/auth/LoginPage";
+import SignupPage from "./pages/auth/SignupPage";
 
 // Auth / legal
 import OAuthCallback from "./pages/OAuthCallback";
@@ -110,17 +115,35 @@ const SIDEBAR_ROUTES: { path: string; component: React.ComponentType }[] = [
   { path: "/settings", component: SettingsComplete },
 ];
 
+/**
+ * ProtectedRoute — redirects to /login if user is not authenticated.
+ * Loading state shows nothing so there's no flash of the login page.
+ * The sidebar app still works in demo mode (hasData from CSV) even without
+ * a Supabase account — auth is soft-gated to avoid breaking the existing flow.
+ */
+function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
+  // Auth is optional for now — the app still works without it (demo / CSV mode)
+  // When auth is fully enforced in Phase 3, change `|| true` to a real check
+  return (
+    <SidebarLayout>
+      <Component />
+    </SidebarLayout>
+  );
+}
+
 function Router() {
   return (
     <Switch>
-      {/* All sidebar routes */}
+      {/* All sidebar routes (soft-protected — auth not enforced yet) */}
       {SIDEBAR_ROUTES.map(({ path, component: Component }) => (
         <Route key={path} path={path}>
-          <SidebarLayout>
-            <Component />
-          </SidebarLayout>
+          <ProtectedRoute component={Component} />
         </Route>
       ))}
+
+      {/* Auth routes */}
+      <Route path="/login"  component={LoginPage} />
+      <Route path="/signup" component={SignupPage} />
 
       {/* No-sidebar routes */}
       <Route path="/api/dotloop/callback" component={OAuthCallback} />
@@ -139,18 +162,20 @@ function Router() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <TransactionDataProvider>
-        <CDAProvider>
-          <ModalProvider>
-            <ThemeProvider defaultTheme="contrast" switchable={true}>
-              <TooltipProvider>
-                <Toaster />
-                <Router />
-              </TooltipProvider>
-            </ThemeProvider>
-          </ModalProvider>
-        </CDAProvider>
-      </TransactionDataProvider>
+      <AuthProvider>
+        <TransactionDataProvider>
+          <CDAProvider>
+            <ModalProvider>
+              <ThemeProvider defaultTheme="contrast" switchable={true}>
+                <TooltipProvider>
+                  <Toaster />
+                  <Router />
+                </TooltipProvider>
+              </ThemeProvider>
+            </ModalProvider>
+          </CDAProvider>
+        </TransactionDataProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

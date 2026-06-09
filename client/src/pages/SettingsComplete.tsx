@@ -724,25 +724,139 @@ function AccountConnectionsForm({ onClose }: FormProps) {
 // ─── DOTLOOP CONNECTIONS form ─────────────────────────────────────────────────
 
 function DotloopConnectionsForm({ onClose }: FormProps) {
+  const [status, setStatus] = useState<{
+    connected: boolean;
+    accountName?: string;
+    lastSynced?: string;
+    syncStatus?: string;
+    error?: string;
+  } | null>(null);
+  const [loading,       setLoading]       = useState(true);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [syncing,       setSyncing]       = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/dotloop/status', { credentials: 'include' });
+        if (!res.ok) { setLoading(false); return; }
+        const data = await res.json() as {
+          connected: boolean;
+          accountName?: string;
+          lastSynced?: string;
+          syncStatus?: string;
+          error?: string;
+        };
+        if (!cancelled) { setStatus(data); setLoading(false); }
+      } catch { if (!cancelled) setLoading(false); }
+    }
+    void fetchStatus();
+    const interval = setInterval(() => { if (!cancelled) void fetchStatus(); }, 3000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, []);
+
+  async function handleConnect() {
+    window.location.href = '/api/dotloop/connect';
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      await fetch('/api/dotloop/disconnect', { method: 'POST', credentials: 'include' });
+      setStatus({ connected: false });
+    } catch { /* ignore */ }
+    setDisconnecting(false);
+  }
+
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await fetch('/api/dotloop/sync', { method: 'POST', credentials: 'include' });
+    } catch { /* ignore */ }
+    setTimeout(() => setSyncing(false), 3000);
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <p className="text-xs text-muted-foreground">Checking Dotloop connection…</p>
+        <div className="h-10 bg-secondary rounded-lg animate-pulse" />
+        <button onClick={onClose} className="w-full py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Close</button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">Sign in to one or more Dotloop accounts</p>
-      <div className="flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-        <div className="w-2 h-2 rounded-full bg-yellow-400 flex-none" />
-        <span className="text-xs text-yellow-400 font-medium">Not connected</span>
-      </div>
-      <button disabled className="w-full py-2.5 bg-secondary border border-border rounded-lg text-muted-foreground text-sm cursor-not-allowed" title="OAuth coming in Phase 2">
-        Connect Dotloop Account
-      </button>
-      <p className="text-muted-foreground text-[11px] text-center">OAuth integration coming in Phase 2</p>
-      <div className="space-y-1.5">
-        <p className="text-xs font-medium text-foreground">Connecting will enable:</p>
-        {['Live transaction sync', 'Real-time data updates', 'Multi-office support', 'Auto-push to Dotloop'].map(f => (
-          <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Check className="w-3 h-3 text-emerald-400 flex-none" /> {f}
+      <p className="text-xs text-muted-foreground">Connect your Dotloop account for live transaction sync</p>
+
+      {status?.connected ? (
+        <div className="flex items-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 flex-none" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs text-emerald-400 font-medium">
+              Connected{status.accountName ? ` — ${status.accountName}` : ''}
+            </span>
+            {status.lastSynced && (
+              <p className="text-[10px] text-muted-foreground truncate">
+                Last synced: {new Date(status.lastSynced).toLocaleString()}
+              </p>
+            )}
           </div>
-        ))}
-      </div>
+          {status.syncStatus === 'running' && (
+            <span className="text-[10px] text-blue-400 animate-pulse">Syncing…</span>
+          )}
+        </div>
+      ) : status?.error ? (
+        <div className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-red-400 flex-none" />
+          <span className="text-xs text-red-400 font-medium">Connection error — please reconnect</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-yellow-400 flex-none" />
+          <span className="text-xs text-yellow-400 font-medium">Not connected</span>
+        </div>
+      )}
+
+      {status?.connected ? (
+        <div className="flex gap-2">
+          <button
+            onClick={() => { void handleSync(); }}
+            disabled={syncing || status.syncStatus === 'running'}
+            className="flex-1 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {syncing || status.syncStatus === 'running' ? 'Syncing…' : 'Sync Now'}
+          </button>
+          <button
+            onClick={() => { void handleDisconnect(); }}
+            disabled={disconnecting}
+            className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          >
+            {disconnecting ? 'Disconnecting…' : 'Disconnect'}
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => { void handleConnect(); }}
+          className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          Connect Dotloop Account
+        </button>
+      )}
+
+      {!status?.connected && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-foreground">Connecting will enable:</p>
+          {['Live transaction sync', 'Real-time data updates', 'Multi-office support', 'Auto-push to Dotloop'].map(f => (
+            <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Check className="w-3 h-3 text-emerald-400 flex-none" /> {f}
+            </div>
+          ))}
+        </div>
+      )}
+
       <button onClick={onClose} className="w-full py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Close</button>
     </div>
   );

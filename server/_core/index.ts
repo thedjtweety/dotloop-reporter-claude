@@ -8,6 +8,8 @@ import { dotloopOAuthCallbackRouter } from "../routes/dotloop-oauth-callback";
 import dotloopAuthRoutes from "../routes/dotloop-auth";
 import dotloopSyncRoutes from "../routes/dotloop-sync";
 import dotloopWebhookRoutes from "../routes/dotloop-webhook";
+import authRoutes from "../routes/auth";
+import loopsRoutes from "../routes/loops";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import cdaRoutes from "../routes/cda";
@@ -64,6 +66,10 @@ async function startServer() {
   
   // Dotloop OAuth callback (legacy route kept for backwards compat)
   app.use('/api/dotloop-oauth', dotloopOAuthCallbackRouter);
+
+  // Phase 2B: Auth routes
+  app.use('/api/auth', authRoutes);
+  app.use('/api/loops', loopsRoutes);
 
   // Phase 2A: Dotloop OAuth, sync, and webhook routes
   app.use('/api/dotloop', dotloopAuthRoutes);
