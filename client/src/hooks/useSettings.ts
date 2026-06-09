@@ -102,6 +102,7 @@ export interface SmtpSettings {
 export interface Webhook {
   id: string;
   url: string;
+  description: string;
   events: string[];
   secret: string;
 }
@@ -109,11 +110,79 @@ export interface Webhook {
 export interface IntegrationSettings {
   fubApiKey: string;
   fubConnected: boolean;
-  qbConnected: boolean;
-  qbFailureAlertsEnabled: boolean;
-  qbFailureAlertEmail: string;
   autoPushEnabled: boolean;
   autoPushProfile: string;
+}
+
+// ─── QuickBooks ───────────────────────────────────────────────────────────────
+
+export interface QbAccountMapping {
+  commissionIncome: string;
+  agentSplitExpense: string;
+  referralFeeExpense: string;
+  bankDeposit: string;
+  brokerSplitExpense: string;
+  franchiseFeeExpense: string;
+}
+
+export interface QbAgentMapping {
+  agentName: string;
+  vendorName: string;
+  customerName: string;
+  expenseAcct: string;
+}
+
+export interface QbBillingItem {
+  id: string;
+  category: string;
+  incomeAccount: string;
+  defaultAmount: number;
+  perTx: boolean;
+}
+
+export interface QbSettings {
+  connected: boolean;
+  autoPostOnClose: boolean;
+  accountMapping: QbAccountMapping;
+  agentMappings: QbAgentMapping[];
+  billingItems: QbBillingItem[];
+}
+
+export interface QbAlertSettings {
+  emailEnabled: boolean;
+  emailRecipients: string;
+  slackEnabled: boolean;
+  slackWebhookUrl: string;
+  slackChannel: string;
+}
+
+// ─── Alert Rules ──────────────────────────────────────────────────────────────
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  metric: string;
+  operator: 'below' | 'above' | 'equals';
+  threshold: number;
+  scope: 'brokerage' | 'agent' | 'team';
+}
+
+// ─── Notification Preferences ─────────────────────────────────────────────────
+
+export interface NotificationPrefs {
+  goalReached: boolean;
+  contestEndingSoon: boolean;
+  contestEnded: boolean;
+  contestLeaderChange: boolean;
+  dealClosed: boolean;
+  reportAvailable: boolean;
+  capReached: boolean;
+  onboardingReminder: boolean;
+  taskAssigned: boolean;
+  taskDueSoon: boolean;
+  taskOverdue: boolean;
 }
 
 // ─── Full Config ──────────────────────────────────────────────────────────────
@@ -126,13 +195,17 @@ export interface SettingsConfig {
   locale: LocaleSettings;
   reporting: ReportingSettings;
   alerts: AlertSettings;
+  alertRules: AlertRule[];
   notifications: NotificationSettings;
+  notificationPrefs: NotificationPrefs;
   leadSources: LeadSource[];
   leadSourceCosts: LeadSourceCost[];
   uploadLimits: UploadLimits;
   smtp: SmtpSettings;
   webhooks: Webhook[];
   integrations: IntegrationSettings;
+  qb: QbSettings;
+  qbAlerts: QbAlertSettings;
 }
 
 // ─── Default lead sources ─────────────────────────────────────────────────────
@@ -237,11 +310,54 @@ export const SETTINGS_DEFAULTS: SettingsConfig = {
   integrations: {
     fubApiKey: '',
     fubConnected: false,
-    qbConnected: false,
-    qbFailureAlertsEnabled: false,
-    qbFailureAlertEmail: '',
     autoPushEnabled: false,
     autoPushProfile: '',
+  },
+  qb: {
+    connected: false,
+    autoPostOnClose: false,
+    accountMapping: {
+      commissionIncome:   'Commission Income',
+      agentSplitExpense:  'Agent Commission Splits',
+      referralFeeExpense: 'Referral Fees Paid',
+      bankDeposit:        'Operating Checking',
+      brokerSplitExpense: 'Broker Splits',
+      franchiseFeeExpense:'Franchise / Royalty Fees',
+    },
+    agentMappings: [],
+    billingItems: [],
+  },
+  qbAlerts: {
+    emailEnabled: true,
+    emailRecipients: '',
+    slackEnabled: false,
+    slackWebhookUrl: '',
+    slackChannel: '',
+  },
+  alertRules: [
+    {
+      id: 'default-low-closings',
+      name: 'Low Monthly Closings',
+      description: 'closed_deals is below 5 · Brokerage-wide',
+      enabled: true,
+      metric: 'closed_deals',
+      operator: 'below',
+      threshold: 5,
+      scope: 'brokerage',
+    },
+  ],
+  notificationPrefs: {
+    goalReached: true,
+    contestEndingSoon: true,
+    contestEnded: true,
+    contestLeaderChange: true,
+    dealClosed: true,
+    reportAvailable: true,
+    capReached: true,
+    onboardingReminder: true,
+    taskAssigned: true,
+    taskDueSoon: true,
+    taskOverdue: true,
   },
 };
 

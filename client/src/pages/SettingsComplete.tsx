@@ -18,6 +18,10 @@ import {
   type SettingsConfig,
   type LeadSource,
   type Webhook as WebhookType,
+  type AlertRule,
+  type NotificationPrefs,
+  type QbAgentMapping,
+  type QbBillingItem,
 } from '@/hooks/useSettings';
 
 // ─── Card / Section data ──────────────────────────────────────────────────────
@@ -82,6 +86,7 @@ interface FormProps {
   update: <K extends keyof SettingsConfig>(section: K, value: SettingsConfig[K]) => void;
   showToast: (msg: string) => void;
   allRecords?: ReturnType<typeof useTransactionData>['allRecords'];
+  agentMetrics?: ReturnType<typeof useTransactionData>['agentMetrics'];
   onClose: () => void;
 }
 
@@ -807,36 +812,239 @@ function FubForm({ settings, update, showToast, onClose }: FormProps) {
 
 // ─── QUICKBOOKS SETTINGS form ─────────────────────────────────────────────────
 
-function QuickBooksForm({ settings, update, showToast, onClose }: FormProps) {
-  const [local, setLocal] = useState(settings.integrations);
-  useEffect(() => { setLocal(settings.integrations); }, [settings.integrations]);
+const QB_ACCOUNTS = [
+  'Commission Income', 'Agent Commission Splits', 'Referral Fees Paid',
+  'Operating Checking', 'Broker Splits', 'Franchise / Royalty Fees',
+  'Trust Account', 'Escrow Payable', 'Sales Income', 'Other Income',
+];
+
+function QuickBooksForm({ settings, update, showToast, agentMetrics, onClose }: FormProps) {
+  const [qb, setQb] = useState(settings.qb);
+  useEffect(() => { setQb(settings.qb); }, [settings.qb]);
+
+  const agents = (agentMetrics ?? []).map(a => a.agentName);
+
+  // Ensure agentMappings has a row per agent
+  const agentMappings: QbAgentMapping[] = agents.map(name => {
+    const existing = qb.agentMappings.find(m => m.agentName === name);
+    return existing ?? { agentName: name, vendorName: '', customerName: '', expenseAcct: '' };
+  });
+
+  function setMapping(name: string, key: keyof QbAgentMapping, val: string) {
+    setQb(p => {
+      const updated = p.agentMappings.filter(m => m.agentName !== name);
+      const existing = p.agentMappings.find(m => m.agentName === name) ?? { agentName: name, vendorName: '', customerName: '', expenseAcct: '' };
+      return { ...p, agentMappings: [...updated, { ...existing, [key]: val }] };
+    });
+  }
+
+  function setAcct(key: keyof typeof qb.accountMapping, val: string) {
+    setQb(p => ({ ...p, accountMapping: { ...p.accountMapping, [key]: val } }));
+  }
+
+  // Billing items
+  const [newCategory, setNewCategory] = useState('');
+  const [newIncome, setNewIncome] = useState('');
+  const [newAmount, setNewAmount] = useState(0);
+  const [newPerTx, setNewPerTx] = useState(true);
+
+  function addBillingItem() {
+    if (!newCategory) return;
+    const item: QbBillingItem = { id: Date.now().toString(), category: newCategory, incomeAccount: newIncome, defaultAmount: newAmount, perTx: newPerTx };
+    setQb(p => ({ ...p, billingItems: [...p.billingItems, item] }));
+    setNewCategory(''); setNewIncome(''); setNewAmount(0); setNewPerTx(true);
+  }
 
   return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">Map accounts, vendors, and billing items for QuickBooks sync.</p>
-      {local.qbConnected ? (
-        <div className="flex items-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-xs text-emerald-400 font-medium">Connected to QuickBooks</span>
-          <button onClick={() => setLocal(p => ({ ...p, qbConnected: false }))} className="ml-auto text-xs text-muted-foreground hover:text-destructive transition-colors">Disconnect</button>
+    <div className="space-y-6">
+      {/* Connection Status */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-muted-foreground" />
+          <div>
+            <p className="text-sm font-semibold text-foreground">QuickBooks Online</p>
+            {qb.connected && <p className="text-xs text-muted-foreground">Demo Brokerage Books (Sandbox) · Realm DEMO-REALM</p>}
+          </div>
+        </div>
+        {qb.connected
+          ? <span className="px-2 py-0.5 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">Connected</span>
+          : <span className="px-2 py-0.5 text-xs font-medium bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">Not Connected</span>
+        }
+      </div>
+
+      {qb.connected ? (
+        <div className="flex items-center justify-between p-3 bg-secondary border border-border rounded-xl">
+          <div>
+            <p className="text-sm font-medium text-foreground">Demo Brokerage Books (Sandbox)</p>
+            <p className="text-xs text-muted-foreground">Realm DEMO-REALM · Sandbox</p>
+          </div>
+          <button onClick={() => setQb(p => ({ ...p, connected: false }))}
+            className="px-3 py-1.5 text-xs border border-border rounded-lg text-muted-foreground hover:bg-secondary/80 transition-colors">
+            Disconnect
+          </button>
         </div>
       ) : (
-        <button onClick={() => { setLocal(p => ({ ...p, qbConnected: true })); showToast('QuickBooks connected (demo)'); }}
-          className="w-full py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
-          Connect to QuickBooks
-        </button>
-      )}
-      {local.qbConnected && (
         <div className="space-y-3">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Account Mapping</p>
-          {['GCI Income', 'Agent Splits', 'Company Dollar'].map(label => (
-            <FR key={label} label={`${label} → QB Account`}>
-              <select className={iCls}><option>Select QB Account...</option></select>
+          <button onClick={() => { setQb(p => ({ ...p, connected: true })); showToast('Connected to QuickBooks (demo)'); }}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+            Connect to QuickBooks Online
+          </button>
+          <p className="text-xs text-muted-foreground text-center">Enables auto-posting closed deals as Journal Entries</p>
+        </div>
+      )}
+
+      {/* Auto-post toggle */}
+      <div className="space-y-1.5">
+        <Toggle checked={qb.autoPostOnClose} onChange={v => setQb(p => ({ ...p, autoPostOnClose: v }))} label="Auto-post on close" />
+        <p className="text-[11px] text-muted-foreground pl-12 leading-snug">When enabled, transactions whose status changes to Closed/Sold are posted to QuickBooks automatically. Each auto-post is recorded in the audit log; failures are surfaced on the QuickBooks Sync page.</p>
+      </div>
+
+      {/* Account Mapping */}
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Account Mapping</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Choose which QuickBooks accounts should be debited and credited when a closed deal is posted. Closed transactions are posted as a balanced Journal Entry.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {([
+            ['commissionIncome',    'Commission Income (CR)'],
+            ['bankDeposit',         'Bank / Deposit (DR)'],
+            ['agentSplitExpense',   'Agent Split Expense (DR)'],
+            ['brokerSplitExpense',  'Broker Split Expense (DR)'],
+            ['referralFeeExpense',  'Referral Fee Expense (DR)'],
+            ['franchiseFeeExpense', 'Franchise Fee Expense (DR)'],
+          ] as const).map(([key, label]) => (
+            <FR key={key} label={label}>
+              <select value={qb.accountMapping[key]} onChange={e => setAcct(key, e.target.value)} className={iCls}>
+                {QB_ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
             </FR>
           ))}
         </div>
+        <div className="flex justify-end">
+          <button onClick={() => { update('qb', qb); showToast('Account mapping saved'); }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+            Save Mapping
+          </button>
+        </div>
+      </div>
+
+      {/* Agent → Vendor / Customer table */}
+      {agents.length > 0 && (
+        <div className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Agent → QuickBooks Vendor / Customer</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Map each Dotloop agent to a QuickBooks Vendor (for commission splits) or Customer (for referrals). Optionally override the agent's expense account.</p>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-border">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-border bg-secondary/50">
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Agent</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">QB Vendor</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">QB Customer</th>
+                  <th className="text-left px-3 py-2 text-muted-foreground font-medium">Expense Acct (override)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {agentMappings.map(m => (
+                  <tr key={m.agentName} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                    <td className="px-3 py-1.5 text-foreground font-medium whitespace-nowrap">{m.agentName}</td>
+                    <td className="px-3 py-1.5">
+                      <input value={m.vendorName} onChange={e => setMapping(m.agentName, 'vendorName', e.target.value)}
+                        className="w-full bg-transparent border border-transparent hover:border-border focus:border-blue-500/50 rounded px-1.5 py-1 outline-none text-foreground transition-colors" placeholder="— none —" />
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <input value={m.customerName} onChange={e => setMapping(m.agentName, 'customerName', e.target.value)}
+                        className="w-full bg-transparent border border-transparent hover:border-border focus:border-blue-500/50 rounded px-1.5 py-1 outline-none text-foreground transition-colors" placeholder="— none —" />
+                    </td>
+                    <td className="px-3 py-1.5">
+                      <select value={m.expenseAcct} onChange={e => setMapping(m.agentName, 'expenseAcct', e.target.value)}
+                        className="w-full bg-transparent border border-transparent hover:border-border rounded px-1.5 py-1 outline-none text-foreground text-xs cursor-pointer">
+                        <option value="">(use default)</option>
+                        {QB_ACCOUNTS.map(a => <option key={a} value={a}>{a}</option>)}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={() => { update('qb', { ...qb, agentMappings }); showToast('Agent mappings saved'); }}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+              Save Agent Mappings
+            </button>
+          </div>
+        </div>
       )}
-      <SaveRow onSave={() => { update('integrations', local); showToast('QuickBooks settings saved'); onClose(); }} onCancel={onClose} />
+
+      {/* Billing Items */}
+      <div className="space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Agent Billing Items (Charge Categories)</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Per-transaction charges (desk fee, E&O, tech fee, etc.) posted as additional debit lines against the company deposit.</p>
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-border bg-secondary/50">
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Category</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Income Account</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-medium">Default $</th>
+                <th className="text-center px-3 py-2 text-muted-foreground font-medium">Per Tx</th>
+                <th className="px-3 py-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {qb.billingItems.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-3 py-4 text-center text-muted-foreground text-xs">No billing items yet.</td>
+                </tr>
+              )}
+              {qb.billingItems.map(item => (
+                <tr key={item.id} className="border-b border-border last:border-0">
+                  <td className="px-3 py-1.5 text-foreground">{item.category}</td>
+                  <td className="px-3 py-1.5 text-foreground">{item.incomeAccount || '—'}</td>
+                  <td className="px-3 py-1.5 text-foreground">${item.defaultAmount}</td>
+                  <td className="px-3 py-1.5 text-center">{item.perTx ? <Check className="w-3 h-3 text-emerald-400 mx-auto" /> : '—'}</td>
+                  <td className="px-3 py-1.5 text-right">
+                    <button onClick={() => setQb(p => ({ ...p, billingItems: p.billingItems.filter(b => b.id !== item.id) }))} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <Trash className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {/* Add row */}
+              <tr className="border-t border-border bg-secondary/20">
+                <td className="px-3 py-1.5">
+                  <input value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder="Desk Fee" className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground/50" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input value={newIncome} onChange={e => setNewIncome(e.target.value)} placeholder="Desk Fee Income" className="w-full bg-transparent outline-none text-foreground placeholder:text-muted-foreground/50" />
+                </td>
+                <td className="px-3 py-1.5">
+                  <input type="number" value={newAmount} onChange={e => setNewAmount(Number(e.target.value))} className="w-full bg-transparent outline-none text-foreground" />
+                </td>
+                <td className="px-3 py-1.5 text-center">
+                  <input type="checkbox" checked={newPerTx} onChange={e => setNewPerTx(e.target.checked)} className="accent-emerald-500" />
+                </td>
+                <td className="px-3 py-1.5 text-right">
+                  <button onClick={addBillingItem} className="text-xs px-2 py-1 bg-secondary border border-border rounded text-foreground hover:bg-secondary/80 transition-colors">+ Add</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="flex justify-end">
+          <button onClick={() => { update('qb', qb); showToast('Billing items saved'); }}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+            Save Billing Items
+          </button>
+        </div>
+      </div>
+
+      <SaveRow onSave={() => { update('qb', qb); showToast('QuickBooks settings saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
@@ -844,87 +1052,167 @@ function QuickBooksForm({ settings, update, showToast, onClose }: FormProps) {
 // ─── QUICKBOOKS ALERTS form ───────────────────────────────────────────────────
 
 function QuickBooksAlertsForm({ settings, update, showToast, onClose }: FormProps) {
-  const [local, setLocal] = useState(settings.integrations);
-  useEffect(() => { setLocal(settings.integrations); }, [settings.integrations]);
+  const [local, setLocal] = useState(settings.qbAlerts);
+  useEffect(() => { setLocal(settings.qbAlerts); }, [settings.qbAlerts]);
+  const smtpMissing = local.emailEnabled && !settings.smtp.host;
 
   return (
-    <div className="space-y-4">
-      <Toggle checked={local.qbFailureAlertsEnabled} onChange={v => setLocal(p => ({ ...p, qbFailureAlertsEnabled: v }))} label="Enable failure alerts" />
-      {local.qbFailureAlertsEnabled && (
-        <FR label="Alert Recipient Email">
-          <input type="email" value={local.qbFailureAlertEmail} onChange={e => setLocal(p => ({ ...p, qbFailureAlertEmail: e.target.value }))} className={iCls} placeholder="alerts@yourbrokerage.com" />
-        </FR>
+    <div className="space-y-5">
+      <p className="text-xs text-muted-foreground">Choose how admins are notified when QuickBooks auto-post fails. Email, Slack, both, or off — recipients are configurable per tenant.</p>
+
+      {/* SMTP warning */}
+      {smtpMissing && (
+        <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl space-y-1">
+          <p className="text-xs font-medium text-destructive flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5 flex-none" />
+            Email selected but no SMTP server is configured for this brokerage
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-snug">Email is your only enabled alert channel, so QuickBooks auto-post failures will not be delivered until SMTP is set up under Email Reports. Configure your brokerage's SMTP server, or enable Slack as a backup channel below.</p>
+        </div>
       )}
-      <SaveRow onSave={() => { update('integrations', local); showToast('QB alert settings saved'); onClose(); }} onCancel={onClose} />
+
+      {/* Email section */}
+      <div className="space-y-3 p-4 bg-secondary/30 border border-border rounded-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Email</p>
+          </div>
+          <Toggle checked={local.emailEnabled} onChange={v => setLocal(p => ({ ...p, emailEnabled: v }))} />
+        </div>
+        <p className="text-xs text-muted-foreground">Send the failure summary to the recipients below.</p>
+        {local.emailEnabled && (
+          <FR label="Email recipients (comma-separated)">
+            <input value={local.emailRecipients} onChange={e => setLocal(p => ({ ...p, emailRecipients: e.target.value }))}
+              className={iCls} placeholder="ops@brokerage.com, manager@brokerage.com" />
+            <p className="text-[11px] text-muted-foreground mt-1">Leave blank to fall back to the admin user who has the "QuickBooks auto-post failed" preference enabled.</p>
+          </FR>
+        )}
+      </div>
+
+      {/* Slack section */}
+      <div className="space-y-3 p-4 bg-secondary/30 border border-border rounded-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Slack</p>
+          </div>
+          <Toggle checked={local.slackEnabled} onChange={v => setLocal(p => ({ ...p, slackEnabled: v }))} />
+        </div>
+        <p className="text-xs text-muted-foreground">Post failures to a Slack channel via incoming webhook.</p>
+        {local.slackEnabled && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <FR label="Slack incoming webhook URL">
+                <input value={local.slackWebhookUrl} onChange={e => setLocal(p => ({ ...p, slackWebhookUrl: e.target.value }))}
+                  className={iCls} placeholder="Paste your Slack incoming webhook URL" />
+              </FR>
+              <FR label="Channel (optional)">
+                <input value={local.slackChannel} onChange={e => setLocal(p => ({ ...p, slackChannel: e.target.value }))}
+                  className={iCls} placeholder="#qb-alerts" />
+              </FR>
+            </div>
+            <button className="flex items-center gap-1.5 px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+              <Wifi className="w-3.5 h-3.5" /> Send test alert
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end">
+        <button onClick={() => { update('qbAlerts', local); showToast('QB alert preferences saved'); onClose(); }}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+          Save preferences
+        </button>
+      </div>
     </div>
   );
 }
 
 // ─── WEBHOOKS form ────────────────────────────────────────────────────────────
 
-const WEBHOOK_EVENTS = ['Deal closed', 'Goal reached', 'Agent cap hit', 'Stuck deal alert'];
+const WEBHOOK_EVENTS_COLS = [
+  ['Deal Closed', 'Agent Cap Reached', 'Task Overdue'],
+  ['Goal Reached', 'Report Sent', 'QuickBooks Synced'],
+  ['Contest Ended', 'Tasks Applied', 'QuickBooks Sync Failed'],
+];
+const WEBHOOK_EVENTS_FLAT = WEBHOOK_EVENTS_COLS.flat();
 
 function WebhooksForm({ settings, update, showToast, onClose }: FormProps) {
   const [webhooks, setWebhooks] = useState<WebhookType[]>(settings.webhooks);
   const [newUrl, setNewUrl] = useState('');
+  const [newDesc, setNewDesc] = useState('');
   const [newEvents, setNewEvents] = useState<string[]>([]);
-  const [newSecret, setNewSecret] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [formOpen, setFormOpen] = useState(true);
   useEffect(() => { setWebhooks(settings.webhooks); }, [settings.webhooks]);
+
+  function toggleEvent(ev: string) {
+    setNewEvents(p => p.includes(ev) ? p.filter(x => x !== ev) : [...p, ev]);
+  }
 
   function addWebhook() {
     if (!newUrl) return;
-    setWebhooks(p => [...p, { id: Date.now().toString(), url: newUrl, events: newEvents, secret: newSecret }]);
-    setNewUrl(''); setNewEvents([]); setNewSecret(''); setAdding(false);
-  }
-
-  function toggleEvent(e: string) {
-    setNewEvents(p => p.includes(e) ? p.filter(x => x !== e) : [...p, e]);
+    setWebhooks(p => [...p, { id: Date.now().toString(), url: newUrl, description: newDesc, events: newEvents, secret: '' }]);
+    setNewUrl(''); setNewDesc(''); setNewEvents([]); setFormOpen(false);
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-xs text-muted-foreground">HTTP callbacks for closed deals, goals, and more.</p>
-      <button onClick={() => setAdding(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
-        <Plus className="w-3.5 h-3.5" /> Add Webhook
-      </button>
-      {adding && (
-        <div className="border border-border rounded-xl p-4 space-y-3 bg-secondary/30">
-          <FR label="Webhook URL"><input value={newUrl} onChange={e => setNewUrl(e.target.value)} className={iCls} placeholder="https://your-server.com/hook" /></FR>
-          <FR label="Events">
-            <div className="space-y-1.5 mt-1">
-              {WEBHOOK_EVENTS.map(ev => (
-                <label key={ev} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={newEvents.includes(ev)} onChange={() => toggleEvent(ev)} className="accent-emerald-500" />
-                  <span className="text-sm text-foreground">{ev}</span>
-                </label>
+    <div className="space-y-5">
+      <p className="text-xs text-muted-foreground">Push event notifications to Slack, Teams, or custom endpoints when key milestones occur.</p>
+
+      {/* Add form */}
+      {formOpen ? (
+        <div className="space-y-4 p-4 border border-border rounded-xl bg-secondary/20">
+          <FR label="Endpoint URL">
+            <input value={newUrl} onChange={e => setNewUrl(e.target.value)} className={iCls} placeholder="https://hooks.slack.com/services/..." />
+          </FR>
+          <FR label="Description (optional)">
+            <input value={newDesc} onChange={e => setNewDesc(e.target.value)} className={iCls} placeholder="Slack #deals channel" />
+          </FR>
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Event Subscriptions</p>
+            <div className="grid grid-cols-3 gap-x-4 gap-y-1.5">
+              {WEBHOOK_EVENTS_COLS.map((col, ci) => (
+                <div key={ci} className="space-y-1.5">
+                  {col.map(ev => (
+                    <label key={ev} className="flex items-center gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={newEvents.includes(ev)} onChange={() => toggleEvent(ev)} className="accent-emerald-500" />
+                      <span className="text-xs text-foreground">{ev}</span>
+                    </label>
+                  ))}
+                </div>
               ))}
             </div>
-          </FR>
-          <FR label="Secret Key" hint="Used to sign payloads for verification.">
-            <input value={newSecret} onChange={e => setNewSecret(e.target.value)} className={iCls} placeholder="whsec_..." />
-          </FR>
+          </div>
           <div className="flex gap-2">
-            <button onClick={() => setAdding(false)} className="flex-1 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Cancel</button>
-            <button onClick={addWebhook} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors">Add</button>
+            <button onClick={() => setFormOpen(false)} className="flex-1 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Cancel</button>
+            <button onClick={addWebhook} disabled={!newUrl} className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40">Add</button>
           </div>
         </div>
+      ) : (
+        <button onClick={() => setFormOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+          <Plus className="w-3.5 h-3.5" /> Add Webhook
+        </button>
       )}
-      <div className="space-y-1.5">
+
+      {/* Webhook list */}
+      <div className="space-y-2">
         {webhooks.length === 0
           ? <p className="text-muted-foreground text-xs text-center py-4 border border-dashed border-border rounded-lg">No webhooks configured.</p>
           : webhooks.map(w => (
-            <div key={w.id} className="flex items-center gap-2 bg-secondary border border-border rounded-lg px-3 py-2">
+            <div key={w.id} className="flex items-start gap-2 bg-secondary border border-border rounded-xl p-3">
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-foreground truncate">{w.url}</p>
-                <p className="text-[10px] text-muted-foreground">{w.events.join(', ') || 'No events'}</p>
+                <p className="text-sm text-foreground font-medium truncate">{w.description || w.url}</p>
+                {w.description && <p className="text-[11px] text-muted-foreground truncate">{w.url}</p>}
+                <p className="text-[11px] text-muted-foreground mt-0.5">{w.events.join(', ') || 'No events'}</p>
               </div>
-              <button onClick={() => setWebhooks(p => p.filter(x => x.id !== w.id))} className="text-muted-foreground hover:text-destructive transition-colors">
+              <button onClick={() => setWebhooks(p => p.filter(x => x.id !== w.id))} className="text-muted-foreground hover:text-destructive transition-colors mt-0.5 flex-none">
                 <Trash className="w-3.5 h-3.5" />
               </button>
             </div>
           ))}
       </div>
+
       <SaveRow onSave={() => { update('webhooks', webhooks); showToast('Webhooks saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
@@ -932,102 +1220,229 @@ function WebhooksForm({ settings, update, showToast, onClose }: FormProps) {
 
 // ─── ALERTS form ──────────────────────────────────────────────────────────────
 
+const ALERT_TEMPLATES = [
+  { id: 'volume-drop',    name: 'Monthly Volume Drop',       desc: 'Alert when 30-day volume drops below a threshold', metric: 'monthly_volume',   operator: 'below' as const, threshold: 500000 },
+  { id: 'agent-gci',      name: 'Agent GCI Milestone',       desc: 'Alert when an agent\'s GCI exceeds a target',      metric: 'agent_gci',        operator: 'above' as const, threshold: 100000 },
+  { id: 'low-close-rate', name: 'Low Close Rate',            desc: 'Alert when close rate drops below target percentage', metric: 'close_rate',    operator: 'below' as const, threshold: 50 },
+  { id: 'office-volume',  name: 'Office Volume Milestone',   desc: 'Alert when brokerage hits a volume milestone',     metric: 'total_volume',     operator: 'above' as const, threshold: 5000000 },
+  { id: 'low-units',      name: 'Monthly Units Below Target',desc: 'Alert when monthly transaction count is low',      metric: 'monthly_units',    operator: 'below' as const, threshold: 10 },
+];
+
+const METRIC_OPTIONS = [
+  { value: 'closed_deals',   label: 'Closed Deals' },
+  { value: 'monthly_volume', label: 'Monthly Volume ($)' },
+  { value: 'close_rate',     label: 'Close Rate (%)' },
+  { value: 'agent_gci',      label: 'Agent GCI ($)' },
+  { value: 'total_volume',   label: 'Total Volume ($)' },
+  { value: 'monthly_units',  label: 'Monthly Units' },
+];
+
 function AlertsForm({ settings, update, showToast, onClose }: FormProps) {
-  const [local, setLocal] = useState(settings.alerts);
-  useEffect(() => { setLocal(settings.alerts); }, [settings.alerts]);
+  const [rules, setRules] = useState<AlertRule[]>(settings.alertRules);
+  const [showNewForm, setShowNewForm] = useState(false);
+  const [editingRule, setEditingRule] = useState<string | null>(null);
+  const [newMetric, setNewMetric] = useState('closed_deals');
+  const [newOp, setNewOp] = useState<'below' | 'above' | 'equals'>('below');
+  const [newThreshold, setNewThreshold] = useState(5);
+  const [newScope, setNewScope] = useState<'brokerage' | 'agent' | 'team'>('brokerage');
+  const [newName, setNewName] = useState('');
+  useEffect(() => { setRules(settings.alertRules); }, [settings.alertRules]);
+
+  function toggleRule(id: string) {
+    setRules(p => p.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
+  }
+
+  function deleteRule(id: string) {
+    setRules(p => p.filter(r => r.id !== id));
+  }
+
+  function activateTemplate(t: typeof ALERT_TEMPLATES[0]) {
+    const exists = rules.find(r => r.id === t.id);
+    if (exists) return;
+    const label = METRIC_OPTIONS.find(m => m.value === t.metric)?.label ?? t.metric;
+    const newRule: AlertRule = {
+      id: t.id,
+      name: t.name,
+      description: `${label} is ${t.operator} ${t.threshold} · Brokerage-wide`,
+      enabled: true,
+      metric: t.metric,
+      operator: t.operator,
+      threshold: t.threshold,
+      scope: 'brokerage',
+    };
+    setRules(p => [...p, newRule]);
+    showToast(`"${t.name}" activated`);
+  }
+
+  function saveNewRule() {
+    if (!newName) return;
+    const label = METRIC_OPTIONS.find(m => m.value === newMetric)?.label ?? newMetric;
+    const rule: AlertRule = {
+      id: `custom-${Date.now()}`,
+      name: newName,
+      description: `${label} is ${newOp} ${newThreshold} · ${newScope === 'brokerage' ? 'Brokerage-wide' : newScope}`,
+      enabled: true,
+      metric: newMetric,
+      operator: newOp,
+      threshold: newThreshold,
+      scope: newScope,
+    };
+    setRules(p => [...p, rule]);
+    setShowNewForm(false);
+    setNewName(''); setNewMetric('closed_deals'); setNewOp('below'); setNewThreshold(5); setNewScope('brokerage');
+  }
 
   return (
     <div className="space-y-5">
-      {/* Stuck deals */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
+      <div>
+        <div className="flex items-center justify-between mb-1">
           <div>
-            <p className="text-sm font-medium text-foreground">Stuck Deals</p>
-            <p className="text-xs text-muted-foreground">Flag deals stagnant for too long.</p>
+            <p className="text-sm font-semibold text-foreground">Data Alerts &amp; Thresholds</p>
+            <p className="text-xs text-muted-foreground">Get notified when key metrics cross your defined thresholds</p>
           </div>
-          <Toggle checked={local.stuckDealEnabled} onChange={v => setLocal(p => ({ ...p, stuckDealEnabled: v }))} />
+          <div className="flex items-center gap-1.5">
+            <button className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors">
+              <Clock className="w-3 h-3" /> History
+            </button>
+            <button className="flex items-center gap-1 px-2.5 py-1.5 bg-secondary border border-border rounded-lg text-xs text-foreground hover:bg-secondary/80 transition-colors">
+              <Zap className="w-3 h-3" /> Evaluate Now
+            </button>
+            <button onClick={() => setShowNewForm(v => !v)} className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors">
+              <Plus className="w-3 h-3" /> New Rule
+            </button>
+          </div>
         </div>
-        {local.stuckDealEnabled && (
-          <FR label="Days threshold (Under Contract)">
-            <input type="number" min={1} value={local.stuckDealDays} onChange={e => setLocal(p => ({ ...p, stuckDealDays: Number(e.target.value) }))} className={iCls} />
-          </FR>
+      </div>
+
+      {/* Existing rules */}
+      <div className="space-y-1.5">
+        {rules.map(rule => (
+          <div key={rule.id} className="flex items-center gap-3 p-3 bg-secondary border border-border rounded-xl">
+            <Toggle checked={rule.enabled} onChange={() => toggleRule(rule.id)} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">{rule.name}</p>
+              <p className="text-xs text-muted-foreground">{rule.description}</p>
+            </div>
+            <button onClick={() => setEditingRule(rule.id === editingRule ? null : rule.id)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+              <Settings2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => deleteRule(rule.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
+              <Trash className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+        {rules.length === 0 && (
+          <p className="text-muted-foreground text-xs text-center py-4 border border-dashed border-border rounded-lg">No rules yet. Add one below or activate a template.</p>
         )}
       </div>
-      <hr className="border-border" />
-      {/* Cap approaching */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Cap Approaching</p>
-            <p className="text-xs text-muted-foreground">Alert when agent is near their cap.</p>
+
+      {/* New rule form */}
+      {showNewForm && (
+        <div className="space-y-3 p-4 border border-border rounded-xl bg-secondary/20">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">New Rule</p>
+          <FR label="Rule Name"><input value={newName} onChange={e => setNewName(e.target.value)} className={iCls} placeholder="e.g. Low Monthly Closings" /></FR>
+          <div className="grid grid-cols-3 gap-2">
+            <FR label="Metric">
+              <select value={newMetric} onChange={e => setNewMetric(e.target.value)} className={iCls}>
+                {METRIC_OPTIONS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+              </select>
+            </FR>
+            <FR label="Operator">
+              <select value={newOp} onChange={e => setNewOp(e.target.value as 'below' | 'above' | 'equals')} className={iCls}>
+                <option value="below">is below</option>
+                <option value="above">is above</option>
+                <option value="equals">equals</option>
+              </select>
+            </FR>
+            <FR label="Threshold">
+              <input type="number" value={newThreshold} onChange={e => setNewThreshold(Number(e.target.value))} className={iCls} />
+            </FR>
           </div>
-          <Toggle checked={local.commissionVarianceEnabled} onChange={v => setLocal(p => ({ ...p, commissionVarianceEnabled: v }))} />
-        </div>
-        {local.commissionVarianceEnabled && (
-          <FR label="Alert when % of cap reached">
-            <input type="number" min={1} max={100} value={local.commissionVariancePercent} onChange={e => setLocal(p => ({ ...p, commissionVariancePercent: Number(e.target.value) }))} className={iCls} />
+          <FR label="Scope">
+            <select value={newScope} onChange={e => setNewScope(e.target.value as 'brokerage' | 'agent' | 'team')} className={iCls}>
+              <option value="brokerage">Brokerage-wide</option>
+              <option value="agent">Per agent</option>
+              <option value="team">Per team</option>
+            </select>
           </FR>
-        )}
-      </div>
-      <hr className="border-border" />
-      {/* Goal pace */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Goal Behind Pace</p>
-          <p className="text-xs text-muted-foreground">Alert when an agent is behind goal.</p>
-        </div>
-        <Toggle checked={local.goalBehindEnabled} onChange={v => setLocal(p => ({ ...p, goalBehindEnabled: v }))} />
-      </div>
-      <hr className="border-border" />
-      {/* Pipeline drop */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Pipeline Drop</p>
-            <p className="text-xs text-muted-foreground">Alert when pipeline falls by X%.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setShowNewForm(false)} className="flex-1 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Cancel</button>
+            <button onClick={saveNewRule} disabled={!newName} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-40">Save Rule</button>
           </div>
-          <Toggle checked={local.pipelineDropEnabled} onChange={v => setLocal(p => ({ ...p, pipelineDropEnabled: v }))} />
         </div>
-        {local.pipelineDropEnabled && (
-          <FR label="Drop % threshold">
-            <input type="number" min={1} max={100} value={local.pipelineDropPercent} onChange={e => setLocal(p => ({ ...p, pipelineDropPercent: Number(e.target.value) }))} className={iCls} />
-          </FR>
-        )}
+      )}
+
+      {/* Quick templates */}
+      <div className="space-y-3">
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Quick Templates</p>
+        <div className="grid grid-cols-2 gap-2">
+          {ALERT_TEMPLATES.map(t => {
+            const activated = rules.some(r => r.id === t.id);
+            return (
+              <div key={t.id} className="flex flex-col gap-2 p-3 bg-secondary border border-border rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Zap className="w-3.5 h-3.5 text-yellow-400 flex-none mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-foreground leading-tight">{t.name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">{t.desc}</p>
+                  </div>
+                </div>
+                <div className="flex gap-1.5">
+                  <button className="flex-1 py-1 text-xs bg-secondary border border-border rounded text-foreground hover:bg-secondary/80 transition-colors">Customize</button>
+                  <button
+                    onClick={() => activateTemplate(t)}
+                    disabled={activated}
+                    className="flex-1 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {activated ? 'Active' : 'Activate'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <SaveRow onSave={() => { update('alerts', local); showToast('Alert settings saved'); onClose(); }} onCancel={onClose} />
+
+      <SaveRow onSave={() => { update('alertRules', rules); showToast('Alert rules saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
 // ─── NOTIFICATION PREFS form ──────────────────────────────────────────────────
 
+const NOTIF_ITEMS: { key: keyof NotificationPrefs; label: string }[] = [
+  { key: 'goalReached',       label: 'Goal Reached' },
+  { key: 'contestEndingSoon', label: 'Contest Ending Soon' },
+  { key: 'contestEnded',      label: 'Contest Ended' },
+  { key: 'contestLeaderChange', label: 'Contest Leader Change' },
+  { key: 'dealClosed',        label: 'Deal Closed' },
+  { key: 'reportAvailable',   label: 'Report Available' },
+  { key: 'capReached',        label: 'Cap Reached' },
+  { key: 'onboardingReminder',label: 'Onboarding Reminder' },
+  { key: 'taskAssigned',      label: 'Task Assigned' },
+  { key: 'taskDueSoon',       label: 'Task Due Soon' },
+  { key: 'taskOverdue',       label: 'Task Overdue' },
+];
+
 function NotificationsForm({ settings, update, showToast, onClose }: FormProps) {
-  const [local, setLocal] = useState(settings.notifications);
-  useEffect(() => { setLocal(settings.notifications); }, [settings.notifications]);
+  const [prefs, setPrefs] = useState<NotificationPrefs>(settings.notificationPrefs);
+  useEffect(() => { setPrefs(settings.notificationPrefs); }, [settings.notificationPrefs]);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-border">
-        <div>
-          <p className="text-sm font-medium text-foreground">In-app notifications</p>
-          <p className="text-xs text-muted-foreground">Always on — cannot be disabled</p>
-        </div>
-        <div className="relative inline-flex h-5 w-9 rounded-full bg-emerald-500 cursor-not-allowed opacity-60">
-          <span className="inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 translate-x-4" />
-        </div>
+      <p className="text-xs text-muted-foreground">Choose which notification types you want to receive</p>
+      <div className="divide-y divide-border border border-border rounded-xl overflow-hidden">
+        {NOTIF_ITEMS.map(item => (
+          <div key={item.key} className="flex items-center justify-between px-4 py-3 bg-background hover:bg-secondary/20 transition-colors">
+            <span className="text-sm text-foreground">{item.label}</span>
+            <Toggle
+              checked={prefs[item.key]}
+              onChange={v => setPrefs(p => ({ ...p, [item.key]: v }))}
+            />
+          </div>
+        ))}
       </div>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-foreground">Email notifications</p>
-        </div>
-        <Toggle checked={local.emailEnabled} onChange={v => setLocal(p => ({ ...p, emailEnabled: v }))} />
-      </div>
-      {local.emailEnabled && (
-        <FR label="Email address">
-          <input type="email" value={local.emailAddress} onChange={e => setLocal(p => ({ ...p, emailAddress: e.target.value }))} className={iCls} placeholder="alerts@yourbrokerage.com" />
-        </FR>
-      )}
-      <SaveRow onSave={() => { update('notifications', local); showToast('Notification preferences saved'); onClose(); }} onCancel={onClose} />
+      <SaveRow onSave={() => { update('notificationPrefs', prefs); showToast('Notification preferences saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
@@ -1325,7 +1740,7 @@ export default function SettingsComplete() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [resetDialog, setResetDialog] = useState(false);
   const [resetInput, setResetInput] = useState('');
-  const { clearTransactionData, allRecords } = useTransactionData();
+  const { clearTransactionData, allRecords, agentMetrics } = useTransactionData();
   const [, navigate] = useLocation();
   const { settings, update, resetAll } = useSettings();
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1354,7 +1769,7 @@ export default function SettingsComplete() {
     setExpandedCard(prev => prev === id ? null : id);
   }
 
-  const formProps: FormProps = { settings, update, showToast, allRecords, onClose: () => setExpandedCard(null) };
+  const formProps: FormProps = { settings, update, showToast, allRecords, agentMetrics, onClose: () => setExpandedCard(null) };
 
   // SectionBlock needs onClose wired per-section
   function renderSection(section: SectionDef) {
