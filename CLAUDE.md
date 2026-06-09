@@ -38,6 +38,7 @@ pnpm seed         # Seed sample data (scripts/seed-sample-data.mjs)
 |---|---|
 | Frontend | React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Recharts, Wouter |
 | Backend | Express 4, tRPC 11, Zod, MySQL2 |
+| Auth / DB (Phase 2) | Supabase (supabase-js 2.x) — RLS-enforced multi-tenancy |
 | ORM | Drizzle ORM (MySQL / TiDB) |
 | Build | Vite 7 (frontend), esbuild (backend) |
 | State | React context (no Redux/Zustand) |
@@ -667,7 +668,8 @@ The modal fills most of the screen: `DialogContent` uses `max-w-6xl w-[95vw] min
 - ✅ Settings Pass 2 (forms fully wired, useSettings, inline expansion pattern)
 - ✅ Settings Pass 3 (QB mapping, webhooks, alerts thresholds, notification prefs exact match)
 - ✅ Full E2E audit — all calculation bugs fixed (2026-06-09)
-- 📋 Dotloop OAuth integration
+- ✅ Phase 2A — Supabase foundation + Dotloop OAuth + sync engine (2026-06-09)
+- 📋 Dotloop OAuth integration — Phase 2A COMPLETE, integration testing next
   - Client ID and secret available (Zillow/Dotloop)
   - Callback URLs configured
   - Will replace CSV upload with live data sync
