@@ -137,8 +137,12 @@ export async function syncTenant(
       .maybeSingle();
 
     const profileId = conn?.dotloop_profile_id;
-    if (!profileId) {
-      throw new Error(`No profile_id on dotloop_connections for tenant ${tenantId}`);
+    console.log('[sync] dotloop_profile_id from DB:', profileId);
+    if (!profileId || profileId === 'null' || profileId === 'undefined') {
+      throw new Error(
+        'No Dotloop profile configured — please reconnect your Dotloop account in Settings. ' +
+        `(tenant: ${tenantId}, stored profile_id: ${String(profileId)})`
+      );
     }
 
     // 4. Create client and fetch all loops

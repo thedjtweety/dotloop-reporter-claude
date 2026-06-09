@@ -233,6 +233,13 @@ export class DotloopAPIClient {
    * Logs progress to console.
    */
   async getAllLoops(profileId: string): Promise<DotloopLoop[]> {
+    if (!profileId || profileId === 'null' || profileId === 'undefined') {
+      throw new Error(
+        `getAllLoops called with invalid profileId: "${profileId}". ` +
+        'Reconnect your Dotloop account in Settings to re-save a valid profile ID.'
+      );
+    }
+
     const all: DotloopLoop[] = [];
     const batchSize = 100;
     let batchNumber = 1;

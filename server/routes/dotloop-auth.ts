@@ -170,28 +170,40 @@ router.get('/callback', async (req: Request, res: Response) => {
       client.getProfiles(),
     ]);
 
-    console.log('[callback] getAccount() result:', {
-      id:       account?.id,
-      name:     account?.name,
-      email:    account?.email,
-    });
-    console.log('[callback] getProfiles() result:', profiles?.length ?? 0, 'profiles');
-    console.log('[callback] profiles raw:', JSON.stringify(profiles));
+    // ── Log raw API responses ────────────────────────────────────────────────
+    console.log('[callback] account:', JSON.stringify(account));
+    console.log('[callback] profiles:', JSON.stringify(profiles));
 
-    // Pick the first INDIVIDUAL profile; fall back to profiles[0] if none typed
-    const individualProfile = profiles?.find(
-      (p) => p.type?.toUpperCase() === 'INDIVIDUAL'
+    // ── Select profile ───────────────────────────────────────────────────────
+    // Prefer the first INDIVIDUAL-type profile; fall back to profiles[0].
+    // If Dotloop returns no profiles at all, abort — we cannot sync without one.
+    if (!profiles || profiles.length === 0) {
+      console.error('[callback] getProfiles() returned empty array — cannot save connection without a profile ID');
+      res.redirect('/settings?error=no_profile');
+      return;
+    }
+
+    const individualProfile = profiles.find(
+      (p) => typeof p.type === 'string' && p.type.toUpperCase() === 'INDIVIDUAL'
     );
-    const profile     = individualProfile ?? profiles?.[0] ?? null;
-    const profileId   = profile?.profileId ?? null;
-    const profileName = profile?.name ?? account?.name ?? 'Unknown';
+    const profile     = individualProfile ?? profiles[0];
+    const profileId   = profile.profileId;   // string — guaranteed non-null now
+    const profileName = profile.name ?? account?.name ?? 'Unknown';
 
+    console.log('[callback] selected profileId:', profileId);
     console.log('[callback] selected profile:', {
       profileId,
       profileName,
-      type:     profile?.type ?? 'no type field',
-      source:   individualProfile ? 'INDIVIDUAL match' : profiles?.length ? 'fallback profiles[0]' : 'none — using account name',
+      type:   profile.type ?? 'no type field',
+      source: individualProfile ? 'INDIVIDUAL match' : 'fallback profiles[0]',
     });
+
+    if (!profileId) {
+      // profileId is an empty string — Dotloop API returned a profile with no id
+      console.error('[callback] selected profile has no profileId:', JSON.stringify(profile));
+      res.redirect('/settings?error=no_profile');
+      return;
+    }
 
     const encryptedAccessToken  = encryptToken(tokens.access_token);
     const encryptedRefreshToken = encryptToken(tokens.refresh_token);
@@ -214,7 +226,7 @@ router.get('/callback', async (req: Request, res: Response) => {
           tenant_id:               tenantId,
           user_id:                 userId,
           dotloop_account_id:      String(account.id),
-          dotloop_profile_id:      String(profileId),
+          dotloop_profile_id:      profileId,          // already a string, never null
           dotloop_profile_name:    profileName,
           encrypted_access_token:  encryptedAccessToken,
           encrypted_refresh_token: encryptedRefreshToken,
