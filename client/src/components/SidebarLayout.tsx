@@ -11,6 +11,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useTransactionData, DateRangeFilter } from '../contexts/TransactionDataContext';
 import { useCDAPanel } from '../contexts/CDAContext';
+import { useSettings } from '@/hooks/useSettings';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
@@ -137,6 +138,7 @@ const THEME_CONFIG = {
 
 export default function SidebarLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
+  const { settings: appSettings } = useSettings();
 
   const [collapsed, setCollapsed] = useState<boolean>(() =>
     typeof window !== 'undefined' && localStorage.getItem('sidebar_collapsed') === 'true'
@@ -212,12 +214,16 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
       >
         {/* Logo */}
         <div className={`flex items-center gap-2 px-3 py-4 border-b border-border ${collapsed ? 'justify-center' : ''}`}>
-          <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-sm">D</span>
-          </div>
+          {appSettings.branding.logoBase64 ? (
+            <img src={appSettings.branding.logoBase64} alt="logo" className="w-7 h-7 rounded-md object-contain shrink-0" />
+          ) : (
+            <div className="w-7 h-7 rounded-md bg-emerald-500 flex items-center justify-center shrink-0">
+              <span className="text-white font-bold text-sm">D</span>
+            </div>
+          )}
           {!collapsed && (
             <div className="min-w-0">
-              <div className="text-foreground font-bold text-sm leading-tight truncate">Dotloop Reporter</div>
+              <div className="text-foreground font-bold text-sm leading-tight truncate">{appSettings.brokerage.name || 'Dotloop Reporter'}</div>
               <div className="text-muted-foreground text-[10px] truncate">
                 {activeDataSetName ? `📊 ${activeDataSetName}` : 'Real Estate Analytics'}
               </div>

@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { DollarSign, TrendingUp, Target, BarChart2 } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
+import { useSettings } from '@/hooks/useSettings';
 import { formatCurrency } from '@/lib/formatUtils';
 import { TxDrillModal, DrillTarget } from '@/components/TxDrillModal';
 
@@ -36,6 +37,9 @@ function compactCurrency(n: number) {
 
 export default function LeadROIPage() {
   const { filteredRecords, hasData, activateDemoMode } = useTransactionData();
+  const { settings } = useSettings();
+  // Active source names from settings — can be used for ordering/filtering
+  const _activeSourceNames = settings.leadSources.filter(s => s.active).map(s => s.name);
   const [highlightSource, setHighlightSource] = useState<string | null>(null);
   const [drillTarget, setDrillTarget] = useState<DrillTarget | null>(null);
 

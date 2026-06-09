@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useSettings } from '@/hooks/useSettings';
 import {
   AlertTriangle, ChevronUp, ChevronDown, Search, X,
   TrendingDown, Clock, AlertCircle, Filter,
@@ -27,11 +28,6 @@ interface StuckDeal {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const STUCK_DAYS: Record<string, number> = {
-  'Active Listing':  60,
-  'Active':          60,
-  'Under Contract':  30,
-};
 
 function daysSince(dateStr: string): number {
   if (!dateStr) return 0;
@@ -71,6 +67,12 @@ function SortIcon({ field, sf, sd }: { field: SortField; sf: SortField; sd: Sort
 
 export default function StuckDealsPage() {
   const { filteredRecords, hasData, activateDemoMode } = useTransactionData();
+  const { settings } = useSettings();
+  const STUCK_DAYS: Record<string, number> = {
+    'Active Listing': 60,
+    'Active': 60,
+    'Under Contract': settings.alerts.stuckDealEnabled ? settings.alerts.stuckDealDays : 30,
+  };
   const [sortField, setSortField] = useState<SortField>('daysInStage');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [search, setSearch] = useState('');

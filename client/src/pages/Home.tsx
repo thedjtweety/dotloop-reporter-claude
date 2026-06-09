@@ -125,6 +125,7 @@ import CSVPreparationGuide from '@/components/CSVPreparationGuide';
 import { useMetricsOrder } from '@/hooks/useMetricsOrder';
 import { DraggableMetricsContainer } from '@/components/DraggableMetricsContainer';
 import { renderMetricCard } from '@/lib/metricRenderHelper';
+import { useSettings } from '@/hooks/useSettings';
 
 function HomeContent() {
   // The userAuth hooks provides authentication state
@@ -132,6 +133,7 @@ function HomeContent() {
   let { user, loading, error, isAuthenticated, logout } = useAuth();
   const { filters, addFilter } = useFilters();
   const { setTransactionData, setComparisonDataSet, comparisonMode, toggleComparisonMode, metrics: contextMetrics, allRecords: contextAllRecords } = useTransactionData();
+  const { settings: appSettings } = useSettings();
 
   const [location, setLocation] = useLocation();
   const { metricsOrder, isEditMode, isLoaded, reorderMetrics, resetToDefault, toggleEditMode } = useMetricsOrder();
@@ -636,8 +638,15 @@ function HomeContent() {
   // Client-side only - no database persistence needed
 
   const handleFileUpload = async (file: File) => {
+    // Enforce configured file size limit
+    const maxSizeBytes = appSettings.uploadLimits.maxFileSizeMB * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      toast.error(`File exceeds the ${appSettings.uploadLimits.maxFileSizeMB}MB limit. Change this in Settings → Upload & Push Limits.`);
+      return;
+    }
+
     setIsLoading(true);
-    
+
     // Show progress dialog for files > 1MB
     const shouldShowProgress = file.size > 1024 * 1024; // 1MB
     if (shouldShowProgress) {
