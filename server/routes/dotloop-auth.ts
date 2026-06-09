@@ -172,34 +172,64 @@ router.get('/callback', async (req: Request, res: Response) => {
 
     // Pick the first INDIVIDUAL profile (as opposed to team/brokerage profiles)
     const profile = profiles[0];
+    const profileId   = profile?.profileId ?? null;
+    const profileName = profile?.name ?? account.name;
+
+    const encryptedAccessToken  = encryptToken(tokens.access_token);
+    const encryptedRefreshToken = encryptToken(tokens.refresh_token);
 
     // Persist to dotloop_connections
-    const db = getSupabaseAdmin();
-    await db.from('dotloop_connections').upsert(
-      {
-        tenant_id: tenantId,
-        user_id: userId,
-        dotloop_account_id: String(account.id),
-        dotloop_profile_id: profile?.profileId ?? null,
-        dotloop_profile_name: profile?.name ?? account.name,
-        encrypted_access_token: encryptToken(tokens.access_token),
-        encrypted_refresh_token: encryptToken(tokens.refresh_token),
-        token_expires_at: tokenExpiresAt.toISOString(),
-        sync_status: 'active',
-        connected_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'tenant_id' }
-    );
+    const supabaseAdmin = getSupabaseAdmin();
 
-    // Audit log
-    await db.from('audit_log').insert({
-      tenant_id: tenantId,
-      user_id: userId,
-      action: 'dotloop_connected',
+    console.log('[callback] attempting DB insert', {
+      tenant_id:         tenantId,
+      user_id:           userId,
+      has_access_token:  !!encryptedAccessToken,
+      has_refresh_token: !!encryptedRefreshToken,
+      profile_id:        profileId,
+    });
+
+    const { data: connData, error: connError } = await supabaseAdmin
+      .from('dotloop_connections')
+      .upsert(
+        {
+          tenant_id:               tenantId,
+          user_id:                 userId,
+          dotloop_account_id:      String(account.id),
+          dotloop_profile_id:      String(profileId),
+          dotloop_profile_name:    profileName,
+          encrypted_access_token:  encryptedAccessToken,
+          encrypted_refresh_token: encryptedRefreshToken,
+          token_expires_at:        tokenExpiresAt.toISOString(),
+          sync_status:             'never',
+          is_active:               true,
+          connected_at:            new Date().toISOString(),
+        },
+        { onConflict: 'tenant_id' }
+      );
+
+    console.log('[callback] DB insert result:', {
+      data:    connData,
+      error:   connError?.message,
+      code:    connError?.code,
+      details: connError?.details,
+    });
+
+    if (connError) {
+      console.error('[callback] FAILED to save connection:', connError);
+      // Don't redirect to success if save failed
+      res.redirect('/settings?error=save_failed');
+      return;
+    }
+
+    // Audit log (best-effort — after successful connection save)
+    await supabaseAdmin.from('audit_log').insert({
+      tenant_id:     tenantId,
+      user_id:       userId,
+      action:        'dotloop_connected',
       resource_type: 'dotloop_connection',
-      details: { dotloop_account_id: account.id, profile_name: profile?.name },
-      created_at: new Date().toISOString(),
+      details:       { dotloop_account_id: account.id, profile_name: profileName },
+      created_at:    new Date().toISOString(),
     });
 
     res.redirect('/settings?connected=true');
