@@ -397,7 +397,7 @@ export default function SidebarLayout({ children }: { children: React.ReactNode 
                 {[
                   { label: 'Transactions', value: dataStatistics.transactionCount.toString() },
                   { label: 'Total GCI', value: `$${(dataStatistics.totalGCI / 1_000_000).toFixed(1)}M` },
-                  { label: 'Close Rate', value: `${(dataStatistics.closeRate * 100).toFixed(1)}%` },
+                  { label: 'Close Rate', value: `${dataStatistics.closeRate.toFixed(1)}%` },
                 ].map(s => (
                   <div key={s.label} className="flex justify-between text-[10px]">
                     <span className="text-muted-foreground">{s.label}</span>

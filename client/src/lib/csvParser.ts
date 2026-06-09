@@ -219,6 +219,11 @@ export function calculateAgentMetrics(records: DotloopRecord[]): AgentMetrics[] 
       ? record.agents.split(',').map(a => a.trim()).filter(a => a)
       : [];
 
+    const status = (record.loopStatus || '').toLowerCase();
+    const isClosed = status === 'closed' || status === 'sold';
+    const isActive = status.includes('active');
+    const isUC = status === 'under contract';
+
     agents.forEach(agentName => {
       if (!agentMap.has(agentName)) {
         agentMap.set(agentName, {
@@ -239,32 +244,33 @@ export function calculateAgentMetrics(records: DotloopRecord[]): AgentMetrics[] 
       const agent = agentMap.get(agentName)!;
       agent.totalTransactions++;
 
-      if (record.loopStatus === 'Closed' || record.loopStatus === 'Sold') {
+      if (isClosed) {
         agent.closedDeals++;
-      } else if (record.loopStatus === 'Active Listings') {
-        agent.activeListings++;
-      } else if (record.loopStatus === 'Under Contract') {
-        agent.underContract++;
-      }
+        // Only accumulate financial metrics for closed deals
+        agent.totalCommission += record.commissionTotal || 0;
+        agent.totalSalesVolume += record.salePrice || record.price || 0;
+        agent.buySideCommission += record.buySideCommission || 0;
+        agent.sellSideCommission += record.sellSideCommission || 0;
+        agent.companyDollar += record.companyDollar || 0;
 
-      agent.totalCommission += record.commissionTotal || 0;
-      agent.totalSalesVolume += record.salePrice || record.price || 0;
-      agent.buySideCommission += record.buySideCommission || 0;
-      agent.sellSideCommission += record.sellSideCommission || 0;
-      agent.companyDollar += record.companyDollar || 0;
-
-      // Calculate days to close
-      if (record.closingDate && record.createdDate) {
-        const created = new Date(record.createdDate);
-        const closing = new Date(record.closingDate);
-        if (!isNaN(created.getTime()) && !isNaN(closing.getTime())) {
-          const daysToClose = Math.ceil(
-            (closing.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
-          );
-          if (daysToClose > 0) {
-            agent.daysToCloseList.push(daysToClose);
+        // Days to close: prefer listingDate, fall back to createdDate
+        const startDateStr = record.listingDate || record.createdDate;
+        if (record.closingDate && startDateStr) {
+          const start = new Date(startDateStr);
+          const closing = new Date(record.closingDate);
+          if (!isNaN(start.getTime()) && !isNaN(closing.getTime())) {
+            const daysToClose = Math.ceil(
+              (closing.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+            );
+            if (daysToClose > 0) {
+              agent.daysToCloseList.push(daysToClose);
+            }
           }
         }
+      } else if (isActive) {
+        agent.activeListings++;
+      } else if (isUC) {
+        agent.underContract++;
       }
     });
   });
@@ -281,13 +287,13 @@ export function calculateAgentMetrics(records: DotloopRecord[]): AgentMetrics[] 
           : 0,
       totalCommission: agent.totalCommission,
       averageCommission:
-        agent.totalTransactions > 0
-          ? agent.totalCommission / agent.totalTransactions
+        agent.closedDeals > 0
+          ? agent.totalCommission / agent.closedDeals
           : 0,
       totalSalesVolume: agent.totalSalesVolume,
       averageSalesPrice:
-        agent.totalTransactions > 0
-          ? agent.totalSalesVolume / agent.totalTransactions
+        agent.closedDeals > 0
+          ? agent.totalSalesVolume / agent.closedDeals
           : 0,
       averageDaysToClose:
         agent.daysToCloseList.length > 0
@@ -484,18 +490,21 @@ export function calculateMetrics(records: DotloopRecord[], previousRecords?: Dot
       else if (status.includes('closed') || status.includes('sold')) statusCounts.closed++;
       else if (status.includes('archived')) statusCounts.archived++;
 
-      // Count volume/commission for all deals (use price for non-closed, salePrice for closed)
-      totalSalesVolume += record.salePrice || record.price || 0;
+      // Only count volume for closed/sold deals
+      if (status.includes('closed') || status.includes('sold')) {
+        totalSalesVolume += record.salePrice || record.price || 0;
+      }
       totalCommission += record.commissionTotal || 0;
       totalCompanyDollar += record.companyDollar || 0;
 
-      // Only calculate days to close for closed/sold deals
+      // Only calculate days to close for closed/sold deals; prefer listingDate over createdDate
       if (status.includes('closed') || status.includes('sold')) {
-        if (record.closingDate && record.createdDate) {
-          const created = new Date(record.createdDate);
+        const startDateStr = record.listingDate || record.createdDate;
+        if (record.closingDate && startDateStr) {
+          const start = new Date(startDateStr);
           const closing = new Date(record.closingDate);
-          if (!isNaN(created.getTime()) && !isNaN(closing.getTime())) {
-            const days = Math.ceil((closing.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+          if (!isNaN(start.getTime()) && !isNaN(closing.getTime())) {
+            const days = Math.ceil((closing.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
             if (days > 0) daysToCloseValues.push(days);
           }
         }
@@ -503,7 +512,7 @@ export function calculateMetrics(records: DotloopRecord[], previousRecords?: Dot
     });
 
     const totalTransactions = recs.length;
-    const averagePrice = totalTransactions > 0 ? totalSalesVolume / totalTransactions : 0;
+    const averagePrice = statusCounts.closed > 0 ? totalSalesVolume / statusCounts.closed : 0;
     const averageDaysToClose = daysToCloseValues.length > 0 
       ? Math.round(daysToCloseValues.reduce((a, b) => a + b, 0) / daysToCloseValues.length) 
       : 0;

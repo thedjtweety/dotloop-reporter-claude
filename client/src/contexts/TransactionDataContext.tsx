@@ -191,8 +191,8 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
     }
     return {
       transactionCount: comparisonDataSet.filteredRecords.length,
-      totalGCI: comparisonDataSet.metrics?.totalGCI ?? 0,
-      closeRate: comparisonDataSet.metrics?.closeRate ?? 0,
+      totalGCI: comparisonDataSet.metrics?.totalCommission ?? 0,
+      closeRate: comparisonDataSet.metrics?.closingRate ?? 0,
     };
   }, [comparisonDataSet]);
 
@@ -253,8 +253,8 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
     teams,
     dataStatistics: {
       transactionCount: filteredRecords.length,
-      totalGCI: metrics?.totalGCI ?? 0,
-      closeRate: metrics?.closeRate ?? 0,
+      totalGCI: metrics?.totalCommission ?? 0,
+      closeRate: metrics?.closingRate ?? 0,
     },
 
     // Comparison mode
