@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
 import { formatCurrency } from '@/lib/formatUtils';
@@ -12,8 +12,25 @@ import { useAgentDetail } from '@/hooks/useAgentDetail';
 import {
   FileText, AlertCircle, TrendingUp, Users, Clock, X,
   DollarSign, BarChart2, Activity, CheckCircle2, Trophy,
-  ArrowUpRight, ArrowDownRight, Minus, Target, Home,
+  ArrowUpRight, ArrowDownRight, Minus, Target, Home, Pencil, Check,
 } from 'lucide-react';
+
+const Q2_TARGET_KEY = 'quarterly-gci-target';
+
+function loadSavedTarget(): number | null {
+  try {
+    const raw = localStorage.getItem(Q2_TARGET_KEY);
+    if (!raw) return null;
+    const n = parseFloat(raw);
+    return isNaN(n) ? null : n;
+  } catch {
+    return null;
+  }
+}
+
+function saveTarget(n: number) {
+  localStorage.setItem(Q2_TARGET_KEY, String(n));
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -169,7 +186,28 @@ export default function Dashboard() {
   const [riskAdjust, setRiskAdjust] = useState([80]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
+  // Q2 target — persisted to localStorage, defaults to 1.25× current GCI if not set
+  const [savedTarget, setSavedTarget] = useState<number | null>(loadSavedTarget);
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [targetInput, setTargetInput] = useState('');
+  const targetInputRef = useRef<HTMLInputElement>(null);
+
   const visibleActions = ACTION_ITEMS.filter(a => !dismissed.has(a.id));
+
+  useEffect(() => {
+    if (editingTarget) targetInputRef.current?.focus();
+  }, [editingTarget]);
+
+  function commitTarget() {
+    const raw = targetInput.replace(/[$,\s]/g, '');
+    const n = parseFloat(raw);
+    if (!isNaN(n) && n > 0) {
+      setSavedTarget(n);
+      saveTarget(n);
+    }
+    setEditingTarget(false);
+    setTargetInput('');
+  }
 
   // ── Pre-filtered record sets (used for drill-down modals) ──
   const closedRecs   = filteredRecords.filter(isClosed);
@@ -210,7 +248,8 @@ export default function Dashboard() {
       .reduce((s, r) => s + (r.commissionTotal || 0), 0),
   [filteredRecords]);
 
-  const q2Target     = Math.max(q2Closed + pipelineGCI, 100) * 1.25;
+  const autoTarget   = Math.max(q2Closed + pipelineGCI, 100) * 1.25;
+  const q2Target     = savedTarget ?? autoTarget;
   const forecastEOQ  = q2Closed + pipelineGCI * (riskAdjust[0] / 100);
   const closedPct    = Math.min((q2Closed / q2Target) * 100, 100);
   const pipelinePct  = Math.min((pipelineGCI / q2Target) * 100, 100 - closedPct);
@@ -377,19 +416,73 @@ export default function Dashboard() {
         <SectionLabel>Goal &amp; Pipeline Coverage</SectionLabel>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-5">
-          {[
-            { label: 'Closed Q2 GCI',  value: compactCurrency(q2Closed),   sub: 'Year to date',            records: closedRecs },
-            { label: 'Pipeline GCI',   value: compactCurrency(pipelineGCI), sub: 'Under contract',          records: ucRecs },
-            { label: 'Q2 Target',      value: compactCurrency(q2Target),    sub: 'Brokerage goal',          records: filteredRecords },
-            { label: 'Forecast EOQ',   value: compactCurrency(forecastEOQ), sub: `${riskAdjust[0]}% conversion`, records: [...closedRecs, ...ucRecs] },
-          ].map(m => (
-            <div key={m.label} className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setDrillTarget({ title: m.label, records: m.records })}>
-              <p className="text-muted-foreground text-xs mb-1">{m.label}</p>
-              <p className="text-foreground text-xl font-bold tabular-nums">{m.value}</p>
-              <p className="text-muted-foreground text-xs">{m.sub}</p>
+          {/* Closed Q2 GCI */}
+          <div className="cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setDrillTarget({ title: 'Closed Q2 GCI', records: closedRecs })}>
+            <p className="text-muted-foreground text-xs mb-1">Closed Q2 GCI</p>
+            <p className="text-foreground text-xl font-bold tabular-nums">{compactCurrency(q2Closed)}</p>
+            <p className="text-muted-foreground text-xs">Year to date</p>
+          </div>
+
+          {/* Pipeline GCI */}
+          <div className="cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setDrillTarget({ title: 'Pipeline GCI', records: ucRecs })}>
+            <p className="text-muted-foreground text-xs mb-1">Pipeline GCI</p>
+            <p className="text-foreground text-xl font-bold tabular-nums">{compactCurrency(pipelineGCI)}</p>
+            <p className="text-muted-foreground text-xs">Under contract</p>
+          </div>
+
+          {/* Q2 Target — editable */}
+          <div>
+            <div className="flex items-center gap-1.5 mb-1">
+              <p className="text-muted-foreground text-xs">Q2 Target</p>
+              {!editingTarget && (
+                <button
+                  onClick={() => { setTargetInput(q2Target.toFixed(0)); setEditingTarget(true); }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  title="Edit Q2 target"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
             </div>
-          ))}
+            {editingTarget ? (
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground text-sm">$</span>
+                <input
+                  ref={targetInputRef}
+                  value={targetInput}
+                  onChange={e => setTargetInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitTarget();
+                    if (e.key === 'Escape') { setEditingTarget(false); setTargetInput(''); }
+                  }}
+                  className="w-28 bg-secondary border border-blue-500/60 rounded px-2 py-0.5 text-foreground text-sm font-bold tabular-nums focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="500000"
+                />
+                <button
+                  onClick={commitTarget}
+                  className="text-emerald-400 hover:text-emerald-300 transition-colors"
+                  title="Save"
+                >
+                  <Check className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <p className="text-foreground text-xl font-bold tabular-nums">{compactCurrency(q2Target)}</p>
+            )}
+            <p className="text-muted-foreground text-xs mt-0.5">
+              {savedTarget ? 'Custom target' : 'Auto (1.25× GCI)'}
+            </p>
+          </div>
+
+          {/* Forecast EOQ */}
+          <div className="cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setDrillTarget({ title: 'Forecast EOQ', records: [...closedRecs, ...ucRecs] })}>
+            <p className="text-muted-foreground text-xs mb-1">Forecast EOQ</p>
+            <p className="text-foreground text-xl font-bold tabular-nums">{compactCurrency(forecastEOQ)}</p>
+            <p className="text-muted-foreground text-xs">{riskAdjust[0]}% conversion</p>
+          </div>
         </div>
 
         {/* Coverage bar */}
