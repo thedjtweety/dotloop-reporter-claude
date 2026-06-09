@@ -105,38 +105,47 @@ All routes are declared in `client/src/App.tsx` in the `SIDEBAR_ROUTES` array. E
 
 ### Current Route Map
 
-| Group | Path | Component | Status |
-|---|---|---|---|
-| Overview | `/` | `Dashboard` | Built |
-| Overview | `/upload` | `Home` | Built (original CSV upload page) |
-| Deals | `/agents` | `AgentsPage` | Built |
-| Deals | `/commission` | `CommissionManagement` | Built |
-| Deals | `/net-commission-report` | `NetCommissionReportPage` | Built |
-| Deals | `/cda-builder` | `CDABuilderPage` | Built |
-| Deals | `/cda-history` | `CDAHistoryPage` | Built |
-| Deals | `/stuck-deals` | `StuckDealsPage` | Built |
-| Deals | `/tasks` | `TasksPage` | Built |
-| Analytics | `/trends` | `TrendsPage` | Built |
-| Analytics | `/forecasting` | `ForecastingPage` | Built |
-| Analytics | `/goals` | `GoalsPage` | Built |
-| Analytics | `/timeline` | `TimelinePage` | Built |
-| Analytics | `/velocity` | `VelocityPage` | Built |
-| Analytics | `/compare` | `ComparePage` | Built |
-| Analytics | `/market` | `MarketPage` | Built |
-| Team | `/teams` | `TeamsPage` | Built |
-| Team | `/contests` | `ContestsPage` | Built |
-| Team | `/recruiting` | `RecruitingPage` | Built |
-| Team | `/comparison` | `ComparisonPage` | Built — accessed from /compare when comparison mode active (no sidebar link) |
-| Team | `/retention` | `RetentionPage` | Built |
-| Team | `/lead-roi` | `LeadROIPage` | Built |
-| Finance | `/agent-billing` | `AgentBillingPage` | Built |
-| Finance | `/quickbooks` | `QuickBooksPage` | Built |
-| Finance | `/templates` | `CommissionTemplates` | Built |
-| Admin | `/reporting` | `ReportingComplete` | Built |
-| Admin | `/data-quality` | `DataValidationRules` | Built |
-| Admin | `/audit-log` | `AuditLog` | Built |
-| Admin | `/admin` | `AdminDashboard` | Built |
-| Settings | `/settings` | `SettingsComplete` | Built |
+#### Overview
+- `/` → `Dashboard` — Full-featured with Action Queue, Goal Coverage, Pipeline, Projected to Close, Closing This Week, Activity, Recruiting Funnel, File Compliance, Market Pulse, Brokerage Health, AI Insights — ALL sections clickable with drill-downs
+- `/upload` → `Home` — CSV upload + demo data
+
+#### Deals & Pipeline
+- `/agents` → `AgentsPage` — Podium, performance chart, full table with commission plan + buy% columns; all agent names clickable to AgentDetailModal
+- `/commission` → `CommissionManagement` — 4 plan cards, Plans/Agents/Calculate/Audit/What-If tabs
+- `/net-commission-report` → `NetCommissionReportPage`
+- `/cda-builder` → `CDABuilderPage` — with prefill support
+- `/cda-history` → `CDAHistoryPage`
+- `/stuck-deals` → `StuckDealsPage` — CDA button on rows
+- `/tasks` → `TasksPage`
+
+#### Analytics
+- `/trends` → `TrendsPage`
+- `/forecasting` → `ForecastingPage`
+- `/goals` → `GoalsPage`
+- `/timeline` → `TimelinePage`
+- `/velocity` → `VelocityPage`
+- `/compare` → `ComparePage`
+- `/market` → `MarketPage`
+
+#### Team & Growth
+- `/teams` → `TeamsPage`
+- `/contests` → `ContestsPage`
+- `/recruiting` → `RecruitingPage` — Kanban board with 6 columns: Lead / Contacted / Interviewing / Offer Extended / Onboarding / Declined
+- `/retention` → `RetentionPage` — Churn risk scores, flight risk panel, retention rate chart
+- `/lead-roi` → `LeadROIPage` — GCI vs cost by source, ROI multiplier, cost per closed deal
+- `/comparison` → `ComparisonPage` — Accessed from /compare when comparison mode active (no sidebar link)
+
+#### Finance & Ops
+- `/agent-billing` → `AgentBillingPage` — A/R aging, billing items, assignments, invoices, 1099-NEC
+- `/templates` → `CommissionTemplates`
+- `/quickbooks` → `QuickBooksPage` — Export-focused, post transactions as journal entries
+
+#### Reports & Admin
+- `/reporting` → `ReportingComplete` — Custom report builder with 5 starter templates
+- `/data-quality` → `DataValidationRules` — Field completeness ring, validation issues
+- `/audit-log` → `AuditLog`
+- `/admin` → `AdminDashboard` — Users, uploads, rate limits, SSO, webhooks, FUB sync
+- `/settings` → `SettingsComplete` — Full hub with search, tabs, card grid, slide-out forms, useSettings hook
 
 All routes are fully built. `/team-management` was removed from routes (requires live auth backend). `/comparison` is reachable from `/compare` when comparison mode is active.
 
@@ -634,36 +643,221 @@ The modal fills most of the screen: `DialogContent` uses `max-w-6xl w-[95vw] min
 
 ---
 
-## Phase 1 — Complete (2026-06-06)
+## Phase Status
 
-All 29 pages are built and polished. The following work was completed in Phase 1:
+### Phase 1 — COMPLETE (2026-06-06)
 
-- All routes rendered through `SidebarLayout` with consistent nav
-- Every page has: proper `h1` header + subtitle, `hasData` empty state with "Load Demo Data" button, theme-aware Tailwind classes (no hardcoded hex colors)
-- Hardcoded hex colors (`#0d1117`, `#111827`, `#1e2d3d`, etc.) replaced with `bg-background`, `bg-secondary`, `border-border`, `text-foreground`, `text-muted-foreground` across all 30 active page files
-- DataValidationRules: real-time data analysis + "Download Report" button added
-- ForecastingPage: click-to-drill-down modal on agent projection table rows
-- `/team-management` removed from routes (requires live auth/tRPC backend — not usable in CSV mode)
-- TypeScript: 0 errors
+- ✅ All 29 pages built
+- ✅ Universal DrillDownModal with Level 1 + Level 2
+- ✅ Agent detail modal with full profile
+- ✅ CDA prefill from any transaction
+- ✅ Three themes (light/dark/contrast) on all pages
+- ✅ All metric cards clickable with drill-downs
+- ✅ Recruiting Kanban board
+- ✅ Retention with churn risk scoring
+- ✅ QuickBooks export page
+- ✅ Data Quality with field completeness
+- ✅ Custom Reports builder
+- ✅ Full Settings hub with useSettings hook
+- ✅ Zero TypeScript errors
+- ✅ All code committed to GitHub
 
-**Known limitations before Phase 2:**
-- CDA Builder "Generate PDF" button is not implemented (>30 min — deferred to Phase 2)
-- All data is computed client-side from CSV; no persistence between sessions
-- Demo mode uses synthetic data; real Dotloop API connection not yet active
-- No user accounts — any broker can access any demo session
+### Phase 2 — IN PROGRESS
+
+- 🔨 Settings Pass 2 (forms fully wired, useSettings)
+- 📋 Dotloop OAuth integration
+  - Client ID and secret available (Zillow/Dotloop)
+  - Callback URLs configured
+  - Will replace CSV upload with live data sync
+- 📋 Supabase database setup
+  - Replace MySQL/demo data with real persistence
+  - User accounts and multi-tenant support
+- 📋 Real user authentication
+  - Replace demo mode with real login
+  - Multi-office/team support
+- 📋 Railway deployment
+  - Deploy to dotlooproport.com
+  - Environment variables configuration
+  - DNS setup
+
+### Phase 3 — PLANNED
+
+- 📋 Visual redesign
+  - Custom brand identity
+  - Non-generic component styling
+  - Design reference: premium PropTech aesthetic
+- 📋 Email report delivery
+- 📋 SMS notifications
+- 📋 Mobile app
 
 ---
 
-## Next Phase (Phase 2)
+## Key Components Built
 
-The following items are planned for production launch. All frontend pages are complete — this phase is infrastructure, auth, and live data.
+### DrillDownModal (`client/src/components/DrillDownModal.tsx`)
 
-1. **Dotloop OAuth integration** — Client ID and secret are ready. Wire up the existing `server/routers/dotloopApi.ts` router and `server/_core/oauth.ts` flow so brokers can connect their Dotloop account directly instead of uploading CSVs.
+Universal two-level drill-down modal used across the entire app.
 
-2. **Supabase database setup** — Replace the current MySQL/TiDB `DATABASE_URL` with Supabase (Postgres). Update `drizzle/schema.ts` for Postgres dialect, run migrations, and update `db.ts` connection helpers.
+- **Level 1:** Paginated transaction list (25/50/100 per page)
+- **Level 2:** Full property detail view when a row is clicked
+- **Props:** `title`, `records`, `onClose`, `onAgentClick` (optional)
+- **Features:** real-time search, status/agent/date filters, sortable columns, CSV export, breadcrumb navigation
+- Pagination preference saved to localStorage
+- **ALWAYS use this component for transaction drill-downs — never create a custom modal for transactions**
 
-3. **Railway deployment** — Deploy the Express + Vite build (`pnpm build` → `dist/`) to Railway. Set all required env vars in Railway dashboard (DATABASE_URL, JWT_SECRET, TOKEN_ENCRYPTION_KEY, DOTLOOP_CLIENT_ID/SECRET, DOTLOOP_REDIRECT_URI pointing to prod domain).
+### AgentDetailModal
 
-4. **Custom domain** — Point `dotlooproport.com` to the Railway deployment. Update `DOTLOOP_REDIRECT_URI` and `VITE_OAUTH_PORTAL_URL` to the production domain.
+Full agent profile drill-down:
 
-5. **Real user auth** — Replace demo mode as the primary entry point with proper broker sign-up/login. The Manus OAuth scaffolding in `server/_core/auth.ts` is the starting point; replace or adapt it for email/password or Supabase Auth. Gate all pages behind `protectedProcedure` and remove the `activateDemoMode` fallback from the default landing experience (keep it as a "Try Demo" option).
+- KPI cards: closed deals, GCI, volume, avg days
+- Buy/sell split bar
+- Performance tab with monthly chart
+- Transactions tab using DrillDownModal table
+- Triggered by clicking any agent name anywhere in the app
+
+### CDA Prefill Pattern
+
+Any transaction table can send data to CDA Builder:
+
+- CDA button on every transaction row
+- Stores prefill data to localStorage key `"cda-prefill"`
+- Navigates to `/cda-builder`
+- `CDABuilderPage` reads and clears prefill on mount
+- Shows green banner confirming prefill loaded
+
+### `useSettings` Hook (`client/src/hooks/useSettings.ts`)
+
+Central settings management. All settings stored in typed localStorage keys.
+
+Sections: `brokerage`, `branding`, `cdaLogo`, `commissionDefaults`, `locale`, `reporting`, `displayMode`, `alerts`, `notifications`, `leadSources`, `leadSourceCosts`, `uploadLimits`
+
+```typescript
+const { settings, updateSetting } = useSettings();
+```
+
+Settings are wired into: sidebar brokerage name, logo display, accent color, auto-refresh, alert thresholds, lead source lists, upload limits.
+
+---
+
+## Clickability Rules
+
+**EVERY metric, card, chart bar, and data point that represents transactions MUST open DrillDownModal. This is a hard rule — no exceptions.**
+
+Standard pattern:
+
+```typescript
+const [modalOpen, setModalOpen] = useState(false);
+const [modalRecords, setModalRecords] = useState<DotloopRecord[]>([]);
+const [modalTitle, setModalTitle] = useState('');
+
+const openModal = (title: string, records: DotloopRecord[]) => {
+  setModalTitle(title);
+  setModalRecords(records);
+  setModalOpen(true);
+};
+
+// On any clickable element:
+onClick={() => openModal('Closed Transactions', closedRecords)}
+```
+
+Status filter patterns (must match exactly):
+
+```typescript
+const closedRecords = records.filter(r =>
+  r.loopStatus === 'Sold' || r.loopStatus === 'Closed' ||
+  r.status === 'Sold' || r.status === 'Closed'
+);
+const activeRecords = records.filter(r =>
+  r.loopStatus === 'Active Listings' || r.status === 'Active Listings'
+);
+const ucRecords = records.filter(r =>
+  r.loopStatus === 'Under Contract' || r.status === 'Under Contract'
+);
+```
+
+---
+
+## CDA Button Rule
+
+**Every table showing individual transactions MUST have a CDA button as the last column.**
+
+```tsx
+<button
+  onClick={() => {
+    localStorage.setItem('cda-prefill',
+      JSON.stringify({
+        address: record.address,
+        city: record.city,
+        state: record.state,
+        salePrice: record.salePrice,
+        closingDate: record.closingDate,
+        agentName: record.agentName,
+        commissionRate: record.commissionRate,
+        commissionTotal: record.commissionTotal,
+        buySide: record.buySide,
+        sellSide: record.sellSide,
+        companyDollar: record.companyDollar,
+      })
+    );
+    navigate('/cda-builder');
+  }}
+  className="px-2 py-1 text-xs border border-accent text-accent hover:bg-accent hover:text-white rounded transition-colors"
+  title="Build CDA for this transaction"
+>
+  CDA
+</button>
+```
+
+---
+
+## Wallboard / Display Mode
+
+The Display Mode settings page (in Settings hub) controls a full-screen rotating dashboard for office TVs. Key features to implement in Phase 2:
+
+- Enable toggle with shareable kiosk URL
+- Draggable scenes rotation order: Top Producers, Active Contests, Goal Progress, Recent Closings, Monthly Volume
+- Theme presets: Brand Bold, Newsroom, Stadium, Midnight, High Contrast
+- Accent color picker
+- Background: Brand / Solid / Gradient / Dots / Grid / Image
+- Logo placement: Top left / Watermark / Hidden
+- Typography: Compact / Default / Jumbo
+- Headline announcement text (0/240 chars)
+- Closing celebration overlay (confetti toggle)
+- Corner widgets: Clock and/or Weather
+- Agent photos upload (match by filename)
+- Rotation interval slider (5s–120s)
+- Chime on new closing toggle
+- Active hours schedule with timezone
+- Holiday management
+
+---
+
+## Design Reference Process
+
+When building UI that should match the Replit reference version:
+
+1. Screenshot the Replit page using Chrome extension
+2. Share screenshot in Claude.ai chat for analysis
+3. Claude.ai writes detailed build prompt from screenshot
+4. Paste prompt into Claude Desktop to build
+5. Compare result in browser at `localhost:3000`
+6. Iterate as needed
+
+- **Reference app:** `dotloopreport.replit.app`
+- **Our app:** `localhost:3000` (`pnpm dev`)
+- **GitHub:** `github.com/thedjtweety/dotloop-reporter`
+
+---
+
+## Git Workflow
+
+SSH is configured. Push after every build session:
+
+```bash
+cd ~/Desktop/dotloop-reporter
+git push origin main
+```
+
+Quick alias available: `gp` (if configured).
+
+Claude Code/Desktop auto-commits after builds. Always push to keep GitHub current. Never commit `.env` files (already in `.gitignore`).
