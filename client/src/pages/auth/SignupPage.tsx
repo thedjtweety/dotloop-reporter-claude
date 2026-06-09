@@ -39,7 +39,10 @@ export default function SignupPage() {
     setLoading(false);
 
     if (authError) {
-      setError(authError.message);
+      console.error('[SignupPage] signUp error:', authError);
+      // Show the full error message so we can debug
+      const msg = authError.message || String(authError);
+      setError(msg);
     } else {
       setDone(true);
     }

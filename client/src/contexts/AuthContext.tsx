@@ -126,11 +126,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     brokerageName: string
   ): Promise<{ error: AuthError | Error | null }> => {
+    console.log('[signUp] Starting Supabase signUp for:', email);
     const { data, error } = await supabase.auth.signUp({ email, password });
+    console.log('[signUp] Supabase signUp result:', { userId: data?.user?.id, error });
     if (error || !data.user) return { error: error ?? new Error('Sign up failed') };
 
     // Create tenant + user rows on our backend
     try {
+      console.log('[signUp] Calling /api/auth/setup-tenant with userId:', data.user.id, 'brokerage:', brokerageName);
       const res = await fetch('/api/auth/setup-tenant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,11 +144,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           brokerageName,
         }),
       });
+      console.log('[signUp] setup-tenant response status:', res.status);
       if (!res.ok) {
         const body = await res.json() as { error?: string };
-        return { error: new Error(body.error ?? 'Failed to create tenant') };
+        console.error('[signUp] setup-tenant error body:', body);
+        return { error: new Error(body.error ?? `Server error ${res.status}: Failed to create tenant`) };
       }
+      const successBody = await res.json() as { tenantId?: string; created?: boolean };
+      console.log('[signUp] setup-tenant success:', successBody);
     } catch (err) {
+      console.error('[signUp] setup-tenant fetch threw:', err);
       return { error: err instanceof Error ? err : new Error('Network error') };
     }
 

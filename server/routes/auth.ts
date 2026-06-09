@@ -77,6 +77,7 @@ router.get('/me', async (req: Request, res: Response) => {
  *   2. A `users` row linking the Supabase UID to the tenant
  */
 router.post('/setup-tenant', async (req: Request, res: Response) => {
+  console.log('[auth/setup-tenant] ── route hit ──');
   try {
     const { userId, email, brokerageName } = req.body as {
       userId?: string;
@@ -84,7 +85,10 @@ router.post('/setup-tenant', async (req: Request, res: Response) => {
       brokerageName?: string;
     };
 
+    console.log('[auth/setup-tenant] received:', { userId, email, brokerageName });
+
     if (!userId || !email || !brokerageName) {
+      console.warn('[auth/setup-tenant] missing fields — returning 400');
       res.status(400).json({ error: 'userId, email, and brokerageName are required' });
       return;
     }
@@ -92,26 +96,32 @@ router.post('/setup-tenant', async (req: Request, res: Response) => {
     const db = getSupabaseAdmin();
 
     // Verify the user actually exists in Supabase Auth
+    console.log('[auth/setup-tenant] verifying user in Supabase Auth:', userId);
     const { data: { user }, error: userError } = await db.auth.admin.getUserById(userId);
+    console.log('[auth/setup-tenant] Supabase Auth lookup result:', { found: !!user, error: userError?.message ?? null });
     if (userError || !user) {
-      res.status(400).json({ error: 'Invalid Supabase user ID' });
+      res.status(400).json({ error: `Invalid Supabase user ID: ${userError?.message ?? 'user not found'}` });
       return;
     }
 
     // Check if user row already exists (idempotent)
-    const { data: existing } = await db
+    console.log('[auth/setup-tenant] checking for existing user row...');
+    const { data: existing, error: existingErr } = await db
       .from('users')
       .select('tenant_id')
       .eq('supabase_uid', userId)
       .maybeSingle();
+    console.log('[auth/setup-tenant] existing user row:', { existing, error: existingErr?.message ?? null });
 
     if (existing) {
+      console.log('[auth/setup-tenant] user already exists, returning existing tenantId');
       res.json({ tenantId: existing.tenant_id, created: false });
       return;
     }
 
     // Create tenant
     const tenantId = uuidv4();
+    console.log('[auth/setup-tenant] inserting tenant row, id:', tenantId);
     const { error: tenantError } = await db
       .from('tenants')
       .insert({
@@ -121,33 +131,35 @@ router.post('/setup-tenant', async (req: Request, res: Response) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
+    console.log('[auth/setup-tenant] tenant insert result:', { error: tenantError?.message ?? null, code: tenantError?.code ?? null, details: tenantError?.details ?? null });
 
     if (tenantError) {
-      console.error('[auth/setup-tenant] tenant insert error:', tenantError.message);
-      res.status(500).json({ error: 'Failed to create tenant' });
+      res.status(500).json({ error: `Failed to create tenant: ${tenantError.message}` });
       return;
     }
 
     // Create user row
+    const newUserId = uuidv4();
+    console.log('[auth/setup-tenant] inserting user row, id:', newUserId);
     const { error: userRowError } = await db
       .from('users')
       .insert({
-        id:          uuidv4(),
-        tenant_id:   tenantId,
+        id:           newUserId,
+        tenant_id:    tenantId,
         supabase_uid: userId,
         email,
-        role:        'admin',
-        created_at:  new Date().toISOString(),
-        updated_at:  new Date().toISOString(),
+        role:         'admin',
+        created_at:   new Date().toISOString(),
+        updated_at:   new Date().toISOString(),
       });
+    console.log('[auth/setup-tenant] user row insert result:', { error: userRowError?.message ?? null, code: userRowError?.code ?? null, details: userRowError?.details ?? null });
 
     if (userRowError) {
-      console.error('[auth/setup-tenant] user insert error:', userRowError.message);
-      res.status(500).json({ error: 'Failed to create user profile' });
+      res.status(500).json({ error: `Failed to create user profile: ${userRowError.message}` });
       return;
     }
 
-    // Audit log
+    // Audit log (best-effort, non-blocking)
     db.from('audit_log').insert({
       tenant_id:     tenantId,
       action:        'tenant_created',
@@ -159,10 +171,12 @@ router.post('/setup-tenant', async (req: Request, res: Response) => {
       if (auditErr) console.error('[auth] audit log insert failed:', auditErr.message);
     });
 
+    console.log('[auth/setup-tenant] ✓ success — tenantId:', tenantId);
     res.status(201).json({ tenantId, created: true });
   } catch (err) {
-    console.error('[auth/setup-tenant] error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('[auth/setup-tenant] THREW:', err);
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: `Internal server error: ${msg}` });
   }
 });
 
