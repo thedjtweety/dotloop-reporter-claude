@@ -53,6 +53,8 @@ export interface DotloopProfile {
   name: string;
   email: string;
   phone?: string;
+  type?: string;        // e.g. 'INDIVIDUAL', 'TEAM', 'OFFICE' — present in real API responses
+  active?: boolean;
 }
 
 export interface TokenRefreshResponse {

@@ -170,10 +170,28 @@ router.get('/callback', async (req: Request, res: Response) => {
       client.getProfiles(),
     ]);
 
-    // Pick the first INDIVIDUAL profile (as opposed to team/brokerage profiles)
-    const profile = profiles[0];
+    console.log('[callback] getAccount() result:', {
+      id:       account?.id,
+      name:     account?.name,
+      email:    account?.email,
+    });
+    console.log('[callback] getProfiles() result:', profiles?.length ?? 0, 'profiles');
+    console.log('[callback] profiles raw:', JSON.stringify(profiles));
+
+    // Pick the first INDIVIDUAL profile; fall back to profiles[0] if none typed
+    const individualProfile = profiles?.find(
+      (p) => p.type?.toUpperCase() === 'INDIVIDUAL'
+    );
+    const profile     = individualProfile ?? profiles?.[0] ?? null;
     const profileId   = profile?.profileId ?? null;
-    const profileName = profile?.name ?? account.name;
+    const profileName = profile?.name ?? account?.name ?? 'Unknown';
+
+    console.log('[callback] selected profile:', {
+      profileId,
+      profileName,
+      type:     profile?.type ?? 'no type field',
+      source:   individualProfile ? 'INDIVIDUAL match' : profiles?.length ? 'fallback profiles[0]' : 'none — using account name',
+    });
 
     const encryptedAccessToken  = encryptToken(tokens.access_token);
     const encryptedRefreshToken = encryptToken(tokens.refresh_token);
