@@ -10,6 +10,7 @@ export interface DotloopAccount {
   name: string;
   email: string;
   timeZone?: string;
+  defaultProfileId?: string | number;  // present in real API responses
 }
 
 export interface DotloopLoop {

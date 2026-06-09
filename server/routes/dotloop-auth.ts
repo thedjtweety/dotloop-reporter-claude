@@ -175,32 +175,33 @@ router.get('/callback', async (req: Request, res: Response) => {
     console.log('[callback] profiles:', JSON.stringify(profiles));
 
     // ── Select profile ───────────────────────────────────────────────────────
-    // Prefer the first INDIVIDUAL-type profile; fall back to profiles[0].
-    // If Dotloop returns no profiles at all, abort — we cannot sync without one.
-    if (!profiles || profiles.length === 0) {
-      console.error('[callback] getProfiles() returned empty array — cannot save connection without a profile ID');
-      res.redirect('/settings?error=no_profile');
-      return;
-    }
+    // account.defaultProfileId is the most reliable fallback — it's present even
+    // when getProfiles() returns an empty array (Dotloop API quirk).
+    const defaultProfileId = account?.defaultProfileId
+      ? String(account.defaultProfileId)
+      : null;
+    console.log('[callback] defaultProfileId from account:', defaultProfileId);
 
-    const individualProfile = profiles.find(
+    // Prefer first INDIVIDUAL-typed profile → profiles[0] → account.defaultProfileId
+    const individualProfile = profiles?.find(
       (p) => typeof p.type === 'string' && p.type.toUpperCase() === 'INDIVIDUAL'
     );
-    const profile     = individualProfile ?? profiles[0];
-    const profileId   = profile.profileId;   // string — guaranteed non-null now
-    const profileName = profile.name ?? account?.name ?? 'Unknown';
+    const profileFromList = individualProfile ?? profiles?.[0] ?? null;
+
+    const profileId   = profileFromList?.profileId ?? defaultProfileId;
+    const profileName = profileFromList?.name ?? account?.name ?? 'Unknown';
 
     console.log('[callback] selected profileId:', profileId);
-    console.log('[callback] selected profile:', {
-      profileId,
-      profileName,
-      type:   profile.type ?? 'no type field',
-      source: individualProfile ? 'INDIVIDUAL match' : 'fallback profiles[0]',
-    });
+    console.log('[callback] selected profile source:',
+      individualProfile   ? 'INDIVIDUAL match from profiles list' :
+      profileFromList     ? 'fallback profiles[0]' :
+      defaultProfileId    ? 'account.defaultProfileId fallback' :
+                            'NONE — will abort'
+    );
 
     if (!profileId) {
-      // profileId is an empty string — Dotloop API returned a profile with no id
-      console.error('[callback] selected profile has no profileId:', JSON.stringify(profile));
+      console.error('[callback] no profile ID available — profiles:', JSON.stringify(profiles),
+        '| defaultProfileId:', defaultProfileId);
       res.redirect('/settings?error=no_profile');
       return;
     }
