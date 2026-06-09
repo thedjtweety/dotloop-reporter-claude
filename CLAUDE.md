@@ -729,13 +729,27 @@ Any transaction table can send data to CDA Builder:
 
 Central settings management. All settings stored in typed localStorage keys.
 
-Sections: `brokerage`, `branding`, `cdaLogo`, `commissionDefaults`, `locale`, `reporting`, `displayMode`, `alerts`, `notifications`, `leadSources`, `leadSourceCosts`, `uploadLimits`
+Sections: `brokerage`, `branding`, `cdaLogo`, `commissionDefaults`, `locale`, `reporting`, `alerts`, `alertRules`, `notifications`, `notificationPrefs`, `leadSources`, `leadSourceCosts`, `uploadLimits`, `smtp`, `webhooks`, `integrations`, `qb`, `qbAlerts`
 
 ```typescript
 const { settings, update, resetAll } = useSettings();
 ```
 
 Settings are wired into: sidebar brokerage name, logo display, accent color, auto-refresh, alert thresholds, lead source lists, upload limits.
+
+`FormProps` interface for all settings form components:
+```typescript
+interface FormProps {
+  settings: SettingsConfig;
+  update: <K extends keyof SettingsConfig>(section: K, value: SettingsConfig[K]) => void;
+  showToast: (msg: string) => void;
+  allRecords?: DotloopRecord[];
+  agentMetrics?: AgentMetrics[];  // needed by QuickBooksForm for agent mapping table
+  onClose: () => void;
+}
+```
+
+Key types added in Settings Pass 3: `QbSettings`, `QbAlertSettings`, `QbAccountMapping`, `QbAgentMapping`, `QbBillingItem`, `AlertRule`, `NotificationPrefs`.
 
 ### Settings Page Inline Expansion Pattern
 
