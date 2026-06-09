@@ -665,6 +665,8 @@ The modal fills most of the screen: `DialogContent` uses `max-w-6xl w-[95vw] min
 ### Phase 2 — IN PROGRESS
 
 - ✅ Settings Pass 2 (forms fully wired, useSettings, inline expansion pattern)
+- ✅ Settings Pass 3 (QB mapping, webhooks, alerts thresholds, notification prefs exact match)
+- ✅ Full E2E audit — all calculation bugs fixed (2026-06-09)
 - 📋 Dotloop OAuth integration
   - Client ID and secret available (Zillow/Dotloop)
   - Callback URLs configured
@@ -689,6 +691,61 @@ The modal fills most of the screen: `DialogContent` uses `max-w-6xl w-[95vw] min
 - 📋 Email report delivery
 - 📋 SMS notifications
 - 📋 Mobile app
+
+---
+
+## Verified Calculations & Formulas (E2E Audit 2026-06-09)
+
+### `calculateMetrics()` — `client/src/lib/csvParser.ts`
+- `totalSalesVolume` = sum of `salePrice` for **Closed/Sold records only**
+- `averagePrice` = `totalSalesVolume / closed` (closed count, not all)
+- `closingRate` = `(closed / totalTransactions) * 100` — stored as 0–100, not 0–1
+- `averageDaysToClose` = mean of `(closingDate − listingDate)` for closed records; uses `listingDate || createdDate`
+- `totalCommission` = sum of `commissionTotal` for **all records** (includes pipeline)
+
+### `calculateAgentMetrics()` — `client/src/lib/csvParser.ts`
+- `closedDeals` = records where `loopStatus` includes `'closed'` or `'sold'` (case-insensitive)
+- `activeListings` = fuzzy `status.includes('active')` — matches both `'Active'` and `'Active Listings'`
+- `totalCommission`, `totalSalesVolume`, `buySideCommission`, `sellSideCommission`, `companyDollar` — **closed records only**
+- `averageCommission` = `totalCommission / closedDeals`
+- `averageSalesPrice` = `totalSalesVolume / closedDeals`
+- `averageDaysToClose` = mean of `(closingDate − listingDate)` using `listingDate || createdDate`
+
+### `dataStatistics` — `TransactionDataContext.tsx`
+- `totalGCI` maps to `metrics.totalCommission`
+- `closeRate` maps to `metrics.closingRate` (already 0–100, sidebar does NOT multiply by 100)
+
+### `commissionRate` storage convention
+- Stored as percentage integer/float (e.g., `3` means 3%, not `0.03`)
+- Pages must use `commissionTotal` directly; do not recalculate as `price × commissionRate`
+
+### `loopStatus` values in use
+- Demo data: `'Sold'`, `'Active'`, `'Under Contract'`, `'Archived'`
+- Real Dotloop CSVs: `'Sold'`, `'Active Listings'`, `'Under Contract'`, `'Archived'`
+- All status checks must handle both forms; use fuzzy `status.includes('active')` for active listings
+
+## Known Limitations Before Phase 2
+
+- **Action Queue** (Dashboard): hardcoded — will be data-driven with real backend
+- **Activity Right Now** (Dashboard): hardcoded demo values
+- **Recruiting Funnel** (Dashboard): hardcoded — real data from recruiting table in DB
+- **Market Pulse** (Dashboard): hardcoded — will use live market API in Phase 3
+- **File Compliance score** (Dashboard): hardcoded 92% — will compute from `complianceStatus` field
+- **Agent Retention** (Brokerage Health): hardcoded 96% — needs historical data
+- **Q2 Target** (Dashboard): auto-calculated as 1.25× current performance — should come from Goals settings
+- **Caps Collected**: estimated as `totalGCI × 8%` — will use real plan cap data in Phase 2
+- **sampleData commissionRate**: stored as `3` (3%) — consistent with normalizeRecord behavior
+
+## Test CSV Location
+
+`public/test-data/comprehensive-test.csv` — 55 records across:
+- 43 Sold/Closed deals (2024, various prices $155K–$1.85M)
+- 5 Under Contract deals (2025, with future closing dates)
+- 5 Active Listings (2025, no commission data)
+- 2 Archived records
+- 5 unique agents (Sarah Miller, James Wilson, Michael Chen, Emily Davis, Robert Taylor + 3 more)
+- Multiple cities/states, commission rates 2.5%–3.5%
+- Various property types, lead sources, compliance statuses
 
 ---
 
