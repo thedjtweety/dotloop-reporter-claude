@@ -94,7 +94,7 @@ router.post('/setup-tenant', async (req: Request, res: Response) => {
     const { data: existing, error: existingErr } = await db
       .from('users')
       .select('tenant_id')
-      .eq('supabase_uid', userId)
+      .eq('id', userId)
       .maybeSingle();
     console.log('[auth/setup-tenant] existing user row:', { existing, error: existingErr?.message ?? null });
 
@@ -123,19 +123,17 @@ router.post('/setup-tenant', async (req: Request, res: Response) => {
       return;
     }
 
-    // Create user row
-    const newUserId = uuidv4();
-    console.log('[auth/setup-tenant] inserting user row, id:', newUserId);
+    // Create user row — users.id IS the Supabase auth user id (no separate supabase_uid column)
+    console.log('[auth/setup-tenant] inserting user row, id:', userId);
     const { error: userRowError } = await db
       .from('users')
       .insert({
-        id:           newUserId,
-        tenant_id:    tenantId,
-        supabase_uid: userId,
+        id:         userId,      // = auth.users.id (Supabase auth user id)
+        tenant_id:  tenantId,
         email,
-        role:         'admin',
-        created_at:   new Date().toISOString(),
-        updated_at:   new Date().toISOString(),
+        role:       'admin',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       });
     console.log('[auth/setup-tenant] user row insert result:', { error: userRowError?.message ?? null, code: userRowError?.code ?? null, details: userRowError?.details ?? null });
 

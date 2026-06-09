@@ -242,7 +242,7 @@ router.get('/status', async (req: Request, res: Response) => {
     }
 
     const { data: userRow } = await db
-      .from('users').select('tenant_id').eq('supabase_uid', user.id).maybeSingle();
+      .from('users').select('tenant_id').eq('id', user.id).maybeSingle();
     if (!userRow?.tenant_id) {
       res.json({ connected: false, lastSynced: null, syncStatus: 'disconnected', loopsSynced: 0, profileName: null });
       return;

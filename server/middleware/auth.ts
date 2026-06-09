@@ -10,7 +10,7 @@
  * Token flow:
  *   Frontend: Authorization: Bearer <supabase_access_token>
  *   Backend:  supabaseAdmin.auth.getUser(token) → user
- *             users table lookup by supabase_uid → tenant_id
+ *             users table lookup by id (users.id = auth.users.id) → tenant_id
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -69,7 +69,7 @@ export async function requireAuth(
     const { data: userRow, error: dbError } = await db
       .from('users')
       .select('id, tenant_id, email')
-      .eq('supabase_uid', user.id)
+      .eq('id', user.id)
       .maybeSingle();
 
     if (dbError) {
