@@ -5,6 +5,9 @@ import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { dotloopOAuthCallbackRouter } from "../routes/dotloop-oauth-callback";
+import dotloopAuthRoutes from "../routes/dotloop-auth";
+import dotloopSyncRoutes from "../routes/dotloop-sync";
+import dotloopWebhookRoutes from "../routes/dotloop-webhook";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import cdaRoutes from "../routes/cda";
@@ -59,9 +62,15 @@ async function startServer() {
   app.get("/health/live", livenessProbe);
   app.get("/health/ready", readinessProbe);
   
-  // Dotloop OAuth callback
+  // Dotloop OAuth callback (legacy route kept for backwards compat)
   app.use('/api/dotloop-oauth', dotloopOAuthCallbackRouter);
-  
+
+  // Phase 2A: Dotloop OAuth, sync, and webhook routes
+  app.use('/api/dotloop', dotloopAuthRoutes);
+  app.use('/api/dotloop', dotloopSyncRoutes);
+  // Webhook needs raw body for signature verification — mount before json middleware override
+  app.use('/api/dotloop/webhook', dotloopWebhookRoutes);
+
   // CDA routes
   app.use("/api/cda", cdaRoutes);
   

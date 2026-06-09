@@ -315,3 +315,21 @@ export async function withSecureToken<T>(
     secureToken.destroy();
   }
 }
+
+// ─── Convenience exports (used by dotloop-token-service and OAuth routes) ─────
+
+/**
+ * Encrypt a plaintext token. Returns format: version:iv:authTag:data
+ * Never logs plaintext.
+ */
+export function encryptToken(plaintext: string): string {
+  return tokenEncryption.encrypt(plaintext);
+}
+
+/**
+ * Decrypt an encrypted token string back to plaintext.
+ * Never logs plaintext.
+ */
+export function decryptToken(encrypted: string): string {
+  return tokenEncryption.decrypt(encrypted);
+}

@@ -5,6 +5,13 @@
 
 import axios, { AxiosInstance } from 'axios';
 
+export interface DotloopAccount {
+  id: number;
+  name: string;
+  email: string;
+  timeZone?: string;
+}
+
 export interface DotloopLoop {
   loopId: string;
   name: string;
@@ -26,6 +33,11 @@ export interface DotloopLoop {
   squareFootage?: number;
   commissionRate?: number;
   totalCommission?: number;
+}
+
+export interface DotloopLoopDetail extends DotloopLoop {
+  participants?: DotloopParticipant[];
+  financials?: Record<string, unknown>;
 }
 
 export interface DotloopParticipant {
@@ -187,6 +199,72 @@ export class DotloopAPIClient {
     } catch (error) {
       throw new Error(`Failed to refresh token: ${this.getErrorMessage(error)}`);
     }
+  }
+
+  /**
+   * Get the authenticated Dotloop account
+   */
+  async getAccount(): Promise<DotloopAccount> {
+    try {
+      const response = await this.client.get('/account');
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to fetch account: ${DotloopAPIClient.getErrorMessage(error)}`);
+    }
+  }
+
+  /**
+   * Get a single loop with full detail
+   */
+  async getLoopDetail(profileId: string, loopId: string): Promise<DotloopLoopDetail> {
+    try {
+      const response = await this.client.get(`/profile/${profileId}/loop/${loopId}/detail`);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to fetch loop detail: ${DotloopAPIClient.getErrorMessage(error)}`);
+    }
+  }
+
+  /**
+   * Fetch ALL loops for a profile by paginating with batchSize=100.
+   * Adds a 100ms delay between requests to respect rate limits.
+   * Logs progress to console.
+   */
+  async getAllLoops(profileId: string): Promise<DotloopLoop[]> {
+    const all: DotloopLoop[] = [];
+    const batchSize = 100;
+    let batchNumber = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      console.log(`[DotloopClient] Fetching page ${batchNumber} for profile ${profileId}...`);
+      try {
+        const response = await this.client.get(`/profile/${profileId}/loop`, {
+          params: {
+            batch_size: batchSize,
+            batch_number: batchNumber,
+          },
+        });
+
+        const loops: DotloopLoop[] = response.data?.loops || [];
+        all.push(...loops);
+
+        // Dotloop returns fewer than batchSize items on the last page
+        hasMore = loops.length === batchSize;
+        batchNumber++;
+
+        if (hasMore) {
+          await new Promise(res => setTimeout(res, 100));
+        }
+      } catch (error) {
+        throw new Error(
+          `Failed to fetch loops page ${batchNumber}: ${DotloopAPIClient.getErrorMessage(error)}`
+        );
+      }
+    }
+
+    console.log(`[DotloopClient] Fetched ${all.length} loops total.`);
+    return all;
   }
 
   /**
