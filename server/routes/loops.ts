@@ -17,6 +17,7 @@ const router = Router();
 // ─── GET /api/loops ───────────────────────────────────────────────────────────
 
 router.get('/', requireAuth, async (req: Request, res: Response) => {
+  console.log('[loops] fetching for tenant:', req.tenantId);
   try {
     const db = getSupabaseAdmin();
 
@@ -28,10 +29,19 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
       .order('updated_at', { ascending: false });
 
     if (loopsError) {
-      console.error('[loops] query error:', loopsError.message);
-      res.status(500).json({ error: 'Failed to fetch loops' });
+      // 42P01 = table does not exist — loops haven't been synced yet, return empty
+      const code = (loopsError as { code?: string }).code;
+      console.error('[loops] query error:', loopsError.message,
+        '| code:', code, '| details:', loopsError.details, '| hint:', loopsError.hint);
+      if (code === '42P01' || loopsError.message?.includes('does not exist')) {
+        console.log('[loops] loops table not found — returning empty (run a sync first)');
+        res.json({ records: [], tenantId: req.tenantId });
+        return;
+      }
+      res.status(500).json({ error: `Failed to fetch loops: ${loopsError.message}` });
       return;
     }
+    console.log('[loops] found', loops?.length ?? 0, 'loops for tenant', req.tenantId);
 
     // Transform to DotloopRecord-compatible shape
     const records = (loops ?? []).map(loop => ({
