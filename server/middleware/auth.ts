@@ -48,6 +48,7 @@ export async function requireAuth(
       (req.query as Record<string, string>)?.token;
 
     if (!token) {
+      console.warn('[requireAuth] no token on', req.method, req.path);
       res.status(401).json({ error: 'Authentication required — no token provided' });
       return;
     }
@@ -57,9 +58,12 @@ export async function requireAuth(
     // Verify the Supabase JWT
     const { data: { user }, error: authError } = await db.auth.getUser(token);
     if (authError || !user) {
+      console.warn('[requireAuth] getUser failed:', authError?.message ?? 'no user returned');
       res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
+
+    console.log('[requireAuth] token verified, supabase_uid:', user.id);
 
     // Look up the tenant via users table
     const { data: userRow, error: dbError } = await db
@@ -69,25 +73,28 @@ export async function requireAuth(
       .maybeSingle();
 
     if (dbError) {
-      console.error('[requireAuth] users table lookup error:', dbError.message);
-      res.status(500).json({ error: 'Failed to load user profile' });
+      console.error('[requireAuth] users table lookup error:', dbError.message, '| code:', dbError.code, '| details:', dbError.details);
+      res.status(500).json({ error: `Failed to load user profile: ${dbError.message}` });
       return;
     }
 
     if (!userRow) {
       // User signed up in Supabase Auth but hasn't completed setup-tenant yet
+      console.warn('[requireAuth] no users row for supabase_uid:', user.id);
       res.status(401).json({ error: 'User profile not found — complete account setup first' });
       return;
     }
 
+    console.log('[requireAuth] ✓ user found, tenant_id:', userRow.tenant_id);
     req.userId    = userRow.id as string;
     req.tenantId  = userRow.tenant_id as string;
     req.userEmail = userRow.email as string | undefined;
 
     next();
   } catch (err) {
-    console.error('[requireAuth] unexpected error:', err);
-    res.status(401).json({ error: 'Authentication failed' });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[requireAuth] unexpected error:', msg, err);
+    res.status(500).json({ error: `Authentication failed: ${msg}` });
   }
 }
 

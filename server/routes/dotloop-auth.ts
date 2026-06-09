@@ -40,12 +40,19 @@ function basicAuth(clientId: string, clientSecret: string) {
 
 // requireAuth accepts query param ?token= so browser redirects work
 router.get('/connect', requireAuth, async (req: Request, res: Response) => {
+  console.log('[dotloop/connect] ── handler reached ──');
+  console.log('[dotloop/connect] tenantId:', req.tenantId, 'userId:', req.userId);
   try {
-    const { clientId, redirectUri } = getDotloopCreds();
+    console.log('[dotloop/connect] reading env vars...');
+    console.log('[dotloop/connect] CLIENT_ID:', process.env.DOTLOOP_CLIENT_ID ? `${process.env.DOTLOOP_CLIENT_ID.slice(0, 8)}...` : 'MISSING');
+    console.log('[dotloop/connect] CLIENT_SECRET:', process.env.DOTLOOP_CLIENT_SECRET ? 'set' : 'MISSING');
+    console.log('[dotloop/connect] REDIRECT_URI:', process.env.DOTLOOP_REDIRECT_URI ?? 'MISSING');
 
-    // Generate and store CSRF state in session
+    const { clientId, redirectUri } = getDotloopCreds();
+    console.log('[dotloop/connect] creds OK — generating state...');
+
     const state = crypto.randomBytes(24).toString('hex');
-    (req as any).session = { ...(req as any).session, dotloopOAuthState: state };
+    console.log('[dotloop/connect] state generated, setting cookies...');
 
     const cookieOpts = {
       httpOnly: true,
@@ -53,22 +60,27 @@ router.get('/connect', requireAuth, async (req: Request, res: Response) => {
       maxAge: 10 * 60 * 1000, // 10 minutes
       sameSite: 'lax' as const,
     };
-    res.cookie('dl_oauth_state', state, cookieOpts);
-    // Store tenant/user so /callback can read them back without another token verification
-    res.cookie('dl_tenant_id', req.tenantId!, cookieOpts);
-    res.cookie('dl_user_id',   req.userId!,   cookieOpts);
+    res.cookie('dl_oauth_state', state,          cookieOpts);
+    res.cookie('dl_tenant_id',   req.tenantId!,  cookieOpts);
+    res.cookie('dl_user_id',     req.userId!,    cookieOpts);
+    console.log('[dotloop/connect] cookies set, building redirect URL...');
 
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: clientId,
-      redirect_uri: redirectUri,
+      client_id:     clientId,
+      redirect_uri:  redirectUri,
       state,
     });
 
-    res.redirect(`${DOTLOOP_AUTH_URL}?${params.toString()}`);
+    const authorizeUrl = `${DOTLOOP_AUTH_URL}?${params.toString()}`;
+    console.log('[dotloop/connect] redirecting to:', authorizeUrl.slice(0, 80) + '...');
+    res.redirect(authorizeUrl);
+    console.log('[dotloop/connect] ✓ redirect sent');
   } catch (err) {
-    console.error('[dotloop-auth] /connect error:', err);
-    res.redirect('/settings?error=connect_failed');
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[dotloop/connect] CAUGHT ERROR:', msg);
+    console.error('[dotloop/connect] full error:', err);
+    res.status(500).json({ error: 'Connect failed', details: msg });
   }
 });
 
