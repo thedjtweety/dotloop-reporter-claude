@@ -108,3 +108,4 @@ temp/
 
 # Database backups
 backups/
+.claude/worktrees/
