@@ -145,7 +145,7 @@ All routes are declared in `client/src/App.tsx` in the `SIDEBAR_ROUTES` array. E
 - `/data-quality` → `DataValidationRules` — Field completeness ring, validation issues
 - `/audit-log` → `AuditLog`
 - `/admin` → `AdminDashboard` — Users, uploads, rate limits, SSO, webhooks, FUB sync
-- `/settings` → `SettingsComplete` — Full hub with search, tabs, card grid, slide-out forms, useSettings hook
+- `/settings` → `SettingsComplete` — Full hub with search, tabs, card grid, inline expansion forms, useSettings hook
 
 All routes are fully built. `/team-management` was removed from routes (requires live auth backend). `/comparison` is reachable from `/compare` when comparison mode is active.
 
@@ -664,7 +664,7 @@ The modal fills most of the screen: `DialogContent` uses `max-w-6xl w-[95vw] min
 
 ### Phase 2 — IN PROGRESS
 
-- 🔨 Settings Pass 2 (forms fully wired, useSettings)
+- ✅ Settings Pass 2 (forms fully wired, useSettings, inline expansion pattern)
 - 📋 Dotloop OAuth integration
   - Client ID and secret available (Zillow/Dotloop)
   - Callback URLs configured
@@ -732,10 +732,40 @@ Central settings management. All settings stored in typed localStorage keys.
 Sections: `brokerage`, `branding`, `cdaLogo`, `commissionDefaults`, `locale`, `reporting`, `displayMode`, `alerts`, `notifications`, `leadSources`, `leadSourceCosts`, `uploadLimits`
 
 ```typescript
-const { settings, updateSetting } = useSettings();
+const { settings, update, resetAll } = useSettings();
 ```
 
 Settings are wired into: sidebar brokerage name, logo display, accent color, auto-refresh, alert thresholds, lead source lists, upload limits.
+
+### Settings Page Inline Expansion Pattern
+
+Settings cards in `SettingsComplete.tsx` expand **inline on the same page** when clicked — they do NOT use sheets/drawers. Key implementation details:
+
+- `expandedCard: string | null` state in the main component
+- `SectionBlock` receives `expandedCard` and `setExpandedCard`; only one card expanded globally at a time
+- If the expanded card belongs to a section, the panel renders below that section's card grid
+- Panel header: card title + `^ Close` button that sets `expandedCard = null`
+- `expandedCard` resets to `null` when the tab changes or search is cleared
+- `Brokerage` and `Branding` cards have a view-mode (shows current values + Edit button) before switching to edit mode
+- `reset-data` card intercepts in `setExpandedCard` and opens a Dialog instead
+
+```tsx
+// Clicking a card:
+setExpandedCard(prev => prev === card.id ? null : card.id);
+
+// Panel rendered below the grid in the matching section:
+{expandedInThisSection && (
+  <div className="mt-3 border border-border rounded-xl bg-background">
+    <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+      <p>{expandedCardDef.title}</p>
+      <button onClick={() => setExpandedCard(null)}>^ Close</button>
+    </div>
+    <div className="px-5 py-5">
+      {renderFormBody(expandedCard, formProps)}
+    </div>
+  </div>
+)}
+```
 
 ---
 

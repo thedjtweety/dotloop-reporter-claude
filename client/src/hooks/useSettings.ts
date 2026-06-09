@@ -88,6 +88,34 @@ export interface UploadLimits {
   maxTransactionsPerPush: number;
 }
 
+export interface SmtpSettings {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  senderEmail: string;
+  senderName: string;
+  useSsl: boolean;
+  attachPdf: boolean;
+}
+
+export interface Webhook {
+  id: string;
+  url: string;
+  events: string[];
+  secret: string;
+}
+
+export interface IntegrationSettings {
+  fubApiKey: string;
+  fubConnected: boolean;
+  qbConnected: boolean;
+  qbFailureAlertsEnabled: boolean;
+  qbFailureAlertEmail: string;
+  autoPushEnabled: boolean;
+  autoPushProfile: string;
+}
+
 // ─── Full Config ──────────────────────────────────────────────────────────────
 
 export interface SettingsConfig {
@@ -102,6 +130,9 @@ export interface SettingsConfig {
   leadSources: LeadSource[];
   leadSourceCosts: LeadSourceCost[];
   uploadLimits: UploadLimits;
+  smtp: SmtpSettings;
+  webhooks: Webhook[];
+  integrations: IntegrationSettings;
 }
 
 // ─── Default lead sources ─────────────────────────────────────────────────────
@@ -191,6 +222,26 @@ export const SETTINGS_DEFAULTS: SettingsConfig = {
   uploadLimits: {
     maxFileSizeMB: 10,
     maxTransactionsPerPush: 5000,
+  },
+  smtp: {
+    host: '',
+    port: 587,
+    username: '',
+    password: '',
+    senderEmail: '',
+    senderName: '',
+    useSsl: false,
+    attachPdf: false,
+  },
+  webhooks: [],
+  integrations: {
+    fubApiKey: '',
+    fubConnected: false,
+    qbConnected: false,
+    qbFailureAlertsEnabled: false,
+    qbFailureAlertEmail: '',
+    autoPushEnabled: false,
+    autoPushProfile: '',
   },
 };
 

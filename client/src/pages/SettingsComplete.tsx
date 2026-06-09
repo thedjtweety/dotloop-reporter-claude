@@ -1,22 +1,26 @@
-import { useState, useMemo, useEffect, useRef, type ReactNode, type ChangeEvent } from 'react';
+import {
+  useState, useMemo, useEffect, useRef,
+  type ReactNode, type ChangeEvent,
+} from 'react';
 import { useLocation } from 'wouter';
 import {
-  Search, ChevronRight, X, Check, Download, Trash2, AlertTriangle,
+  Search, ChevronUp, ChevronRight, X, Check, Download, Trash2, AlertTriangle,
   Building2, Palette, FileImage, Percent, Clock, RefreshCw, Archive,
   Mail, Users, Monitor, Link, Zap, Settings2, Bell, BellOff, Tag,
-  DollarSign, Upload, Activity, Plus, GripVertical, ChevronUp, ChevronDown, Trash,
+  DollarSign, Upload, Activity, Plus, GripVertical, ChevronDown, Trash,
+  Wifi, Copy, Image, Eye, EyeOff, LogOut, Webhook,
 } from 'lucide-react';
 import { useTransactionData } from '@/contexts/TransactionDataContext';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   useSettings,
   type SettingsConfig,
   type LeadSource,
+  type Webhook as WebhookType,
 } from '@/hooks/useSettings';
 
-// ─── Card / Section definitions ───────────────────────────────────────────────
+// ─── Card / Section data ──────────────────────────────────────────────────────
 
 interface SettingCard {
   id: string;
@@ -27,31 +31,31 @@ interface SettingCard {
 }
 
 const CARDS: SettingCard[] = [
-  { id: 'brokerage', title: 'Brokerage', description: 'Your brokerage name and details.', icon: <Building2 />, section: 'brokerage' },
-  { id: 'branding', title: 'Branding & White Label', description: 'Colors, tagline, logo, and brokerage details.', icon: <Palette />, section: 'brokerage' },
-  { id: 'cda-logo', title: 'CDA Logo', description: 'Logo shown on Commission Disbursement Authorizations.', icon: <FileImage />, section: 'brokerage' },
-  { id: 'default-commission', title: 'Default Commission Rate', description: 'Default split applied to new agents and deals.', icon: <Percent />, section: 'brokerage' },
-  { id: 'default-timezone', title: 'Default Timezone', description: 'Tenant timezone used for schedules and reports.', icon: <Clock />, section: 'brokerage' },
-  { id: 'auto-refresh', title: 'Dashboard Auto-Refresh', description: 'How often the dashboard polls for fresh data.', icon: <RefreshCw />, section: 'reporting' },
-  { id: 'report-retention', title: 'Custom Report Retention', description: 'How long generated reports stay available.', icon: <Archive />, section: 'reporting' },
-  { id: 'email-reports', title: 'Automated Email Reports', description: 'Schedule monthly or quarterly production reports.', icon: <Mail />, section: 'reporting' },
-  { id: 'report-recipients', title: 'External Report Recipients', description: 'Share reports with stakeholders outside the brokerage.', icon: <Users />, section: 'reporting' },
-  { id: 'display-mode', title: 'Display Mode', description: 'Wallboard, scenes, and presentation schedules.', icon: <Monitor />, section: 'reporting' },
-  { id: 'account-connections', title: 'Account Connections', description: 'Connected accounts and identity providers.', icon: <Link />, section: 'integrations' },
-  { id: 'dotloop-connections', title: 'Dotloop Connections', description: 'Sign in to one or more Dotloop accounts.', icon: <Zap />, section: 'integrations' },
-  { id: 'dotloop-autopush', title: 'Dotloop Auto-Push', description: 'Automatically push new transactions from Dotloop.', icon: <Zap />, section: 'integrations' },
-  { id: 'fub', title: 'Follow Up Boss', description: 'Sync loops, custom fields, and participants into FUB.', icon: <Settings2 />, section: 'integrations' },
-  { id: 'quickbooks', title: 'QuickBooks Settings', description: 'Map accounts, vendors, and billing items for sync.', icon: <DollarSign />, section: 'integrations' },
-  { id: 'quickbooks-alerts', title: 'QuickBooks Failure Alerts', description: 'Get notified when a QuickBooks sync fails.', icon: <Bell />, section: 'integrations' },
-  { id: 'webhooks', title: 'Webhook Settings', description: 'HTTP callbacks for closed deals, goals, and more.', icon: <Activity />, section: 'integrations' },
-  { id: 'alerts', title: 'Alerts & Notifications', description: 'Threshold-based alerts and stuck-deal monitoring.', icon: <Bell />, section: 'notifications' },
-  { id: 'notification-prefs', title: 'Notification Preferences', description: 'Per-notification opt-in for each delivery channel.', icon: <BellOff />, section: 'notifications' },
-  { id: 'lead-sources', title: 'Lead Sources', description: 'Define and order the lead sources you track.', icon: <Tag />, section: 'data' },
-  { id: 'lead-costs', title: 'Lead Source Costs', description: 'Monthly cost per lead source for ROI calculations.', icon: <DollarSign />, section: 'data' },
-  { id: 'upload-limits', title: 'Upload & Push Limits', description: 'Maximum CSV size and per-push transaction count.', icon: <Upload />, section: 'data' },
-  { id: 'api-limits', title: 'API Rate Limits', description: "Inspect your tenant's current rate-limit usage.", icon: <Activity />, section: 'advanced' },
-  { id: 'export-data', title: 'Export All Data', description: 'Download all your data as JSON.', icon: <Download />, section: 'danger' },
-  { id: 'reset-data', title: 'Reset All Data', description: 'Permanently delete all data. Irreversible.', icon: <Trash2 />, section: 'danger' },
+  { id: 'brokerage',            title: 'Brokerage',                    description: 'Name, contact details, and license info.',             icon: <Building2 />,  section: 'brokerage' },
+  { id: 'branding',             title: 'Branding & White Label',        description: 'Colors, logo, tagline, and appearance.',               icon: <Palette />,    section: 'brokerage' },
+  { id: 'cda-logo',             title: 'CDA Logo',                      description: 'Logo on Commission Disbursement Authorizations.',      icon: <FileImage />,  section: 'brokerage' },
+  { id: 'default-commission',   title: 'Default Commission Rate',        description: 'Default split applied to new agents and deals.',       icon: <Percent />,    section: 'brokerage' },
+  { id: 'default-timezone',     title: 'Default Timezone',              description: 'Timezone, date format, and currency.',                 icon: <Clock />,      section: 'brokerage' },
+  { id: 'auto-refresh',         title: 'Dashboard Auto-Refresh',        description: 'How often the dashboard polls for fresh data.',        icon: <RefreshCw />,  section: 'reporting' },
+  { id: 'report-retention',     title: 'Custom Report Retention',       description: 'How long generated reports stay available.',           icon: <Archive />,    section: 'reporting' },
+  { id: 'email-reports',        title: 'Automated Email Reports',       description: 'Schedule monthly or quarterly production reports.',    icon: <Mail />,       section: 'reporting' },
+  { id: 'report-recipients',    title: 'External Report Recipients',    description: 'Share reports with stakeholders outside the brokerage.', icon: <Users />,   section: 'reporting' },
+  { id: 'display-mode',         title: 'Display Mode',                  description: 'Wallboard, scenes, and presentation schedules.',       icon: <Monitor />,    section: 'reporting' },
+  { id: 'account-connections',  title: 'Account Connections',           description: 'Your account and sign-out options.',                   icon: <Link />,       section: 'integrations' },
+  { id: 'dotloop-connections',  title: 'Dotloop Connections',           description: 'Sign in to one or more Dotloop accounts.',             icon: <Zap />,        section: 'integrations' },
+  { id: 'dotloop-autopush',     title: 'Dotloop Auto-Push',             description: 'Automatically push new transactions to Dotloop.',      icon: <Zap />,        section: 'integrations' },
+  { id: 'fub',                  title: 'Follow Up Boss',                description: 'Sync loops and participants into FUB.',                icon: <Settings2 />,  section: 'integrations' },
+  { id: 'quickbooks',           title: 'QuickBooks Settings',           description: 'Map accounts, vendors, and billing items for sync.',   icon: <DollarSign />, section: 'integrations' },
+  { id: 'quickbooks-alerts',    title: 'QuickBooks Failure Alerts',     description: 'Get notified when a QuickBooks sync fails.',           icon: <Bell />,       section: 'integrations' },
+  { id: 'webhooks',             title: 'Webhook Settings',              description: 'HTTP callbacks for closed deals, goals, and more.',    icon: <Activity />,   section: 'integrations' },
+  { id: 'alerts',               title: 'Alerts & Notifications',        description: 'Threshold-based alerts and stuck-deal monitoring.',    icon: <Bell />,       section: 'notifications' },
+  { id: 'notification-prefs',   title: 'Notification Preferences',      description: 'Per-notification opt-in for each delivery channel.',   icon: <BellOff />,    section: 'notifications' },
+  { id: 'lead-sources',         title: 'Lead Sources',                  description: 'Define and order the lead sources you track.',         icon: <Tag />,        section: 'data' },
+  { id: 'lead-costs',           title: 'Lead Source Costs',             description: 'Monthly cost per lead source for ROI calculations.',   icon: <DollarSign />, section: 'data' },
+  { id: 'upload-limits',        title: 'Upload & Push Limits',          description: 'Maximum CSV size and per-push transaction count.',     icon: <Upload />,     section: 'data' },
+  { id: 'api-limits',           title: 'API Rate Limits',               description: "Inspect your tenant's current rate-limit usage.",     icon: <Activity />,   section: 'advanced' },
+  { id: 'export-data',          title: 'Export All Data',               description: 'Download all your data as JSON.',                     icon: <Download />,   section: 'danger' },
+  { id: 'reset-data',           title: 'Reset All Data',                description: 'Permanently delete all data. Irreversible.',          icon: <Trash2 />,     section: 'danger' },
 ];
 
 interface SectionDef {
@@ -62,71 +66,63 @@ interface SectionDef {
 }
 
 const SECTIONS: SectionDef[] = [
-  { id: 'brokerage', label: 'BROKERAGE', description: 'Brokerage profile, branding, and defaults.', tabLabel: 'Brokerage' },
-  { id: 'reporting', label: 'REPORTING', description: 'Dashboards, reports, and recipients.', tabLabel: 'Reporting' },
-  { id: 'integrations', label: 'INTEGRATIONS', description: 'Connect Dotloop, FUB, QuickBooks, and webhooks.', tabLabel: 'Integrations' },
-  { id: 'notifications', label: 'NOTIFICATIONS', description: 'Alerts and delivery preferences.', tabLabel: 'Notifications' },
-  { id: 'data', label: 'DATA', description: 'Lead sources, costs, and import limits.', tabLabel: 'Data' },
-  { id: 'advanced', label: 'ADVANCED', description: 'Power-user controls.', tabLabel: 'Advanced' },
-  { id: 'danger', label: 'DANGER ZONE', description: '', tabLabel: 'Danger' },
+  { id: 'brokerage',     label: 'BROKERAGE',      description: 'Brokerage profile, branding, and defaults.',           tabLabel: 'Brokerage' },
+  { id: 'reporting',     label: 'REPORTING',       description: 'Dashboards, reports, and recipients.',                 tabLabel: 'Reporting' },
+  { id: 'integrations',  label: 'INTEGRATIONS',    description: 'Connect Dotloop, FUB, QuickBooks, and webhooks.',      tabLabel: 'Integrations' },
+  { id: 'notifications', label: 'NOTIFICATIONS',   description: 'Alerts and delivery preferences.',                     tabLabel: 'Notifications' },
+  { id: 'data',          label: 'DATA',            description: 'Lead sources, costs, and import limits.',              tabLabel: 'Data' },
+  { id: 'advanced',      label: 'ADVANCED',        description: 'Power-user controls.',                                 tabLabel: 'Advanced' },
+  { id: 'danger',        label: 'DANGER ZONE',     description: '',                                                     tabLabel: 'Danger' },
 ];
 
-// ─── Shared form prop type ────────────────────────────────────────────────────
+// ─── Shared form props ────────────────────────────────────────────────────────
 
 interface FormProps {
   settings: SettingsConfig;
   update: <K extends keyof SettingsConfig>(section: K, value: SettingsConfig[K]) => void;
   showToast: (msg: string) => void;
   allRecords?: ReturnType<typeof useTransactionData>['allRecords'];
+  onClose: () => void;
 }
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
-const inputCls = 'w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500/50';
-const labelCls = 'text-foreground text-xs font-medium block mb-1.5';
+const iCls = 'w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-blue-500/50';
+const lCls = 'text-foreground text-xs font-medium block mb-1';
 
-function FormRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function FR({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <div>
-      <label className={labelCls}>{label}</label>
-      {hint && <p className="text-muted-foreground text-xs mb-1.5">{hint}</p>}
+      <label className={lCls}>{label}</label>
+      {hint && <p className="text-muted-foreground text-[11px] mb-1.5 leading-snug">{hint}</p>}
       {children}
     </div>
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ${checked ? 'bg-emerald-500' : 'bg-border'}`}
-    >
-      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 mt-0.5 ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
-    </button>
+    <div className="flex items-center gap-3">
+      <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors ${checked ? 'bg-emerald-500' : 'bg-border'}`}>
+        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform mt-0.5 ${checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
+      </button>
+      {label && <span className="text-sm text-muted-foreground">{label}</span>}
+    </div>
   );
 }
 
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function ColorSwatch({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
-    <FormRow label={label}>
-      <div className="flex items-center gap-2">
-        <input type="color" value={value} onChange={e => onChange(e.target.value)}
-          className="w-10 h-10 rounded cursor-pointer border border-border bg-transparent flex-none" />
+    <div className="flex items-center gap-2 p-2 bg-secondary rounded-lg border border-border">
+      <input type="color" value={value} onChange={e => onChange(e.target.value)}
+        className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent flex-none" style={{ padding: 0 }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] text-muted-foreground">{label}</p>
         <input type="text" value={value} onChange={e => onChange(e.target.value)}
-          className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground font-mono focus:outline-none" />
+          className="text-xs text-foreground font-mono bg-transparent outline-none w-full" />
       </div>
-    </FormRow>
-  );
-}
-
-function SaveBtn({ onClick }: { onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="w-full py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors">
-      Save Changes
-    </button>
+    </div>
   );
 }
 
@@ -136,12 +132,9 @@ function BtnGroup<T extends string | number>({
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map(o => (
-        <button key={String(o.value)} type="button"
-          onClick={() => onChange(o.value)}
+        <button key={String(o.value)} type="button" onClick={() => onChange(o.value)}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-            value === o.value
-              ? 'bg-emerald-500 text-white border-emerald-500'
-              : 'bg-secondary text-foreground border-border hover:border-border/60'
+            value === o.value ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-secondary text-foreground border-border hover:border-border/60'
           }`}>
           {o.label}
         </button>
@@ -150,116 +143,91 @@ function BtnGroup<T extends string | number>({
   );
 }
 
-function ComingSoon({ card }: { card: SettingCard | undefined }) {
+function SaveRow({ onSave, onCancel }: { onSave: () => void; onCancel: () => void }) {
   return (
-    <div className="px-6 py-5">
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center mb-4">
-          <span className="text-muted-foreground [&>svg]:w-5 [&>svg]:h-5">{card?.icon}</span>
-        </div>
-        <p className="text-foreground font-medium mb-2">Coming Soon</p>
-        <p className="text-muted-foreground text-sm max-w-[260px]">{card?.description}</p>
-      </div>
+    <div className="flex gap-2 pt-2">
+      <button onClick={onCancel} className="flex-1 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Cancel</button>
+      <button onClick={onSave} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors">Save Changes</button>
     </div>
   );
 }
 
-// ─── Form: Brokerage ─────────────────────────────────────────────────────────
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[10px] font-semibold tracking-widest text-muted-foreground uppercase">{title}</p>
+      {children}
+    </div>
+  );
+}
 
-function BrokerageForm({ settings, update, showToast }: FormProps) {
+// ─── BROKERAGE form ───────────────────────────────────────────────────────────
+
+function BrokerageForm({ settings, update, showToast, onClose }: FormProps) {
+  const [editing, setEditing] = useState(false);
   const [local, setLocal] = useState(settings.brokerage);
   useEffect(() => { setLocal(settings.brokerage); }, [settings.brokerage]);
-  const set = (k: keyof typeof local) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const set = (k: keyof typeof local) => (e: ChangeEvent<HTMLInputElement>) =>
     setLocal(prev => ({ ...prev, [k]: e.target.value }));
-  return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Brokerage Name"><input value={local.name} onChange={set('name')} className={inputCls} placeholder="Acme Realty" /></FormRow>
-      <FormRow label="Managing Broker Name"><input value={local.brokerName} onChange={set('brokerName')} className={inputCls} /></FormRow>
-      <FormRow label="License Number"><input value={local.licenseNumber} onChange={set('licenseNumber')} className={inputCls} /></FormRow>
-      <FormRow label="Phone"><input value={local.phone} onChange={set('phone')} className={inputCls} placeholder="(555) 555-5555" /></FormRow>
-      <div className="grid grid-cols-2 gap-3">
-        <FormRow label="City"><input value={local.city} onChange={set('city')} className={inputCls} /></FormRow>
-        <FormRow label="State"><input value={local.state} onChange={set('state')} className={inputCls} placeholder="TX" /></FormRow>
+
+  function handleSave() {
+    update('brokerage', local);
+    update('branding', { ...settings.branding, tagline: local.name ? settings.branding.tagline : settings.branding.tagline });
+    showToast('Brokerage settings saved');
+    setEditing(false);
+  }
+
+  if (!editing) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          {[
+            ['Brokerage Name', local.name || '—'],
+            ['Managing Broker', local.brokerName || '—'],
+            ['License #', local.licenseNumber || '—'],
+            ['Phone', local.phone || '—'],
+            ['Address', [local.address, local.city, local.state, local.zip].filter(Boolean).join(', ') || '—'],
+            ['Website', local.website || '—'],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{k}</p>
+              <p className="text-foreground mt-0.5 truncate">{v}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setEditing(true)} className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Edit</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Close</button>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <FormRow label="Street Address"><input value={local.address} onChange={set('address')} className={inputCls} /></FormRow>
-        <FormRow label="ZIP"><input value={local.zip} onChange={set('zip')} className={inputCls} /></FormRow>
-      </div>
-      <FormRow label="Website"><input value={local.website} onChange={set('website')} className={inputCls} placeholder="https://yoursite.com" /></FormRow>
-      <SaveBtn onClick={() => { update('brokerage', local); showToast('Brokerage settings saved'); }} />
-    </div>
-  );
-}
-
-// ─── Form: Branding ──────────────────────────────────────────────────────────
-
-function BrandingForm({ settings, update, showToast }: FormProps) {
-  const [local, setLocal] = useState(settings.branding);
-  useEffect(() => { setLocal(settings.branding); }, [settings.branding]);
-  const set = <K extends keyof typeof local>(k: K, v: typeof local[K]) =>
-    setLocal(prev => ({ ...prev, [k]: v }));
-
-  function handleLogoUpload(e: ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = ev => set('logoBase64', (ev.target?.result as string) || '');
-    reader.readAsDataURL(f);
+    );
   }
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Brokerage Logo" hint="PNG or SVG recommended. Displayed in the sidebar and on reports.">
-        <div className="space-y-2">
-          {local.logoBase64 && (
-            <div className="w-full h-20 rounded-lg border border-border bg-secondary flex items-center justify-center overflow-hidden">
-              <img src={local.logoBase64} alt="Logo preview" className="max-h-16 max-w-full object-contain" />
-            </div>
-          )}
-          <label className="block w-full py-2 bg-secondary border border-dashed border-border rounded-lg text-sm text-muted-foreground text-center cursor-pointer hover:border-border/60 transition-colors">
-            {local.logoBase64 ? 'Replace Logo' : 'Upload Logo'}
-            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-          </label>
-          {local.logoBase64 && (
-            <button onClick={() => set('logoBase64', '')} className="w-full py-1.5 text-xs text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors">
-              Remove Logo
-            </button>
-          )}
-        </div>
-      </FormRow>
-      <ColorField label="Primary Color" value={local.primaryColor} onChange={v => set('primaryColor', v)} />
-      <ColorField label="Secondary Color" value={local.secondaryColor} onChange={v => set('secondaryColor', v)} />
-      <ColorField label="Accent Color" value={local.accentColor} onChange={v => set('accentColor', v)} />
-      <FormRow label="Tagline"><input value={local.tagline} onChange={e => set('tagline', e.target.value)} className={inputCls} placeholder="Your tagline here" /></FormRow>
-      <FormRow label="Footer Disclaimer">
-        <textarea value={local.footerDisclaimer} onChange={e => set('footerDisclaimer', e.target.value)} rows={3} className={inputCls} placeholder="Legal disclaimer for reports..." />
-      </FormRow>
-      {/* Live preview */}
-      <div className="rounded-lg border border-border p-3 space-y-1">
-        <p className="text-xs font-medium text-muted-foreground mb-2">Preview</p>
-        <div className="flex items-center gap-2">
-          {local.logoBase64
-            ? <img src={local.logoBase64} alt="preview" className="w-7 h-7 rounded-md object-contain" />
-            : <div className="w-7 h-7 rounded-md flex items-center justify-center text-white text-sm font-bold" style={{ backgroundColor: local.primaryColor }}>D</div>
-          }
-          <span className="text-foreground text-sm font-bold">{settings.brokerage.name || 'Your Brokerage'}</span>
-        </div>
-        {local.tagline && <p className="text-xs text-muted-foreground italic">{local.tagline}</p>}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <FR label="Brokerage Name"><input value={local.name} onChange={set('name')} className={iCls} placeholder="Acme Realty" /></FR>
+        <FR label="Managing Broker"><input value={local.brokerName} onChange={set('brokerName')} className={iCls} /></FR>
+        <FR label="License #"><input value={local.licenseNumber} onChange={set('licenseNumber')} className={iCls} /></FR>
+        <FR label="Phone"><input value={local.phone} onChange={set('phone')} className={iCls} placeholder="(555) 555-5555" /></FR>
+        <FR label="Street Address"><input value={local.address} onChange={set('address')} className={iCls} /></FR>
+        <FR label="City"><input value={local.city} onChange={set('city')} className={iCls} /></FR>
+        <FR label="State"><input value={local.state} onChange={set('state')} className={iCls} placeholder="TX" /></FR>
+        <FR label="ZIP"><input value={local.zip} onChange={set('zip')} className={iCls} /></FR>
       </div>
-      <SaveBtn onClick={() => {
-        update('branding', local);
-        document.documentElement.style.setProperty('--primary', local.primaryColor);
-        showToast('Branding settings saved');
-      }} />
+      <FR label="Website"><input value={local.website} onChange={set('website')} className={iCls} placeholder="https://" /></FR>
+      <SaveRow onSave={handleSave} onCancel={() => { setLocal(settings.brokerage); setEditing(false); }} />
     </div>
   );
 }
 
-// ─── Form: CDA Logo ──────────────────────────────────────────────────────────
+// ─── BRANDING form ────────────────────────────────────────────────────────────
 
-function CdaLogoForm({ settings, update, showToast }: FormProps) {
-  const [local, setLocal] = useState(settings.cdaLogo);
-  useEffect(() => { setLocal(settings.cdaLogo); }, [settings.cdaLogo]);
+function BrandingForm({ settings, update, showToast, onClose }: FormProps) {
+  const [editing, setEditing] = useState(false);
+  const [local, setLocal] = useState(settings.branding);
+  const [brok, setBrok] = useState(settings.brokerage);
+  useEffect(() => { setLocal(settings.branding); setBrok(settings.brokerage); }, [settings.branding, settings.brokerage]);
 
   function handleLogoUpload(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -269,337 +237,431 @@ function CdaLogoForm({ settings, update, showToast }: FormProps) {
     reader.readAsDataURL(f);
   }
 
-  return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Logo Source">
-        <div className="space-y-2">
-          {(['true', 'false'] as const).map(val => (
-            <label key={val} className="flex items-center gap-3 cursor-pointer">
-              <input type="radio" name="cda-logo-src" checked={local.useMainLogo === (val === 'true')} onChange={() => setLocal(prev => ({ ...prev, useMainLogo: val === 'true' }))} className="accent-emerald-500" />
-              <span className="text-sm text-foreground">{val === 'true' ? 'Use main brokerage logo' : 'Use a different logo for CDAs'}</span>
-            </label>
-          ))}
-        </div>
-      </FormRow>
-      {!local.useMainLogo && (
-        <FormRow label="CDA-specific Logo">
-          <div className="space-y-2">
-            {local.logoBase64 && (
-              <div className="w-full h-20 rounded-lg border border-border bg-secondary flex items-center justify-center overflow-hidden">
-                <img src={local.logoBase64} alt="CDA logo preview" className="max-h-16 max-w-full object-contain" />
-              </div>
-            )}
-            <label className="block w-full py-2 bg-secondary border border-dashed border-border rounded-lg text-sm text-muted-foreground text-center cursor-pointer hover:border-border/60">
-              {local.logoBase64 ? 'Replace CDA Logo' : 'Upload CDA Logo'}
-              <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-            </label>
+  function handleSave() {
+    update('branding', local);
+    update('brokerage', { ...settings.brokerage, ...brok });
+    document.documentElement.style.setProperty('--primary', local.primaryColor);
+    showToast('Branding settings saved');
+    setEditing(false);
+  }
+
+  if (!editing) {
+    return (
+      <div className="space-y-4">
+        <p className="text-xs text-muted-foreground">Customize your brokerage appearance across CDA documents, email reports, and the dashboard</p>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Tagline</p>
+            <p className="text-foreground mt-0.5">{local.tagline || '—'}</p>
           </div>
-        </FormRow>
-      )}
-      <SaveBtn onClick={() => { update('cdaLogo', local); showToast('CDA logo settings saved'); }} />
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Brand Colors</p>
+            <div className="flex gap-1.5 mt-1">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-secondary text-xs">
+                <span className="w-3 h-3 rounded-sm inline-block" style={{ background: local.primaryColor }} />
+                <span className="font-mono text-foreground">{local.primaryColor}</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-secondary text-xs">
+                <span className="w-3 h-3 rounded-sm inline-block" style={{ background: local.secondaryColor }} />
+                <span className="font-mono text-foreground">{local.secondaryColor}</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Logo</p>
+            {local.logoBase64
+              ? <img src={local.logoBase64} alt="logo" className="h-8 mt-1 object-contain" />
+              : <p className="text-foreground mt-0.5">—</p>}
+          </div>
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Footer Disclaimer</p>
+            <p className="text-foreground mt-0.5 text-xs line-clamp-2">{local.footerDisclaimer || '—'}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={() => setEditing(true)} className="px-4 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Edit</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <FR label="Tagline"><input value={brok.name} onChange={e => setBrok(p => ({ ...p, name: e.target.value }))} placeholder="Your brokerage tagline" className={iCls} /></FR>
+      <div className="grid grid-cols-2 gap-3">
+        <ColorSwatch label="Primary Color" value={local.primaryColor} onChange={v => setLocal(p => ({ ...p, primaryColor: v }))} />
+        <ColorSwatch label="Secondary Color" value={local.secondaryColor} onChange={v => setLocal(p => ({ ...p, secondaryColor: v }))} />
+      </div>
+      <FR label="Accent Color">
+        <ColorSwatch label="Accent" value={local.accentColor} onChange={v => setLocal(p => ({ ...p, accentColor: v }))} />
+      </FR>
+      <FR label="Logo" hint="PNG or SVG recommended.">
+        <div className="space-y-2">
+          {local.logoBase64 && (
+            <div className="w-full h-16 rounded-lg border border-border bg-secondary flex items-center justify-center overflow-hidden">
+              <img src={local.logoBase64} alt="Logo preview" className="max-h-12 max-w-full object-contain" />
+            </div>
+          )}
+          <label className="block w-full py-2 bg-secondary border border-dashed border-border rounded-lg text-sm text-muted-foreground text-center cursor-pointer hover:border-border/60 transition-colors">
+            {local.logoBase64 ? 'Replace Logo' : 'Upload Logo'}
+            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+          </label>
+          {local.logoBase64 && (
+            <button onClick={() => setLocal(p => ({ ...p, logoBase64: '' }))} className="w-full py-1.5 text-xs text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors">Remove Logo</button>
+          )}
+        </div>
+      </FR>
+      <FR label="Footer Disclaimer">
+        <textarea value={local.footerDisclaimer} onChange={e => setLocal(p => ({ ...p, footerDisclaimer: e.target.value }))} rows={2} className={iCls} placeholder="Legal disclaimer for reports..." />
+      </FR>
+      <SaveRow onSave={handleSave} onCancel={() => { setLocal(settings.branding); setEditing(false); }} />
     </div>
   );
 }
 
-// ─── Form: Commission Defaults ────────────────────────────────────────────────
+// ─── CDA LOGO form ────────────────────────────────────────────────────────────
 
-function CommissionForm({ settings, update, showToast }: FormProps) {
+function CdaLogoForm({ settings, update, showToast, onClose }: FormProps) {
+  const [local, setLocal] = useState(settings.cdaLogo);
+  useEffect(() => { setLocal(settings.cdaLogo); }, [settings.cdaLogo]);
+
+  function handleUpload(e: ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev => setLocal(p => ({ ...p, logoBase64: (ev.target?.result as string) || '' }));
+    reader.readAsDataURL(f);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Upload your brokerage logo to appear on Commission Disbursement Authorizations</p>
+      <label className="block w-full cursor-pointer">
+        <div className={`w-full rounded-xl border-2 border-dashed transition-colors py-10 flex flex-col items-center justify-center gap-2 ${local.logoBase64 ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-border bg-secondary/40 hover:border-border/60'}`}>
+          {local.logoBase64
+            ? <img src={local.logoBase64} alt="CDA logo" className="max-h-20 max-w-full object-contain" />
+            : (
+              <>
+                <Image className="w-8 h-8 text-muted-foreground/50" />
+                <p className="text-sm text-foreground font-medium">Click to upload logo</p>
+                <p className="text-xs text-muted-foreground">PNG or JPG — max 500KB</p>
+              </>
+            )}
+        </div>
+        <input type="file" accept="image/png,image/jpeg" onChange={handleUpload} className="hidden" />
+      </label>
+      {local.logoBase64 && (
+        <button onClick={() => setLocal(p => ({ ...p, logoBase64: '' }))} className="w-full py-1.5 text-xs text-destructive border border-destructive/30 rounded-lg hover:bg-destructive/10 transition-colors">Remove Logo</button>
+      )}
+      <div className="space-y-2">
+        {[{ val: true, label: 'Use main brokerage logo' }, { val: false, label: 'Use a different logo for CDAs' }].map(opt => (
+          <label key={String(opt.val)} className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="cda-logo-src" checked={local.useMainLogo === opt.val} onChange={() => setLocal(p => ({ ...p, useMainLogo: opt.val }))} className="accent-emerald-500" />
+            <span className="text-sm text-foreground">{opt.label}</span>
+          </label>
+        ))}
+      </div>
+      <SaveRow
+        onSave={() => { update('cdaLogo', local); showToast('CDA logo saved'); onClose(); }}
+        onCancel={onClose}
+      />
+    </div>
+  );
+}
+
+// ─── COMMISSION form ──────────────────────────────────────────────────────────
+
+function CommissionForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.commissionDefaults);
   useEffect(() => { setLocal(settings.commissionDefaults); }, [settings.commissionDefaults]);
   const brokerSplit = 100 - local.agentSplit;
-  const sampleGCI = 500000 * 0.03; // $15,000 on a $500k deal at 3%
+  const sampleGCI = 500000 * 0.03;
   const agentEarns = sampleGCI * (local.agentSplit / 100);
-  const brokerEarns = sampleGCI - agentEarns;
-  const fmt = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const fmt = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Agent Split %" hint="Percentage of GCI the agent keeps.">
-        <input type="number" min={0} max={100} value={local.agentSplit}
-          onChange={e => setLocal(prev => ({ ...prev, agentSplit: Math.min(100, Math.max(0, Number(e.target.value))) }))}
-          className={inputCls} />
-      </FormRow>
-      <FormRow label="Broker Split %">
-        <div className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">{brokerSplit}%</div>
-      </FormRow>
-      <FormRow label="Annual Cap Amount $" hint="Once reached, agent pays no more broker commission.">
-        <input type="number" min={0} value={local.capAmount}
-          onChange={e => setLocal(prev => ({ ...prev, capAmount: Number(e.target.value) }))}
-          className={inputCls} />
-      </FormRow>
-      <FormRow label="Post-Cap Split %" hint="Agent split after hitting the cap.">
-        <input type="number" min={0} max={100} value={local.postCapSplit}
-          onChange={e => setLocal(prev => ({ ...prev, postCapSplit: Math.min(100, Math.max(0, Number(e.target.value))) }))}
-          className={inputCls} />
-      </FormRow>
-      <FormRow label="Referral Fee %" hint="Default referral fee taken off the top.">
-        <input type="number" min={0} max={50} value={local.referralFee}
-          onChange={e => setLocal(prev => ({ ...prev, referralFee: Number(e.target.value) }))}
-          className={inputCls} />
-      </FormRow>
-      {/* Live preview */}
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <FR label="Agent Split %">
+          <input type="number" min={0} max={100} value={local.agentSplit}
+            onChange={e => setLocal(p => ({ ...p, agentSplit: Math.min(100, Math.max(0, Number(e.target.value))) }))} className={iCls} />
+        </FR>
+        <FR label="Broker Split %">
+          <div className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">{brokerSplit}%</div>
+        </FR>
+        <FR label="Cap Amount $" hint="Annual broker commission cap.">
+          <input type="number" min={0} value={local.capAmount} onChange={e => setLocal(p => ({ ...p, capAmount: Number(e.target.value) }))} className={iCls} />
+        </FR>
+        <FR label="Post-Cap Split %">
+          <input type="number" min={0} max={100} value={local.postCapSplit} onChange={e => setLocal(p => ({ ...p, postCapSplit: Number(e.target.value) }))} className={iCls} />
+        </FR>
+      </div>
+      <FR label="Referral Fee %">
+        <input type="number" min={0} max={50} value={local.referralFee} onChange={e => setLocal(p => ({ ...p, referralFee: Number(e.target.value) }))} className={iCls} />
+      </FR>
       <div className="rounded-lg border border-border p-3 bg-secondary/50 space-y-1.5">
-        <p className="text-xs font-semibold text-muted-foreground">Preview — $500k deal @ 3% GCI</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Preview — $500k deal @ 3% GCI</p>
         <div className="flex justify-between text-sm">
-          <span className="text-foreground">Agent earns</span>
+          <span className="text-muted-foreground">Agent earns</span>
           <span className="text-emerald-400 font-medium">{fmt(agentEarns)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-foreground">Broker retains</span>
-          <span className="text-blue-400 font-medium">{fmt(brokerEarns)}</span>
+          <span className="text-muted-foreground">Broker retains</span>
+          <span className="text-blue-400 font-medium">{fmt(sampleGCI - agentEarns)}</span>
         </div>
-        <div className="h-2 rounded-full overflow-hidden bg-border mt-2">
+        <div className="h-2 rounded-full overflow-hidden bg-border mt-1">
           <div className="h-full bg-emerald-500 transition-all" style={{ width: `${local.agentSplit}%` }} />
         </div>
       </div>
-      <SaveBtn onClick={() => { update('commissionDefaults', local); showToast('Commission settings saved'); }} />
+      <SaveRow onSave={() => { update('commissionDefaults', local); showToast('Commission defaults saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Locale ─────────────────────────────────────────────────────────────
+// ─── LOCALE form ──────────────────────────────────────────────────────────────
 
 const US_TIMEZONES = [
-  { group: 'Eastern', zones: ['America/New_York'] },
-  { group: 'Central', zones: ['America/Chicago'] },
+  { group: 'Eastern',  zones: ['America/New_York'] },
+  { group: 'Central',  zones: ['America/Chicago'] },
   { group: 'Mountain', zones: ['America/Denver', 'America/Phoenix'] },
-  { group: 'Pacific', zones: ['America/Los_Angeles'] },
-  { group: 'Alaska', zones: ['America/Anchorage'] },
-  { group: 'Hawaii', zones: ['Pacific/Honolulu'] },
+  { group: 'Pacific',  zones: ['America/Los_Angeles'] },
+  { group: 'Alaska',   zones: ['America/Anchorage'] },
+  { group: 'Hawaii',   zones: ['Pacific/Honolulu'] },
 ];
 
-function LocaleForm({ settings, update, showToast }: FormProps) {
+function LocaleForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.locale);
   useEffect(() => { setLocal(settings.locale); }, [settings.locale]);
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Timezone">
-        <select value={local.timezone} onChange={e => setLocal(prev => ({ ...prev, timezone: e.target.value }))}
-          className={inputCls}>
+    <div className="space-y-4">
+      <FR label="Timezone">
+        <select value={local.timezone} onChange={e => setLocal(p => ({ ...p, timezone: e.target.value }))} className={iCls}>
           {US_TIMEZONES.map(g => (
             <optgroup key={g.group} label={g.group}>
-              {g.zones.map(z => <option key={z} value={z}>{z.replace('America/', '').replace('Pacific/', '').replace(/_/g, ' ')}</option>)}
+              {g.zones.map(z => <option key={z} value={z}>{z.replace(/^(America|Pacific)\//, '').replace(/_/g, ' ')}</option>)}
             </optgroup>
           ))}
         </select>
-      </FormRow>
-      <FormRow label="Date Format">
-        <BtnGroup
-          value={local.dateFormat}
-          onChange={v => setLocal(prev => ({ ...prev, dateFormat: v }))}
-          options={[
-            { label: 'MM/DD/YYYY', value: 'MM/DD/YYYY' as const },
-            { label: 'DD/MM/YYYY', value: 'DD/MM/YYYY' as const },
-            { label: 'YYYY-MM-DD', value: 'YYYY-MM-DD' as const },
-          ]}
-        />
-      </FormRow>
-      <FormRow label="Currency">
-        <BtnGroup
-          value={local.currencyFormat}
-          onChange={v => setLocal(prev => ({ ...prev, currencyFormat: v }))}
-          options={[
-            { label: 'USD ($)', value: 'USD' as const },
-            { label: 'CAD (C$)', value: 'CAD' as const },
-          ]}
-        />
-      </FormRow>
-      <SaveBtn onClick={() => { update('locale', local); showToast('Locale settings saved'); }} />
+      </FR>
+      <FR label="Date Format">
+        <BtnGroup value={local.dateFormat} onChange={v => setLocal(p => ({ ...p, dateFormat: v }))}
+          options={[{ label: 'MM/DD/YYYY', value: 'MM/DD/YYYY' as const }, { label: 'DD/MM/YYYY', value: 'DD/MM/YYYY' as const }, { label: 'YYYY-MM-DD', value: 'YYYY-MM-DD' as const }]} />
+      </FR>
+      <FR label="Currency">
+        <BtnGroup value={local.currencyFormat} onChange={v => setLocal(p => ({ ...p, currencyFormat: v }))}
+          options={[{ label: 'USD ($)', value: 'USD' as const }, { label: 'CAD (C$)', value: 'CAD' as const }]} />
+      </FR>
+      <SaveRow onSave={() => { update('locale', local); showToast('Locale saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Auto Refresh ───────────────────────────────────────────────────────
+// ─── AUTO-REFRESH form ────────────────────────────────────────────────────────
 
-function AutoRefreshForm({ settings, update, showToast }: FormProps) {
+const REFRESH_OPTIONS = [
+  { label: '1 min', value: 60 }, { label: '2 min', value: 120 },
+  { label: '5 min', value: 300 }, { label: '10 min', value: 600 },
+  { label: '15 min', value: 900 }, { label: '30 min', value: 1800 },
+  { label: '60 min', value: 3600 },
+];
+
+function AutoRefreshForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.reporting);
   useEffect(() => { setLocal(settings.reporting); }, [settings.reporting]);
+  const mins = local.autoRefreshInterval / 60;
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Enable Auto-Refresh">
-        <div className="flex items-center gap-3">
-          <Toggle checked={local.autoRefreshEnabled} onChange={v => setLocal(prev => ({ ...prev, autoRefreshEnabled: v }))} />
-          <span className="text-sm text-muted-foreground">{local.autoRefreshEnabled ? 'Enabled' : 'Disabled'}</span>
-        </div>
-      </FormRow>
-      {local.autoRefreshEnabled && (
-        <FormRow label="Refresh Interval" hint="How often the dashboard checks for new data.">
-          <BtnGroup
-            value={local.autoRefreshInterval}
-            onChange={v => setLocal(prev => ({ ...prev, autoRefreshInterval: v }))}
-            options={[
-              { label: '30s', value: 30 },
-              { label: '1m', value: 60 },
-              { label: '5m', value: 300 },
-              { label: '15m', value: 900 },
-              { label: '30m', value: 1800 },
-              { label: '1hr', value: 3600 },
-            ]}
-          />
-        </FormRow>
-      )}
-      <SaveBtn onClick={() => { update('reporting', local); showToast('Auto-refresh settings saved'); }} />
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Automatically refresh dashboard data at a regular interval</p>
+      <Section title="Refresh Interval">
+        <BtnGroup value={local.autoRefreshInterval} onChange={v => setLocal(p => ({ ...p, autoRefreshEnabled: true, autoRefreshInterval: v }))} options={REFRESH_OPTIONS} />
+        <p className="text-xs text-muted-foreground mt-1.5">Dashboard metrics and charts will automatically refresh every {mins < 1 ? '30 seconds' : `${mins} minute${mins !== 1 ? 's' : ''}`}.</p>
+      </Section>
+      <Toggle checked={local.autoRefreshEnabled} onChange={v => setLocal(p => ({ ...p, autoRefreshEnabled: v }))} label={local.autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
+      <SaveRow onSave={() => { update('reporting', local); showToast('Auto-refresh saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Report Retention ───────────────────────────────────────────────────
+// ─── REPORT RETENTION form ────────────────────────────────────────────────────
 
-function ReportRetentionForm({ settings, update, showToast }: FormProps) {
+const RETENTION_OPTIONS = [
+  { label: '30 days', value: 30 }, { label: '60 days', value: 60 },
+  { label: '90 days', value: 90 }, { label: '180 days', value: 180 },
+  { label: '1 year', value: 365 },
+];
+
+function ReportRetentionForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.reporting);
   useEffect(() => { setLocal(settings.reporting); }, [settings.reporting]);
+  const sel = RETENTION_OPTIONS.find(o => o.value === local.retentionDays) ?? RETENTION_OPTIONS[2];
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Retain Reports For" hint="Generated reports older than this are automatically removed.">
-        <BtnGroup
-          value={local.retentionDays}
-          onChange={v => setLocal(prev => ({ ...prev, retentionDays: v }))}
-          options={[
-            { label: '7 days', value: 7 },
-            { label: '30 days', value: 30 },
-            { label: '90 days', value: 90 },
-            { label: '1 year', value: 365 },
-            { label: 'Forever', value: 0 },
-          ]}
-        />
-      </FormRow>
-      <SaveBtn onClick={() => { update('reporting', local); showToast('Retention settings saved'); }} />
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">How long to keep send-history rows for each custom report. Older rows are pruned automatically by the daily cleanup pass.</p>
+      <Section title="Retention Period">
+        <BtnGroup value={local.retentionDays} onChange={v => setLocal(p => ({ ...p, retentionDays: v }))} options={RETENTION_OPTIONS} />
+        <p className="text-xs text-muted-foreground mt-1.5">Run-history rows older than {sel.label} are removed during the next cleanup pass.</p>
+      </Section>
+      <SaveRow onSave={() => { update('reporting', local); showToast('Retention saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Email Reports ──────────────────────────────────────────────────────
+// ─── EMAIL REPORTS form ───────────────────────────────────────────────────────
 
-const REPORT_TYPES = ['production', 'pipeline', 'commission', 'goals', 'recruiting'];
+function EmailReportsForm({ settings, update, showToast, onClose }: FormProps) {
+  const [rep, setRep] = useState(settings.reporting);
+  const [smtp, setSmtp] = useState(settings.smtp);
+  const [showPw, setShowPw] = useState(false);
+  useEffect(() => { setRep(settings.reporting); setSmtp(settings.smtp); }, [settings.reporting, settings.smtp]);
 
-function EmailReportsForm({ settings, update, showToast }: FormProps) {
-  const [local, setLocal] = useState(settings.reporting);
-  useEffect(() => { setLocal(settings.reporting); }, [settings.reporting]);
-
+  const REPORT_TYPES = ['production', 'pipeline', 'commission', 'goals', 'recruiting'];
   function toggleType(t: string) {
-    setLocal(prev => ({
-      ...prev,
-      emailReportTypes: prev.emailReportTypes.includes(t)
-        ? prev.emailReportTypes.filter(x => x !== t)
-        : [...prev.emailReportTypes, t],
-    }));
+    setRep(p => ({ ...p, emailReportTypes: p.emailReportTypes.includes(t) ? p.emailReportTypes.filter(x => x !== t) : [...p.emailReportTypes, t] }));
   }
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Enable Email Reports">
-        <div className="flex items-center gap-3">
-          <Toggle checked={local.emailReportsEnabled} onChange={v => setLocal(prev => ({ ...prev, emailReportsEnabled: v }))} />
-          <span className="text-sm text-muted-foreground">{local.emailReportsEnabled ? 'Enabled' : 'Disabled'}</span>
-        </div>
-      </FormRow>
-      {local.emailReportsEnabled && (
+    <div className="space-y-5">
+      <p className="text-xs text-muted-foreground">Send periodic production reports to agents automatically. Reports include KPIs, goal progress, and peer ranking.</p>
+      <div className="space-y-1.5">
+        <Toggle checked={rep.emailReportsEnabled} onChange={v => setRep(p => ({ ...p, emailReportsEnabled: v }))} label="Enable Automated Reports" />
+        <p className="text-[11px] text-muted-foreground pl-12">Automatically send reports on schedule</p>
+      </div>
+      {rep.emailReportsEnabled && (
         <>
-          <FormRow label="Frequency">
-            <BtnGroup
-              value={local.emailFrequency}
-              onChange={v => setLocal(prev => ({ ...prev, emailFrequency: v }))}
-              options={[
-                { label: 'Monthly', value: 'monthly' as const },
-                { label: 'Quarterly', value: 'quarterly' as const },
-              ]}
-            />
-          </FormRow>
-          {local.emailFrequency === 'monthly' && (
-            <FormRow label="Day of Month">
-              <input type="number" min={1} max={28} value={local.emailDayOfMonth}
-                onChange={e => setLocal(prev => ({ ...prev, emailDayOfMonth: Number(e.target.value) }))}
-                className={inputCls} />
-            </FormRow>
-          )}
-          <FormRow label="Include Reports">
-            <div className="space-y-2 mt-1">
+          <Section title="Schedule">
+            <BtnGroup value={rep.emailFrequency} onChange={v => setRep(p => ({ ...p, emailFrequency: v }))}
+              options={[{ label: 'Monthly', value: 'monthly' as const }, { label: 'Quarterly', value: 'quarterly' as const }, { label: 'Both', value: 'monthly' as const }]} />
+            <p className="text-xs text-muted-foreground mt-1.5">Monthly reports sent on the 1st. Quarterly on Jan 1, Apr 1, Jul 1, Oct 1.</p>
+          </Section>
+          <Section title="Report Types">
+            <div className="space-y-1.5">
               {REPORT_TYPES.map(t => (
                 <label key={t} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={local.emailReportTypes.includes(t)} onChange={() => toggleType(t)} className="accent-emerald-500" />
+                  <input type="checkbox" checked={rep.emailReportTypes.includes(t)} onChange={() => toggleType(t)} className="accent-emerald-500" />
                   <span className="text-sm text-foreground capitalize">{t}</span>
                 </label>
               ))}
             </div>
-          </FormRow>
+          </Section>
+          <Section title="SMTP Configuration">
+            <div className="grid grid-cols-2 gap-3">
+              <FR label="SMTP Host"><input value={smtp.host} onChange={e => setSmtp(p => ({ ...p, host: e.target.value }))} className={iCls} placeholder="smtp.gmail.com" /></FR>
+              <FR label="SMTP Port"><input type="number" value={smtp.port} onChange={e => setSmtp(p => ({ ...p, port: Number(e.target.value) }))} className={iCls} /></FR>
+              <FR label="SMTP Username"><input value={smtp.username} onChange={e => setSmtp(p => ({ ...p, username: e.target.value }))} className={iCls} /></FR>
+              <FR label="SMTP Password">
+                <div className="relative">
+                  <input type={showPw ? 'text' : 'password'} value={smtp.password} onChange={e => setSmtp(p => ({ ...p, password: e.target.value }))} className={`${iCls} pr-9`} />
+                  <button type="button" onClick={() => setShowPw(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    {showPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </FR>
+              <FR label="Sender Email"><input value={smtp.senderEmail} onChange={e => setSmtp(p => ({ ...p, senderEmail: e.target.value }))} className={iCls} placeholder="reports@yourbrokerage.com" /></FR>
+              <FR label="Sender Name"><input value={smtp.senderName} onChange={e => setSmtp(p => ({ ...p, senderName: e.target.value }))} className={iCls} placeholder="Acme Realty" /></FR>
+            </div>
+            <div className="space-y-2 mt-2">
+              <Toggle checked={smtp.useSsl} onChange={v => setSmtp(p => ({ ...p, useSsl: v }))} label="Use SSL/TLS (port 465)" />
+              <Toggle checked={smtp.attachPdf} onChange={v => setSmtp(p => ({ ...p, attachPdf: v }))} label="Attach PDF report to emails" />
+            </div>
+            <button className="mt-2 flex items-center gap-1.5 px-3 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+              <Wifi className="w-3.5 h-3.5" />
+              Test Connection
+            </button>
+          </Section>
         </>
       )}
-      <SaveBtn onClick={() => { update('reporting', local); showToast('Email report settings saved'); }} />
+      <SaveRow onSave={() => { update('reporting', rep); update('smtp', smtp); showToast('Email report settings saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Report Recipients ──────────────────────────────────────────────────
+// ─── REPORT RECIPIENTS form ───────────────────────────────────────────────────
 
-function ReportRecipientsForm({ settings, update, showToast }: FormProps) {
+function ReportRecipientsForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.reporting);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [scope, setScope] = useState<'all' | 'specific' | 'office'>('all');
   useEffect(() => { setLocal(settings.reporting); }, [settings.reporting]);
 
   function addRecipient() {
     const e = newEmail.trim();
     if (!e || local.recipients.includes(e)) return;
-    setLocal(prev => ({ ...prev, recipients: [...prev.recipients, e] }));
-    setNewEmail('');
-  }
-
-  function removeRecipient(e: string) {
-    setLocal(prev => ({ ...prev, recipients: prev.recipients.filter(r => r !== e) }));
+    setLocal(p => ({ ...p, recipients: [...p.recipients, `${newName.trim()} <${e}>`] }));
+    setNewName(''); setNewEmail(''); setAdding(false);
   }
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Add Recipient">
-        <div className="flex gap-2">
-          <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addRecipient()}
-            className={`${inputCls} flex-1`} placeholder="email@example.com" />
-          <button onClick={addRecipient} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600 transition-colors">
-            <Plus className="w-4 h-4" />
-          </button>
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Share production summary reports with stakeholders, franchise contacts, or partners</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-foreground">Recipients</p>
+        <button onClick={() => setAdding(v => !v)} className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium transition-colors">
+          <Plus className="w-3 h-3" /> Add Recipient
+        </button>
+      </div>
+      {adding && (
+        <div className="border border-border rounded-xl p-4 space-y-3 bg-secondary/30">
+          <p className="text-sm font-medium text-foreground">New Recipient</p>
+          <FR label="Name"><input value={newName} onChange={e => setNewName(e.target.value)} className={iCls} placeholder="Jane Smith" /></FR>
+          <FR label="Email"><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} className={iCls} placeholder="jane@example.com" /></FR>
+          <FR label="Report Scope">
+            <div className="space-y-1.5 mt-1">
+              {([['all', 'All Agents'], ['specific', 'Specific Agents'], ['office', 'By Office']] as const).map(([v, l]) => (
+                <label key={v} className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="scope" checked={scope === v} onChange={() => setScope(v)} className="accent-emerald-500" />
+                  <span className="text-sm text-foreground">{l}</span>
+                </label>
+              ))}
+            </div>
+          </FR>
+          <div className="flex gap-2">
+            <button onClick={() => { setAdding(false); setNewName(''); setNewEmail(''); }} className="flex-1 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Cancel</button>
+            <button onClick={addRecipient} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors">Add</button>
+          </div>
         </div>
-      </FormRow>
+      )}
       <div className="space-y-1.5">
         {local.recipients.length === 0
-          ? <p className="text-muted-foreground text-xs text-center py-4">No recipients yet.</p>
+          ? <p className="text-muted-foreground text-xs text-center py-4 border border-dashed border-border rounded-lg">No recipients yet.</p>
           : local.recipients.map(r => (
             <div key={r} className="flex items-center justify-between bg-secondary border border-border rounded-lg px-3 py-2">
               <span className="text-sm text-foreground">{r}</span>
-              <button onClick={() => removeRecipient(r)} className="text-muted-foreground hover:text-destructive transition-colors">
+              <button onClick={() => setLocal(p => ({ ...p, recipients: p.recipients.filter(x => x !== r) }))} className="text-muted-foreground hover:text-destructive transition-colors">
                 <Trash className="w-3.5 h-3.5" />
               </button>
             </div>
-          ))
-        }
+          ))}
       </div>
-      <SaveBtn onClick={() => { update('reporting', local); showToast('Recipients saved'); }} />
+      <SaveRow onSave={() => { update('reporting', local); showToast('Recipients saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Display Mode ───────────────────────────────────────────────────────
+// ─── DISPLAY MODE form ────────────────────────────────────────────────────────
 
 const DISPLAY_MODES = [
-  { id: 'standard', label: 'Standard', desc: 'Normal dashboard view for brokers.' },
-  { id: 'wallboard', label: 'Wallboard', desc: 'Large-display mode with auto-rotating scenes.' },
+  { id: 'standard',     label: 'Standard',     desc: 'Normal dashboard view for brokers.' },
+  { id: 'wallboard',    label: 'Wallboard',    desc: 'Large-display mode with auto-rotating scenes.' },
   { id: 'presentation', label: 'Presentation', desc: 'Clean layout for meetings and screen share.' },
 ] as const;
 
-function DisplayModeForm({ settings, update, showToast }: FormProps) {
+function DisplayModeForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.reporting);
   useEffect(() => { setLocal(settings.reporting); }, [settings.reporting]);
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Display Mode">
-        <div className="space-y-2 mt-1">
+    <div className="space-y-4">
+      <Section title="Display Mode">
+        <div className="space-y-2">
           {DISPLAY_MODES.map(m => (
             <label key={m.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${local.displayMode === m.id ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-border bg-secondary hover:border-border/60'}`}>
-              <input type="radio" name="display-mode" value={m.id} checked={local.displayMode === m.id}
-                onChange={() => setLocal(prev => ({ ...prev, displayMode: m.id }))} className="accent-emerald-500 mt-0.5" />
+              <input type="radio" name="dmode" value={m.id} checked={local.displayMode === m.id} onChange={() => setLocal(p => ({ ...p, displayMode: m.id }))} className="accent-emerald-500 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-foreground">{m.label}</p>
                 <p className="text-xs text-muted-foreground">{m.desc}</p>
@@ -607,38 +669,275 @@ function DisplayModeForm({ settings, update, showToast }: FormProps) {
             </label>
           ))}
         </div>
-      </FormRow>
+      </Section>
       {local.displayMode === 'wallboard' && (
-        <FormRow label="Scene Rotation Interval" hint="Seconds between automatic scene changes.">
-          <BtnGroup
-            value={local.wallboardRotateSeconds}
-            onChange={v => setLocal(prev => ({ ...prev, wallboardRotateSeconds: v }))}
-            options={[
-              { label: '10s', value: 10 },
-              { label: '15s', value: 15 },
-              { label: '30s', value: 30 },
-              { label: '60s', value: 60 },
-            ]}
-          />
-        </FormRow>
+        <Section title="Rotation Interval">
+          <BtnGroup value={local.wallboardRotateSeconds} onChange={v => setLocal(p => ({ ...p, wallboardRotateSeconds: v }))}
+            options={[{ label: '10s', value: 10 }, { label: '15s', value: 15 }, { label: '30s', value: 30 }, { label: '60s', value: 60 }]} />
+        </Section>
       )}
-      <SaveBtn onClick={() => { update('reporting', local); showToast('Display settings saved'); }} />
+      <SaveRow onSave={() => { update('reporting', local); showToast('Display mode saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Alerts ─────────────────────────────────────────────────────────────
+// ─── ACCOUNT CONNECTIONS form ─────────────────────────────────────────────────
 
-function AlertsForm({ settings, update, showToast }: FormProps) {
+function AccountConnectionsForm({ onClose }: FormProps) {
+  const [, navigate] = useLocation();
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Who you're signed in as, and how to sign out.</p>
+      <div className="flex items-center gap-3 p-3 bg-secondary border border-border rounded-xl">
+        <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-sm font-bold">
+          DA
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">Demo Admin</p>
+          <p className="text-xs text-muted-foreground">demo@dotloopreport.com</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <button onClick={() => navigate('/upload')}
+          className="py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors flex items-center justify-center gap-1.5">
+          <LogOut className="w-3.5 h-3.5" />
+          Sign Out
+        </button>
+        <button onClick={() => navigate('/upload')}
+          className="py-2.5 bg-secondary border border-destructive/40 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center gap-1.5">
+          <LogOut className="w-3.5 h-3.5" />
+          Sign Out All Devices
+        </button>
+      </div>
+      <p className="text-[11px] text-muted-foreground leading-relaxed">"Sign Out" only signs you out of this browser. Use "Sign Out of All Devices" if you have signed in on a shared computer or want to ensure no other sessions are active.</p>
+      <button onClick={onClose} className="w-full py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Close</button>
+    </div>
+  );
+}
+
+// ─── DOTLOOP CONNECTIONS form ─────────────────────────────────────────────────
+
+function DotloopConnectionsForm({ onClose }: FormProps) {
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Sign in to one or more Dotloop accounts</p>
+      <div className="flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+        <div className="w-2 h-2 rounded-full bg-yellow-400 flex-none" />
+        <span className="text-xs text-yellow-400 font-medium">Not connected</span>
+      </div>
+      <button disabled className="w-full py-2.5 bg-secondary border border-border rounded-lg text-muted-foreground text-sm cursor-not-allowed" title="OAuth coming in Phase 2">
+        Connect Dotloop Account
+      </button>
+      <p className="text-muted-foreground text-[11px] text-center">OAuth integration coming in Phase 2</p>
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-foreground">Connecting will enable:</p>
+        {['Live transaction sync', 'Real-time data updates', 'Multi-office support', 'Auto-push to Dotloop'].map(f => (
+          <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Check className="w-3 h-3 text-emerald-400 flex-none" /> {f}
+          </div>
+        ))}
+      </div>
+      <button onClick={onClose} className="w-full py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Close</button>
+    </div>
+  );
+}
+
+// ─── DOTLOOP AUTO-PUSH form ───────────────────────────────────────────────────
+
+function AutoPushForm({ settings, update, showToast, onClose }: FormProps) {
+  const [local, setLocal] = useState(settings.integrations);
+  useEffect(() => { setLocal(settings.integrations); }, [settings.integrations]);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">When enabled, transactions added by CSV import or Dotloop sync are automatically pushed back into Dotloop as new loops using the default profile selected below.</p>
+      <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+        <p className="text-xs text-yellow-400">Connect a Dotloop account above to choose a default profile.</p>
+      </div>
+      <div className="space-y-1.5">
+        <Toggle checked={local.autoPushEnabled} onChange={v => setLocal(p => ({ ...p, autoPushEnabled: v }))} label="Enable auto-push" />
+        <p className="text-[11px] text-muted-foreground pl-12">Off by default. Turn on to push every new imported transaction.</p>
+      </div>
+      <FR label="Default profile">
+        <select value={local.autoPushProfile} onChange={e => setLocal(p => ({ ...p, autoPushProfile: e.target.value }))} disabled className={`${iCls} disabled:opacity-50 disabled:cursor-not-allowed`}>
+          <option value="">Select a profile...</option>
+        </select>
+      </FR>
+      <SaveRow onSave={() => { update('integrations', local); showToast('Auto-push settings saved'); onClose(); }} onCancel={onClose} />
+    </div>
+  );
+}
+
+// ─── FOLLOW UP BOSS form ──────────────────────────────────────────────────────
+
+function FubForm({ settings, update, showToast, onClose }: FormProps) {
+  const [local, setLocal] = useState(settings.integrations);
+  const [showKey, setShowKey] = useState(false);
+  useEffect(() => { setLocal(settings.integrations); }, [settings.integrations]);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Connect your Follow Up Boss account to sync Dotloop loop status, close events, and participants into FUB people and notes. Paste your Owner API key from FUB → Admin → API.</p>
+      <FR label="FUB Owner API key">
+        <div className="relative">
+          <input type={showKey ? 'text' : 'password'} value={local.fubApiKey} onChange={e => setLocal(p => ({ ...p, fubApiKey: e.target.value }))} className={`${iCls} pr-9`} placeholder="fka_live_..." />
+          <button type="button" onClick={() => setShowKey(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+          </button>
+        </div>
+      </FR>
+      {local.fubConnected ? (
+        <div className="flex items-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-xs text-emerald-400 font-medium">Connected</span>
+          <button onClick={() => setLocal(p => ({ ...p, fubConnected: false, fubApiKey: '' }))} className="ml-auto text-xs text-muted-foreground hover:text-destructive transition-colors">Disconnect</button>
+        </div>
+      ) : (
+        <button onClick={() => { if (local.fubApiKey) { setLocal(p => ({ ...p, fubConnected: true })); showToast('FUB connected (demo)'); } }}
+          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+          disabled={!local.fubApiKey}>
+          Connect
+        </button>
+      )}
+      <SaveRow onSave={() => { update('integrations', local); showToast('FUB settings saved'); onClose(); }} onCancel={onClose} />
+    </div>
+  );
+}
+
+// ─── QUICKBOOKS SETTINGS form ─────────────────────────────────────────────────
+
+function QuickBooksForm({ settings, update, showToast, onClose }: FormProps) {
+  const [local, setLocal] = useState(settings.integrations);
+  useEffect(() => { setLocal(settings.integrations); }, [settings.integrations]);
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Map accounts, vendors, and billing items for QuickBooks sync.</p>
+      {local.qbConnected ? (
+        <div className="flex items-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-xs text-emerald-400 font-medium">Connected to QuickBooks</span>
+          <button onClick={() => setLocal(p => ({ ...p, qbConnected: false }))} className="ml-auto text-xs text-muted-foreground hover:text-destructive transition-colors">Disconnect</button>
+        </div>
+      ) : (
+        <button onClick={() => { setLocal(p => ({ ...p, qbConnected: true })); showToast('QuickBooks connected (demo)'); }}
+          className="w-full py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+          Connect to QuickBooks
+        </button>
+      )}
+      {local.qbConnected && (
+        <div className="space-y-3">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Account Mapping</p>
+          {['GCI Income', 'Agent Splits', 'Company Dollar'].map(label => (
+            <FR key={label} label={`${label} → QB Account`}>
+              <select className={iCls}><option>Select QB Account...</option></select>
+            </FR>
+          ))}
+        </div>
+      )}
+      <SaveRow onSave={() => { update('integrations', local); showToast('QuickBooks settings saved'); onClose(); }} onCancel={onClose} />
+    </div>
+  );
+}
+
+// ─── QUICKBOOKS ALERTS form ───────────────────────────────────────────────────
+
+function QuickBooksAlertsForm({ settings, update, showToast, onClose }: FormProps) {
+  const [local, setLocal] = useState(settings.integrations);
+  useEffect(() => { setLocal(settings.integrations); }, [settings.integrations]);
+
+  return (
+    <div className="space-y-4">
+      <Toggle checked={local.qbFailureAlertsEnabled} onChange={v => setLocal(p => ({ ...p, qbFailureAlertsEnabled: v }))} label="Enable failure alerts" />
+      {local.qbFailureAlertsEnabled && (
+        <FR label="Alert Recipient Email">
+          <input type="email" value={local.qbFailureAlertEmail} onChange={e => setLocal(p => ({ ...p, qbFailureAlertEmail: e.target.value }))} className={iCls} placeholder="alerts@yourbrokerage.com" />
+        </FR>
+      )}
+      <SaveRow onSave={() => { update('integrations', local); showToast('QB alert settings saved'); onClose(); }} onCancel={onClose} />
+    </div>
+  );
+}
+
+// ─── WEBHOOKS form ────────────────────────────────────────────────────────────
+
+const WEBHOOK_EVENTS = ['Deal closed', 'Goal reached', 'Agent cap hit', 'Stuck deal alert'];
+
+function WebhooksForm({ settings, update, showToast, onClose }: FormProps) {
+  const [webhooks, setWebhooks] = useState<WebhookType[]>(settings.webhooks);
+  const [newUrl, setNewUrl] = useState('');
+  const [newEvents, setNewEvents] = useState<string[]>([]);
+  const [newSecret, setNewSecret] = useState('');
+  const [adding, setAdding] = useState(false);
+  useEffect(() => { setWebhooks(settings.webhooks); }, [settings.webhooks]);
+
+  function addWebhook() {
+    if (!newUrl) return;
+    setWebhooks(p => [...p, { id: Date.now().toString(), url: newUrl, events: newEvents, secret: newSecret }]);
+    setNewUrl(''); setNewEvents([]); setNewSecret(''); setAdding(false);
+  }
+
+  function toggleEvent(e: string) {
+    setNewEvents(p => p.includes(e) ? p.filter(x => x !== e) : [...p, e]);
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">HTTP callbacks for closed deals, goals, and more.</p>
+      <button onClick={() => setAdding(v => !v)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">
+        <Plus className="w-3.5 h-3.5" /> Add Webhook
+      </button>
+      {adding && (
+        <div className="border border-border rounded-xl p-4 space-y-3 bg-secondary/30">
+          <FR label="Webhook URL"><input value={newUrl} onChange={e => setNewUrl(e.target.value)} className={iCls} placeholder="https://your-server.com/hook" /></FR>
+          <FR label="Events">
+            <div className="space-y-1.5 mt-1">
+              {WEBHOOK_EVENTS.map(ev => (
+                <label key={ev} className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={newEvents.includes(ev)} onChange={() => toggleEvent(ev)} className="accent-emerald-500" />
+                  <span className="text-sm text-foreground">{ev}</span>
+                </label>
+              ))}
+            </div>
+          </FR>
+          <FR label="Secret Key" hint="Used to sign payloads for verification.">
+            <input value={newSecret} onChange={e => setNewSecret(e.target.value)} className={iCls} placeholder="whsec_..." />
+          </FR>
+          <div className="flex gap-2">
+            <button onClick={() => setAdding(false)} className="flex-1 py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Cancel</button>
+            <button onClick={addWebhook} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm font-medium transition-colors">Add</button>
+          </div>
+        </div>
+      )}
+      <div className="space-y-1.5">
+        {webhooks.length === 0
+          ? <p className="text-muted-foreground text-xs text-center py-4 border border-dashed border-border rounded-lg">No webhooks configured.</p>
+          : webhooks.map(w => (
+            <div key={w.id} className="flex items-center gap-2 bg-secondary border border-border rounded-lg px-3 py-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-foreground truncate">{w.url}</p>
+                <p className="text-[10px] text-muted-foreground">{w.events.join(', ') || 'No events'}</p>
+              </div>
+              <button onClick={() => setWebhooks(p => p.filter(x => x.id !== w.id))} className="text-muted-foreground hover:text-destructive transition-colors">
+                <Trash className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ))}
+      </div>
+      <SaveRow onSave={() => { update('webhooks', webhooks); showToast('Webhooks saved'); onClose(); }} onCancel={onClose} />
+    </div>
+  );
+}
+
+// ─── ALERTS form ──────────────────────────────────────────────────────────────
+
+function AlertsForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.alerts);
   useEffect(() => { setLocal(settings.alerts); }, [settings.alerts]);
 
-  type AlertKey = keyof typeof local;
-  function toggle(k: AlertKey) { setLocal(prev => ({ ...prev, [k]: !prev[k] })); }
-  function setNum(k: AlertKey, v: number) { setLocal(prev => ({ ...prev, [k]: v })); }
-
   return (
-    <div className="px-6 py-5 space-y-5 flex-1 overflow-y-auto">
+    <div className="space-y-5">
       {/* Stuck deals */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -646,14 +945,38 @@ function AlertsForm({ settings, update, showToast }: FormProps) {
             <p className="text-sm font-medium text-foreground">Stuck Deals</p>
             <p className="text-xs text-muted-foreground">Flag deals stagnant for too long.</p>
           </div>
-          <Toggle checked={local.stuckDealEnabled} onChange={() => toggle('stuckDealEnabled')} />
+          <Toggle checked={local.stuckDealEnabled} onChange={v => setLocal(p => ({ ...p, stuckDealEnabled: v }))} />
         </div>
         {local.stuckDealEnabled && (
-          <FormRow label="Days threshold (Under Contract)">
-            <input type="number" min={1} max={365} value={local.stuckDealDays}
-              onChange={e => setNum('stuckDealDays', Number(e.target.value))} className={inputCls} />
-          </FormRow>
+          <FR label="Days threshold (Under Contract)">
+            <input type="number" min={1} value={local.stuckDealDays} onChange={e => setLocal(p => ({ ...p, stuckDealDays: Number(e.target.value) }))} className={iCls} />
+          </FR>
         )}
+      </div>
+      <hr className="border-border" />
+      {/* Cap approaching */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-foreground">Cap Approaching</p>
+            <p className="text-xs text-muted-foreground">Alert when agent is near their cap.</p>
+          </div>
+          <Toggle checked={local.commissionVarianceEnabled} onChange={v => setLocal(p => ({ ...p, commissionVarianceEnabled: v }))} />
+        </div>
+        {local.commissionVarianceEnabled && (
+          <FR label="Alert when % of cap reached">
+            <input type="number" min={1} max={100} value={local.commissionVariancePercent} onChange={e => setLocal(p => ({ ...p, commissionVariancePercent: Number(e.target.value) }))} className={iCls} />
+          </FR>
+        )}
+      </div>
+      <hr className="border-border" />
+      {/* Goal pace */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Goal Behind Pace</p>
+          <p className="text-xs text-muted-foreground">Alert when an agent is behind goal.</p>
+        </div>
+        <Toggle checked={local.goalBehindEnabled} onChange={v => setLocal(p => ({ ...p, goalBehindEnabled: v }))} />
       </div>
       <hr className="border-border" />
       {/* Pipeline drop */}
@@ -663,82 +986,55 @@ function AlertsForm({ settings, update, showToast }: FormProps) {
             <p className="text-sm font-medium text-foreground">Pipeline Drop</p>
             <p className="text-xs text-muted-foreground">Alert when pipeline falls by X%.</p>
           </div>
-          <Toggle checked={local.pipelineDropEnabled} onChange={() => toggle('pipelineDropEnabled')} />
+          <Toggle checked={local.pipelineDropEnabled} onChange={v => setLocal(p => ({ ...p, pipelineDropEnabled: v }))} />
         </div>
         {local.pipelineDropEnabled && (
-          <FormRow label="Drop % threshold">
-            <input type="number" min={1} max={100} value={local.pipelineDropPercent}
-              onChange={e => setNum('pipelineDropPercent', Number(e.target.value))} className={inputCls} />
-          </FormRow>
+          <FR label="Drop % threshold">
+            <input type="number" min={1} max={100} value={local.pipelineDropPercent} onChange={e => setLocal(p => ({ ...p, pipelineDropPercent: Number(e.target.value) }))} className={iCls} />
+          </FR>
         )}
       </div>
-      <hr className="border-border" />
-      {/* Commission variance */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Commission Variance</p>
-            <p className="text-xs text-muted-foreground">Flag when commission deviates from split.</p>
-          </div>
-          <Toggle checked={local.commissionVarianceEnabled} onChange={() => toggle('commissionVarianceEnabled')} />
-        </div>
-        {local.commissionVarianceEnabled && (
-          <FormRow label="Variance % threshold">
-            <input type="number" min={1} max={100} value={local.commissionVariancePercent}
-              onChange={e => setNum('commissionVariancePercent', Number(e.target.value))} className={inputCls} />
-          </FormRow>
-        )}
-      </div>
-      <hr className="border-border" />
-      {/* Goal behind */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-foreground">Goal Behind Pace</p>
-            <p className="text-xs text-muted-foreground">Alert when an agent is behind goal by X%.</p>
-          </div>
-          <Toggle checked={local.goalBehindEnabled} onChange={() => toggle('goalBehindEnabled')} />
-        </div>
-        {local.goalBehindEnabled && (
-          <FormRow label="Behind % threshold">
-            <input type="number" min={1} max={100} value={local.goalBehindPercent}
-              onChange={e => setNum('goalBehindPercent', Number(e.target.value))} className={inputCls} />
-          </FormRow>
-        )}
-      </div>
-      <SaveBtn onClick={() => { update('alerts', local); showToast('Alert settings saved'); }} />
+      <SaveRow onSave={() => { update('alerts', local); showToast('Alert settings saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Notifications ──────────────────────────────────────────────────────
+// ─── NOTIFICATION PREFS form ──────────────────────────────────────────────────
 
-function NotificationsForm({ settings, update, showToast }: FormProps) {
+function NotificationsForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.notifications);
   useEffect(() => { setLocal(settings.notifications); }, [settings.notifications]);
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Email Notifications">
-        <div className="flex items-center gap-3">
-          <Toggle checked={local.emailEnabled} onChange={v => setLocal(prev => ({ ...prev, emailEnabled: v }))} />
-          <span className="text-sm text-muted-foreground">{local.emailEnabled ? 'Enabled' : 'Disabled'}</span>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-border">
+        <div>
+          <p className="text-sm font-medium text-foreground">In-app notifications</p>
+          <p className="text-xs text-muted-foreground">Always on — cannot be disabled</p>
         </div>
-      </FormRow>
+        <div className="relative inline-flex h-5 w-9 rounded-full bg-emerald-500 cursor-not-allowed opacity-60">
+          <span className="inline-block h-4 w-4 rounded-full bg-white shadow mt-0.5 translate-x-4" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-foreground">Email notifications</p>
+        </div>
+        <Toggle checked={local.emailEnabled} onChange={v => setLocal(p => ({ ...p, emailEnabled: v }))} />
+      </div>
       {local.emailEnabled && (
-        <FormRow label="Notification Email Address">
-          <input type="email" value={local.emailAddress} onChange={e => setLocal(prev => ({ ...prev, emailAddress: e.target.value }))}
-            className={inputCls} placeholder="alerts@yourbrokerage.com" />
-        </FormRow>
+        <FR label="Email address">
+          <input type="email" value={local.emailAddress} onChange={e => setLocal(p => ({ ...p, emailAddress: e.target.value }))} className={iCls} placeholder="alerts@yourbrokerage.com" />
+        </FR>
       )}
-      <SaveBtn onClick={() => { update('notifications', local); showToast('Notification preferences saved'); }} />
+      <SaveRow onSave={() => { update('notifications', local); showToast('Notification preferences saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Lead Sources ───────────────────────────────────────────────────────
+// ─── LEAD SOURCES form ────────────────────────────────────────────────────────
 
-function LeadSourcesForm({ settings, update, showToast }: FormProps) {
+function LeadSourcesForm({ settings, update, showToast, onClose }: FormProps) {
   const [sources, setSources] = useState<LeadSource[]>(settings.leadSources);
   const [newName, setNewName] = useState('');
   useEffect(() => { setSources(settings.leadSources); }, [settings.leadSources]);
@@ -751,230 +1047,206 @@ function LeadSourcesForm({ settings, update, showToast }: FormProps) {
     setSources(next);
   }
 
-  function toggleActive(id: string) {
-    setSources(prev => prev.map(s => s.id === id ? { ...s, active: !s.active } : s));
-  }
-
-  function remove(id: string) {
-    setSources(prev => prev.filter(s => s.id !== id));
-  }
-
   function addSource() {
     const n = newName.trim();
     if (!n) return;
-    const id = n.toLowerCase().replace(/\s+/g, '-');
-    setSources(prev => [...prev, { id, name: n, active: true }]);
+    setSources(p => [...p, { id: `custom-${Date.now()}`, name: n, active: true }]);
     setNewName('');
   }
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <div className="space-y-1.5">
+    <div className="space-y-4">
+      <div className="space-y-1.5 max-h-64 overflow-y-auto">
         {sources.map((s, i) => (
           <div key={s.id} className="flex items-center gap-2 bg-secondary border border-border rounded-lg px-2 py-1.5">
             <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 flex-none" />
             <div className="flex flex-col gap-0.5">
-              <button onClick={() => move(i, -1)} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"><ChevronUp className="w-3 h-3" /></button>
-              <button onClick={() => move(i, 1)} disabled={i === sources.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors"><ChevronDown className="w-3 h-3" /></button>
+              <button onClick={() => move(i, -1)} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20"><ChevronUp className="w-3 h-3" /></button>
+              <button onClick={() => move(i, 1)} disabled={i === sources.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-20"><ChevronDown className="w-3 h-3" /></button>
             </div>
             <span className="flex-1 text-sm text-foreground truncate">{s.name}</span>
-            <Toggle checked={s.active} onChange={() => toggleActive(s.id)} />
-            <button onClick={() => remove(s.id)} className="text-muted-foreground hover:text-destructive transition-colors ml-1">
+            <Toggle checked={s.active} onChange={() => setSources(p => p.map(x => x.id === s.id ? { ...x, active: !x.active } : x))} />
+            <button onClick={() => setSources(p => p.filter(x => x.id !== s.id))} className="text-muted-foreground hover:text-destructive transition-colors ml-1">
               <Trash className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}
       </div>
       <div className="flex gap-2">
-        <input value={newName} onChange={e => setNewName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addSource()}
-          className={`${inputCls} flex-1`} placeholder="New lead source name" />
-        <button onClick={addSource} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600 transition-colors">
-          <Plus className="w-4 h-4" />
-        </button>
+        <input value={newName} onChange={e => setNewName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addSource()} className={`${iCls} flex-1`} placeholder="New lead source name" />
+        <button onClick={addSource} className="px-3 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600 transition-colors"><Plus className="w-4 h-4" /></button>
       </div>
-      <SaveBtn onClick={() => { update('leadSources', sources); showToast('Lead sources saved'); }} />
+      <SaveRow onSave={() => { update('leadSources', sources); showToast('Lead sources saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Lead Source Costs ──────────────────────────────────────────────────
+// ─── LEAD COSTS form ──────────────────────────────────────────────────────────
 
-function LeadCostsForm({ settings, update, showToast }: FormProps) {
+function LeadCostsForm({ settings, update, showToast, onClose }: FormProps) {
   const [costs, setCosts] = useState(settings.leadSourceCosts);
   useEffect(() => { setCosts(settings.leadSourceCosts); }, [settings.leadSourceCosts]);
-  const activeSources = settings.leadSources.filter(s => s.active);
-  const totalMonthly = costs.reduce((sum, c) => sum + c.monthlyCost, 0);
+  const active = settings.leadSources.filter(s => s.active);
+  const total = costs.reduce((s, c) => s + c.monthlyCost, 0);
 
   function setCost(id: string, val: number) {
-    setCosts(prev => {
-      const existing = prev.find(c => c.sourceId === id);
-      if (existing) return prev.map(c => c.sourceId === id ? { ...c, monthlyCost: val } : c);
-      return [...prev, { sourceId: id, monthlyCost: val }];
-    });
-  }
-
-  function getCost(id: string) {
-    return costs.find(c => c.sourceId === id)?.monthlyCost ?? 0;
+    setCosts(p => p.find(c => c.sourceId === id) ? p.map(c => c.sourceId === id ? { ...c, monthlyCost: val } : c) : [...p, { sourceId: id, monthlyCost: val }]);
   }
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <p className="text-muted-foreground text-xs">Set the monthly cost per lead source. Used in the Lead ROI page to calculate return on investment.</p>
-      <div className="space-y-3">
-        {activeSources.map(s => (
-          <FormRow key={s.id} label={s.name}>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-sm">$</span>
-              <input type="number" min={0} value={getCost(s.id)}
-                onChange={e => setCost(s.id, Number(e.target.value))}
-                className={`${inputCls} flex-1`} placeholder="0" />
-              <span className="text-muted-foreground text-xs whitespace-nowrap">/mo</span>
-            </div>
-          </FormRow>
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Set the monthly cost per lead source for ROI calculations.</p>
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {active.map(s => (
+          <div key={s.id} className="flex items-center gap-2">
+            <span className="text-sm text-foreground w-28 flex-none truncate">{s.name}</span>
+            <span className="text-muted-foreground text-sm">$</span>
+            <input type="number" min={0} value={costs.find(c => c.sourceId === s.id)?.monthlyCost ?? 0}
+              onChange={e => setCost(s.id, Number(e.target.value))} className={`${iCls} flex-1`} />
+            <span className="text-xs text-muted-foreground">/mo</span>
+          </div>
         ))}
       </div>
       <div className="rounded-lg border border-border p-3 bg-secondary/50 space-y-1">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Total monthly spend</span>
-          <span className="text-foreground font-medium">${totalMonthly.toLocaleString()}</span>
+          <span className="text-muted-foreground">Total monthly</span>
+          <span className="text-foreground font-medium">${total.toLocaleString()}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Annual spend</span>
-          <span className="text-foreground font-medium">${(totalMonthly * 12).toLocaleString()}</span>
+          <span className="text-muted-foreground">Annual</span>
+          <span className="text-foreground font-medium">${(total * 12).toLocaleString()}</span>
         </div>
       </div>
-      <SaveBtn onClick={() => { update('leadSourceCosts', costs); showToast('Lead costs saved'); }} />
+      <SaveRow onSave={() => { update('leadSourceCosts', costs); showToast('Lead costs saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: Upload Limits ──────────────────────────────────────────────────────
+// ─── UPLOAD LIMITS form ───────────────────────────────────────────────────────
 
-function UploadLimitsForm({ settings, update, showToast }: FormProps) {
+function UploadLimitsForm({ settings, update, showToast, onClose }: FormProps) {
   const [local, setLocal] = useState(settings.uploadLimits);
   useEffect(() => { setLocal(settings.uploadLimits); }, [settings.uploadLimits]);
 
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <FormRow label="Max CSV File Size" hint="Files larger than this will be rejected at upload.">
-        <BtnGroup
-          value={local.maxFileSizeMB}
-          onChange={v => setLocal(prev => ({ ...prev, maxFileSizeMB: v }))}
-          options={[
-            { label: '5 MB', value: 5 },
-            { label: '10 MB', value: 10 },
-            { label: '25 MB', value: 25 },
-            { label: '50 MB', value: 50 },
-            { label: '100 MB', value: 100 },
-          ]}
-        />
-      </FormRow>
-      <FormRow label="Max Transactions Per Push" hint="Uploads with more rows than this will be truncated.">
-        <BtnGroup
-          value={local.maxTransactionsPerPush}
-          onChange={v => setLocal(prev => ({ ...prev, maxTransactionsPerPush: v }))}
-          options={[
-            { label: '1,000', value: 1000 },
-            { label: '2,500', value: 2500 },
-            { label: '5,000', value: 5000 },
-            { label: '10,000', value: 10000 },
-            { label: 'Unlimited', value: 999999 },
-          ]}
-        />
-      </FormRow>
-      <SaveBtn onClick={() => { update('uploadLimits', local); showToast('Upload limits saved'); }} />
+    <div className="space-y-4">
+      <FR label="Max CSV File Size" hint="Files larger than this will be rejected.">
+        <BtnGroup value={local.maxFileSizeMB} onChange={v => setLocal(p => ({ ...p, maxFileSizeMB: v }))}
+          options={[{ label: '5 MB', value: 5 }, { label: '10 MB', value: 10 }, { label: '25 MB', value: 25 }, { label: '50 MB', value: 50 }, { label: '100 MB', value: 100 }]} />
+      </FR>
+      <FR label="Max Transactions Per Push">
+        <BtnGroup value={local.maxTransactionsPerPush} onChange={v => setLocal(p => ({ ...p, maxTransactionsPerPush: v }))}
+          options={[{ label: '1,000', value: 1000 }, { label: '2,500', value: 2500 }, { label: '5,000', value: 5000 }, { label: '10,000', value: 10000 }, { label: 'Unlimited', value: 999999 }]} />
+      </FR>
+      <SaveRow onSave={() => { update('uploadLimits', local); showToast('Upload limits saved'); onClose(); }} onCancel={onClose} />
     </div>
   );
 }
 
-// ─── Form: API Limits ─────────────────────────────────────────────────────────
+// ─── API LIMITS form ──────────────────────────────────────────────────────────
 
-function ApiLimitsForm() {
+function ApiLimitsForm({ onClose }: FormProps) {
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
-      <p className="text-muted-foreground text-xs">Current API usage for this tenant. Limits reset monthly.</p>
-      <div className="space-y-4">
-        {[
-          { label: 'API Calls (this month)', used: 0, limit: 1000 },
-          { label: 'Webhook Deliveries', used: 0, limit: 10000 },
-        ].map(item => (
-          <div key={item.label} className="space-y-1.5">
-            <div className="flex justify-between text-xs">
-              <span className="text-foreground">{item.label}</span>
-              <span className="text-muted-foreground">{item.used.toLocaleString()} / {item.limit.toLocaleString()}</span>
-            </div>
-            <div className="h-2 rounded-full bg-border overflow-hidden">
-              <div className="h-full bg-blue-500 transition-all" style={{ width: `${Math.min(100, (item.used / item.limit) * 100)}%` }} />
-            </div>
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Current API usage for this tenant. Limits reset monthly.</p>
+      {[{ label: 'API Calls (this month)', used: 0, limit: 1000 }, { label: 'Webhook Deliveries', used: 0, limit: 10000 }].map(item => (
+        <div key={item.label} className="space-y-1.5">
+          <div className="flex justify-between text-xs">
+            <span className="text-foreground">{item.label}</span>
+            <span className="text-muted-foreground">{item.used.toLocaleString()} / {item.limit.toLocaleString()}</span>
           </div>
-        ))}
-      </div>
-      <p className="text-muted-foreground text-xs text-center pt-2">Live API rate limits available in Phase 2</p>
+          <div className="h-2 rounded-full bg-border overflow-hidden">
+            <div className="h-full bg-blue-500" style={{ width: `${(item.used / item.limit) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+      <p className="text-[11px] text-muted-foreground text-center">Live API rate limits available in Phase 2</p>
+      <button onClick={onClose} className="w-full py-2 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors">Close</button>
     </div>
   );
 }
 
-// ─── Form: Export Data ────────────────────────────────────────────────────────
+// ─── EXPORT DATA form ─────────────────────────────────────────────────────────
 
-function ExportDataForm({ settings, allRecords, showToast }: FormProps) {
+function ExportDataForm({ settings, allRecords, showToast, onClose }: FormProps) {
   function handleExport() {
-    const data = {
-      exportDate: new Date().toISOString(),
-      version: '2.0',
-      settings,
-      transactions: allRecords ?? [],
-    };
+    const data = { exportDate: new Date().toISOString(), version: '2.0', settings, transactions: allRecords ?? [] };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `dotloop-reporter-export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = `dotloop-reporter-export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
     showToast('Export downloaded');
   }
-
   return (
-    <div className="px-6 py-5 space-y-4 flex-1 overflow-y-auto">
+    <div className="space-y-4">
       <p className="text-muted-foreground text-sm">Downloads all settings and transaction data as JSON. Includes {(allRecords ?? []).length.toLocaleString()} records.</p>
-      <button onClick={handleExport}
-        className="w-full py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2">
-        <Download className="w-4 h-4" />
-        Download JSON Export
+      <button onClick={handleExport} className="w-full py-2.5 bg-secondary border border-border rounded-lg text-sm text-foreground hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2">
+        <Download className="w-4 h-4" /> Download JSON Export
       </button>
+      <button onClick={onClose} className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">Close</button>
     </div>
   );
 }
 
-// ─── Sheet card components ────────────────────────────────────────────────────
+// ─── Form router ──────────────────────────────────────────────────────────────
 
-function SettingCardItem({ card, onClick }: { card: SettingCard; onClick: () => void }) {
-  const isDanger = card.section === 'danger';
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full text-left flex items-center gap-3 p-3.5 border rounded-xl transition-all group ${
-        isDanger
-          ? 'bg-destructive/5 border-destructive/30 hover:border-destructive/60'
-          : 'bg-background border-border hover:border-border/80 hover:bg-secondary/30'
-      }`}
-    >
-      <div className={`flex-none w-9 h-9 rounded-lg flex items-center justify-center ${isDanger ? 'bg-destructive/10' : 'bg-secondary'}`}>
-        <span className={`[&>svg]:w-4 [&>svg]:h-4 ${isDanger ? 'text-destructive' : 'text-muted-foreground'}`}>{card.icon}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-foreground text-sm font-medium leading-tight truncate">{card.title}</p>
-        <p className="text-muted-foreground text-xs mt-0.5 line-clamp-1">{card.description}</p>
-      </div>
-      <ChevronRight className="flex-none w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
-    </button>
-  );
+function renderFormBody(cardId: string, props: FormProps): ReactNode {
+  switch (cardId) {
+    case 'brokerage':           return <BrokerageForm {...props} />;
+    case 'branding':            return <BrandingForm {...props} />;
+    case 'cda-logo':            return <CdaLogoForm {...props} />;
+    case 'default-commission':  return <CommissionForm {...props} />;
+    case 'default-timezone':    return <LocaleForm {...props} />;
+    case 'auto-refresh':        return <AutoRefreshForm {...props} />;
+    case 'report-retention':    return <ReportRetentionForm {...props} />;
+    case 'email-reports':       return <EmailReportsForm {...props} />;
+    case 'report-recipients':   return <ReportRecipientsForm {...props} />;
+    case 'display-mode':        return <DisplayModeForm {...props} />;
+    case 'account-connections': return <AccountConnectionsForm {...props} />;
+    case 'dotloop-connections': return <DotloopConnectionsForm {...props} />;
+    case 'dotloop-autopush':    return <AutoPushForm {...props} />;
+    case 'fub':                 return <FubForm {...props} />;
+    case 'quickbooks':          return <QuickBooksForm {...props} />;
+    case 'quickbooks-alerts':   return <QuickBooksAlertsForm {...props} />;
+    case 'webhooks':            return <WebhooksForm {...props} />;
+    case 'alerts':              return <AlertsForm {...props} />;
+    case 'notification-prefs':  return <NotificationsForm {...props} />;
+    case 'lead-sources':        return <LeadSourcesForm {...props} />;
+    case 'lead-costs':          return <LeadCostsForm {...props} />;
+    case 'upload-limits':       return <UploadLimitsForm {...props} />;
+    case 'api-limits':          return <ApiLimitsForm {...props} />;
+    case 'export-data':         return <ExportDataForm {...props} />;
+    default: {
+      const card = CARDS.find(c => c.id === cardId);
+      return (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center mb-3">
+            <span className="text-muted-foreground [&>svg]:w-5 [&>svg]:h-5">{card?.icon}</span>
+          </div>
+          <p className="text-foreground text-sm font-medium mb-1">Coming Soon</p>
+          <p className="text-muted-foreground text-xs max-w-[220px]">{card?.description}</p>
+        </div>
+      );
+    }
+  }
 }
 
-function SectionBlock({ section, cards, onCardClick }: { section: SectionDef; cards: SettingCard[]; onCardClick: (id: string) => void }) {
+// ─── Section block with inline expansion ─────────────────────────────────────
+
+function SectionBlock({
+  section, cards, expandedCard, setExpandedCard, formProps,
+}: {
+  section: SectionDef;
+  cards: SettingCard[];
+  expandedCard: string | null;
+  setExpandedCard: (id: string | null) => void;
+  formProps: FormProps;
+}) {
   if (cards.length === 0) return null;
   const isDanger = section.id === 'danger';
+  const expandedCardDef = cards.find(c => c.id === expandedCard);
+
   return (
     <div className={isDanger ? 'border border-destructive/30 rounded-xl p-5' : ''}>
       <div className="mb-3">
@@ -984,10 +1256,62 @@ function SectionBlock({ section, cards, onCardClick }: { section: SectionDef; ca
         {section.description && <p className="text-muted-foreground text-xs">{section.description}</p>}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-        {cards.map(card => (
-          <SettingCardItem key={card.id} card={card} onClick={() => onCardClick(card.id)} />
-        ))}
+        {cards.map(card => {
+          const isExpanded = card.id === expandedCard;
+          const isDangerCard = card.section === 'danger';
+          return (
+            <button
+              key={card.id}
+              onClick={() => setExpandedCard(isExpanded ? null : card.id)}
+              className={`w-full text-left flex items-center gap-3 p-3.5 border rounded-xl transition-all group ${
+                isExpanded
+                  ? isDangerCard
+                    ? 'bg-destructive/10 border-destructive/60'
+                    : 'bg-secondary/60 border-blue-500/40'
+                  : isDangerCard
+                    ? 'bg-destructive/5 border-destructive/30 hover:border-destructive/60'
+                    : 'bg-background border-border hover:border-border/80 hover:bg-secondary/30'
+              }`}
+            >
+              <div className={`flex-none w-9 h-9 rounded-lg flex items-center justify-center ${isDangerCard ? 'bg-destructive/10' : 'bg-secondary'}`}>
+                <span className={`[&>svg]:w-4 [&>svg]:h-4 ${isDangerCard ? 'text-destructive' : 'text-muted-foreground'}`}>{card.icon}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-foreground text-sm font-medium leading-tight truncate">{card.title}</p>
+                <p className="text-muted-foreground text-xs mt-0.5 line-clamp-1">{card.description}</p>
+              </div>
+              {isExpanded
+                ? <ChevronUp className="flex-none w-4 h-4 text-blue-400" />
+                : <ChevronRight className="flex-none w-4 h-4 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors" />
+              }
+            </button>
+          );
+        })}
       </div>
+
+      {/* Inline expansion panel */}
+      {expandedCardDef && (
+        <div className="mt-3 border border-border rounded-xl bg-background overflow-hidden">
+          {/* Panel header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-secondary/30">
+            <div>
+              <p className="text-sm font-semibold text-foreground">{expandedCardDef.title}</p>
+              <p className="text-xs text-muted-foreground">{expandedCardDef.description}</p>
+            </div>
+            <button
+              onClick={() => setExpandedCard(null)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-secondary"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+              Close
+            </button>
+          </div>
+          {/* Panel body */}
+          <div className="px-5 py-5">
+            {renderFormBody(expandedCard!, { ...formProps, onClose: () => setExpandedCard(null) })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -997,7 +1321,7 @@ function SectionBlock({ section, cards, onCardClick }: { section: SectionDef; ca
 export default function SettingsComplete() {
   const [activeTab, setActiveTab] = useState('overview');
   const [search, setSearch] = useState('');
-  const [openCard, setOpenCard] = useState<string | null>(null);
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [resetDialog, setResetDialog] = useState(false);
   const [resetInput, setResetInput] = useState('');
@@ -1012,6 +1336,9 @@ export default function SettingsComplete() {
     toastTimer.current = setTimeout(() => setToastMsg(null), 3000);
   }
 
+  // Close expansion when switching tabs or searching
+  useEffect(() => { setExpandedCard(null); }, [activeTab, search]);
+
   const filteredCards = useMemo(() => {
     if (!search) return CARDS;
     const q = search.toLowerCase();
@@ -1024,55 +1351,31 @@ export default function SettingsComplete() {
 
   function handleCardClick(id: string) {
     if (id === 'reset-data') { setResetDialog(true); return; }
-    setOpenCard(id);
+    setExpandedCard(prev => prev === id ? null : id);
   }
 
-  const formProps: FormProps = { settings, update, showToast, allRecords };
+  const formProps: FormProps = { settings, update, showToast, allRecords, onClose: () => setExpandedCard(null) };
 
-  function renderSheetBody(cardId: string): ReactNode {
-    switch (cardId) {
-      case 'brokerage': return <BrokerageForm {...formProps} />;
-      case 'branding': return <BrandingForm {...formProps} />;
-      case 'cda-logo': return <CdaLogoForm {...formProps} />;
-      case 'default-commission': return <CommissionForm {...formProps} />;
-      case 'default-timezone': return <LocaleForm {...formProps} />;
-      case 'auto-refresh': return <AutoRefreshForm {...formProps} />;
-      case 'report-retention': return <ReportRetentionForm {...formProps} />;
-      case 'email-reports': return <EmailReportsForm {...formProps} />;
-      case 'report-recipients': return <ReportRecipientsForm {...formProps} />;
-      case 'display-mode': return <DisplayModeForm {...formProps} />;
-      case 'alerts': return <AlertsForm {...formProps} />;
-      case 'notification-prefs': return <NotificationsForm {...formProps} />;
-      case 'lead-sources': return <LeadSourcesForm {...formProps} />;
-      case 'lead-costs': return <LeadCostsForm {...formProps} />;
-      case 'upload-limits': return <UploadLimitsForm {...formProps} />;
-      case 'api-limits': return <ApiLimitsForm />;
-      case 'export-data': return <ExportDataForm {...formProps} />;
-      case 'dotloop-connections': return (
-        <div className="px-6 py-5 space-y-5 flex-1 overflow-y-auto">
-          <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <span className="text-xs text-yellow-400 font-medium">Status: Not connected</span>
-          </div>
-          <button disabled className="w-full py-2.5 bg-secondary border border-border rounded-lg text-muted-foreground text-sm cursor-not-allowed">
-            Connect Dotloop Account
-          </button>
-          <p className="text-muted-foreground text-xs text-center">Coming in Phase 2</p>
-          <div className="space-y-2">
-            <p className="text-foreground text-xs font-medium">Connecting will enable:</p>
-            {['Live data sync', 'Auto-push transactions', 'Real-time updates', 'Multi-office support'].map(f => (
-              <div key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Check className="w-3.5 h-3.5 text-emerald-400 flex-none" />
-                {f}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-      default: return <ComingSoon card={CARDS.find(c => c.id === cardId)} />;
-    }
+  // SectionBlock needs onClose wired per-section
+  function renderSection(section: SectionDef) {
+    const cards = getVisibleCards(section.id);
+    // Only one card expanded globally — if expanded card isn't in this section, don't show panel here
+    const expandedInThisSection = cards.some(c => c.id === expandedCard) ? expandedCard : null;
+
+    return (
+      <SectionBlock
+        key={section.id}
+        section={section}
+        cards={cards}
+        expandedCard={expandedInThisSection}
+        setExpandedCard={id => {
+          if (id === 'reset-data') { setResetDialog(true); return; }
+          setExpandedCard(id);
+        }}
+        formProps={formProps}
+      />
+    );
   }
-
-  const openCardDef = CARDS.find(c => c.id === openCard);
 
   return (
     <div className="space-y-6 pb-8">
@@ -1112,14 +1415,14 @@ export default function SettingsComplete() {
               );
             })}
           </TabsList>
+
           <TabsContent value="overview" className="mt-6 space-y-8">
-            {SECTIONS.map(section => (
-              <SectionBlock key={section.id} section={section} cards={getVisibleCards(section.id)} onCardClick={handleCardClick} />
-            ))}
+            {SECTIONS.map(section => renderSection(section))}
           </TabsContent>
+
           {SECTIONS.map(section => (
             <TabsContent key={section.id} value={section.id} className="mt-6">
-              <SectionBlock section={section} cards={getVisibleCards(section.id)} onCardClick={handleCardClick} />
+              {renderSection(section)}
             </TabsContent>
           ))}
         </Tabs>
@@ -1134,27 +1437,10 @@ export default function SettingsComplete() {
               <button onClick={() => setSearch('')} className="mt-2 text-xs text-blue-400 hover:text-blue-300 underline">Clear search</button>
             </div>
           ) : (
-            SECTIONS.map(section => (
-              <SectionBlock key={section.id} section={section} cards={getVisibleCards(section.id)} onCardClick={handleCardClick} />
-            ))
+            SECTIONS.map(section => renderSection(section))
           )}
         </div>
       )}
-
-      {/* Settings Sheet */}
-      <Sheet open={!!openCard} onOpenChange={open => !open && setOpenCard(null)}>
-        <SheetContent className="w-full sm:max-w-md flex flex-col h-full bg-background border-l border-border p-0 gap-0">
-          {openCard && (
-            <>
-              <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-                <SheetTitle className="text-foreground">{openCardDef?.title}</SheetTitle>
-                <SheetDescription className="text-muted-foreground text-sm">{openCardDef?.description}</SheetDescription>
-              </SheetHeader>
-              {renderSheetBody(openCard)}
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
 
       {/* Reset Dialog */}
       <Dialog open={resetDialog} onOpenChange={setResetDialog}>
@@ -1188,10 +1474,8 @@ export default function SettingsComplete() {
               <button
                 disabled={resetInput !== 'RESET'}
                 onClick={() => {
-                  clearTransactionData();
-                  resetAll();
-                  setResetDialog(false);
-                  setResetInput('');
+                  clearTransactionData(); resetAll();
+                  setResetDialog(false); setResetInput('');
                   showToast('All data has been cleared');
                   setTimeout(() => navigate('/upload'), 1500);
                 }}
