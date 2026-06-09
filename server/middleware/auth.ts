@@ -1,18 +1,23 @@
 /**
  * Auth Middleware
  *
- * requireAuth            — Validate session JWT, attach user + tenantId to req
+ * requireAuth              — Verify Supabase Bearer token, attach userId + tenantId to req
  * requireDotloopConnection — Verify the tenant has an active Dotloop connection
  *
- * Session tokens are signed JWTs stored in the `session` cookie (set during OAuth callback).
- * The payload carries: { userId, tenantId, email }
+ * All protected routes use Supabase JWTs issued by supabase.auth.signIn/signUp.
+ * The service_role admin client is used server-side to verify tokens and fetch tenant data.
+ *
+ * Token flow:
+ *   Frontend: Authorization: Bearer <supabase_access_token>
+ *   Backend:  supabaseAdmin.auth.getUser(token) → user
+ *             users table lookup by supabase_uid → tenant_id
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { jwtVerify } from 'jose';
 import { getSupabaseAdmin } from '../lib/supabase';
 
-// Extend Express Request to carry our session context
+// ─── Extend Express.Request ───────────────────────────────────────────────────
+
 declare global {
   namespace Express {
     interface Request {
@@ -23,21 +28,13 @@ declare global {
   }
 }
 
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) throw new Error('JWT_SECRET environment variable is not set');
-  return new TextEncoder().encode(secret);
-}
-
 // ─── requireAuth ──────────────────────────────────────────────────────────────
 
 /**
- * Middleware that validates the session JWT and attaches user context to req.
- * Accepts token from either:
- *  1. Cookie: `session`
- *  2. Authorization: Bearer <token> header
+ * Verifies the Supabase access token from the Authorization: Bearer header,
+ * looks up the user's tenant row, and attaches userId + tenantId to req.
  *
- * Returns 401 if no valid token found.
+ * Returns 401 if no valid token is found or the user has no tenant row yet.
  */
 export async function requireAuth(
   req: Request,
@@ -45,42 +42,60 @@ export async function requireAuth(
   next: NextFunction
 ): Promise<void> {
   try {
-    const cookieToken = (req.cookies as Record<string, string>)?.session;
-    const headerToken = req.headers.authorization?.startsWith('Bearer ')
-      ? req.headers.authorization.slice(7)
-      : undefined;
-
-    const token = cookieToken || headerToken;
+    // Accept token from Authorization header OR query param (for browser redirects)
+    const token =
+      req.headers.authorization?.replace('Bearer ', '') ||
+      (req.query as Record<string, string>)?.token;
 
     if (!token) {
-      res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: 'Authentication required — no token provided' });
       return;
     }
 
-    const secret = getJwtSecret();
-    const { payload } = await jwtVerify(token, secret);
+    const db = getSupabaseAdmin();
 
-    if (!payload.userId || !payload.tenantId) {
-      res.status(401).json({ error: 'Invalid session token' });
+    // Verify the Supabase JWT
+    const { data: { user }, error: authError } = await db.auth.getUser(token);
+    if (authError || !user) {
+      res.status(401).json({ error: 'Invalid or expired token' });
       return;
     }
 
-    req.userId    = String(payload.userId);
-    req.tenantId  = String(payload.tenantId);
-    req.userEmail = typeof payload.email === 'string' ? payload.email : undefined;
+    // Look up the tenant via users table
+    const { data: userRow, error: dbError } = await db
+      .from('users')
+      .select('id, tenant_id, email')
+      .eq('supabase_uid', user.id)
+      .maybeSingle();
+
+    if (dbError) {
+      console.error('[requireAuth] users table lookup error:', dbError.message);
+      res.status(500).json({ error: 'Failed to load user profile' });
+      return;
+    }
+
+    if (!userRow) {
+      // User signed up in Supabase Auth but hasn't completed setup-tenant yet
+      res.status(401).json({ error: 'User profile not found — complete account setup first' });
+      return;
+    }
+
+    req.userId    = userRow.id as string;
+    req.tenantId  = userRow.tenant_id as string;
+    req.userEmail = userRow.email as string | undefined;
 
     next();
   } catch (err) {
-    res.status(401).json({ error: 'Invalid or expired session' });
+    console.error('[requireAuth] unexpected error:', err);
+    res.status(401).json({ error: 'Authentication failed' });
   }
 }
 
 // ─── requireDotloopConnection ─────────────────────────────────────────────────
 
 /**
- * Middleware that checks the tenant has an active Dotloop connection.
+ * Checks the tenant has an active Dotloop connection.
  * Must be used after requireAuth (needs req.tenantId).
- * Returns 400 if not connected.
  */
 export async function requireDotloopConnection(
   req: Request,

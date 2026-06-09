@@ -55,11 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch tenant info from our backend after Supabase auth succeeds
-  const loadUserProfile = useCallback(async (supabaseUser: User) => {
+  // Fetch tenant info from our backend after Supabase auth succeeds.
+  // accessToken must be passed in — the session state may not be updated yet when this runs.
+  const loadUserProfile = useCallback(async (supabaseUser: User, accessToken: string) => {
     try {
       const res = await fetch('/api/auth/me', {
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
       });
       if (res.ok) {
@@ -74,7 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           brokerageName: profile.brokerageName ?? null,
         });
       } else {
-        // Profile not set up yet — might be new user
+        // 404 = profile not set up yet (new user who hasn't completed setup-tenant)
+        // 401 = token invalid
+        console.warn('[AuthContext] /api/auth/me returned', res.status);
         setUser({
           id:            supabaseUser.id,
           email:         supabaseUser.email ?? '',
@@ -82,8 +88,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           brokerageName: null,
         });
       }
-    } catch {
-      // Network error — still set basic user info
+    } catch (err) {
+      console.error('[AuthContext] /api/auth/me fetch error:', err);
       setUser({
         id:            supabaseUser.id,
         email:         supabaseUser.email ?? '',
@@ -98,8 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
-      if (s?.user) {
-        loadUserProfile(s.user).finally(() => setLoading(false));
+      if (s?.user && s.access_token) {
+        loadUserProfile(s.user, s.access_token).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -108,8 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, s) => {
         setSession(s);
-        if (s?.user) {
-          loadUserProfile(s.user);
+        if (s?.user && s.access_token) {
+          loadUserProfile(s.user, s.access_token);
         } else {
           setUser(null);
         }

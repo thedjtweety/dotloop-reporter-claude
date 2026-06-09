@@ -10,6 +10,7 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { getSupabaseAdmin } from '../lib/supabase';
+import { requireAuth } from '../middleware/auth';
 import { encryptToken } from '../lib/token-encryption';
 import { revokeToken } from '../lib/dotloop-token-service';
 import { DotloopAPIClient } from '../lib/dotloop-client';
@@ -35,73 +36,27 @@ function basicAuth(clientId: string, clientSecret: string) {
   return 'Basic ' + Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 }
 
-/** Read tenant/user from session, request headers, or JWT cookie/query param */
-function getSessionUser(req: Request): { tenantId: string; userId: string } | null {
-  // Already attached by requireAuth middleware
-  const tenantId = (req as any).tenantId || req.headers['x-tenant-id'] as string;
-  const userId   = (req as any).userId   || req.headers['x-user-id']   as string;
-  if (tenantId && userId) return { tenantId, userId };
-  return null;
-}
-
-/**
- * Async version: verify Supabase token from query param or Authorization header,
- * then look up the user's tenant in the DB.
- * Returns null if not authenticated or not found.
- */
-async function getSessionUserFromSupabase(req: Request): Promise<{ tenantId: string; userId: string } | null> {
-  // 1. Try the fast path (requireAuth middleware already ran)
-  const quick = getSessionUser(req);
-  if (quick) return quick;
-
-  // 2. Supabase access token from query param (browser redirect) or Authorization header
-  const token =
-    (req.query as Record<string, string>)?.token ||
-    req.headers.authorization?.replace('Bearer ', '');
-
-  if (!token) return null;
-
-  try {
-    const db = getSupabaseAdmin();
-    const { data: { user }, error } = await db.auth.getUser(token);
-    if (error || !user) return null;
-
-    const { data: userRow } = await db
-      .from('users')
-      .select('id, tenant_id')
-      .eq('supabase_uid', user.id)
-      .maybeSingle();
-
-    if (!userRow) return null;
-    return { tenantId: userRow.tenant_id as string, userId: userRow.id as string };
-  } catch {
-    return null;
-  }
-}
-
 // ─── GET /connect ─────────────────────────────────────────────────────────────
 
-router.get('/connect', async (req: Request, res: Response) => {
+// requireAuth accepts query param ?token= so browser redirects work
+router.get('/connect', requireAuth, async (req: Request, res: Response) => {
   try {
-    const session = await getSessionUserFromSupabase(req);
-    if (!session) {
-      res.redirect('/login?error=auth_required');
-      return;
-    }
-
     const { clientId, redirectUri } = getDotloopCreds();
 
     // Generate and store CSRF state in session
     const state = crypto.randomBytes(24).toString('hex');
     (req as any).session = { ...(req as any).session, dotloopOAuthState: state };
 
-    // Also store in a short-lived cookie as a fallback (some environments lose session)
-    res.cookie('dl_oauth_state', state, {
+    const cookieOpts = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 10 * 60 * 1000, // 10 minutes
-      sameSite: 'lax',
-    });
+      sameSite: 'lax' as const,
+    };
+    res.cookie('dl_oauth_state', state, cookieOpts);
+    // Store tenant/user so /callback can read them back without another token verification
+    res.cookie('dl_tenant_id', req.tenantId!, cookieOpts);
+    res.cookie('dl_user_id',   req.userId!,   cookieOpts);
 
     const params = new URLSearchParams({
       response_type: 'code',
@@ -146,11 +101,18 @@ router.get('/callback', async (req: Request, res: Response) => {
     }
     res.clearCookie('dl_oauth_state');
 
-    const session = await getSessionUserFromSupabase(req);
-    if (!session) {
+    // tenantId/userId were stored in the state cookie during /connect
+    // Re-derive from the callback's cookie (no second auth needed — Dotloop signed the code)
+    // We stored the user context in a cookie at /connect time; read it back
+    const tenantId = (req.cookies as Record<string, string>)?.dl_tenant_id;
+    const userId   = (req.cookies as Record<string, string>)?.dl_user_id;
+    if (!tenantId || !userId) {
+      console.error('[dotloop-auth] Missing tenant/user cookies in callback');
       res.redirect('/settings?error=auth_failed');
       return;
     }
+    res.clearCookie('dl_tenant_id');
+    res.clearCookie('dl_user_id');
 
     const { clientId, clientSecret, redirectUri } = getDotloopCreds();
 
@@ -200,8 +162,8 @@ router.get('/callback', async (req: Request, res: Response) => {
     const db = getSupabaseAdmin();
     await db.from('dotloop_connections').upsert(
       {
-        tenant_id: session.tenantId,
-        user_id: session.userId,
+        tenant_id: tenantId,
+        user_id: userId,
         dotloop_account_id: String(account.id),
         dotloop_profile_id: profile?.profileId ?? null,
         dotloop_profile_name: profile?.name ?? account.name,
@@ -217,8 +179,8 @@ router.get('/callback', async (req: Request, res: Response) => {
 
     // Audit log
     await db.from('audit_log').insert({
-      tenant_id: session.tenantId,
-      user_id: session.userId,
+      tenant_id: tenantId,
+      user_id: userId,
       action: 'dotloop_connected',
       resource_type: 'dotloop_connection',
       details: { dotloop_account_id: account.id, profile_name: profile?.name },
@@ -234,15 +196,9 @@ router.get('/callback', async (req: Request, res: Response) => {
 
 // ─── POST /disconnect ─────────────────────────────────────────────────────────
 
-router.post('/disconnect', async (req: Request, res: Response) => {
+router.post('/disconnect', requireAuth, async (req: Request, res: Response) => {
   try {
-    const session = await getSessionUserFromSupabase(req);
-    if (!session) {
-      res.status(401).json({ error: 'Authentication required' });
-      return;
-    }
-
-    await revokeToken(session.tenantId);
+    await revokeToken(req.tenantId!);
     res.json({ success: true });
   } catch (err) {
     console.error('[dotloop-auth] /disconnect error:', err);
@@ -252,19 +208,39 @@ router.post('/disconnect', async (req: Request, res: Response) => {
 
 // ─── GET /status ──────────────────────────────────────────────────────────────
 
+// /status is intentionally unauthenticated — returns {connected:false} when not logged in
+// so the Settings form can show "Not connected" without requiring auth
 router.get('/status', async (req: Request, res: Response) => {
   try {
-    const session = await getSessionUserFromSupabase(req);
-    if (!session) {
+    // Verify token if present; if absent just return disconnected (not an error)
+    const token =
+      req.headers.authorization?.replace('Bearer ', '') ||
+      (req.query as Record<string, string>)?.token;
+
+    if (!token) {
       res.json({ connected: false, lastSynced: null, syncStatus: 'disconnected', loopsSynced: 0, profileName: null });
       return;
     }
 
     const db = getSupabaseAdmin();
+    const { data: { user }, error: authErr } = await db.auth.getUser(token);
+    if (authErr || !user) {
+      res.json({ connected: false, lastSynced: null, syncStatus: 'disconnected', loopsSynced: 0, profileName: null });
+      return;
+    }
+
+    const { data: userRow } = await db
+      .from('users').select('tenant_id').eq('supabase_uid', user.id).maybeSingle();
+    if (!userRow?.tenant_id) {
+      res.json({ connected: false, lastSynced: null, syncStatus: 'disconnected', loopsSynced: 0, profileName: null });
+      return;
+    }
+    const tenantId = userRow.tenant_id as string;
+
     const { data: conn } = await db
       .from('dotloop_connections')
       .select('sync_status, last_synced_at, loops_synced, dotloop_profile_name')
-      .eq('tenant_id', session.tenantId)
+      .eq('tenant_id', tenantId)
       .maybeSingle();
 
     if (!conn) {

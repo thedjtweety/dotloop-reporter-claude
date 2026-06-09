@@ -11,6 +11,7 @@
 
 import { Router, Request, Response } from 'express';
 import { getSupabaseAdmin } from '../lib/supabase';
+import { requireAuth } from '../middleware/auth';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
@@ -19,48 +20,32 @@ const router = Router();
 
 /**
  * Returns the tenant profile for the currently authenticated user.
- * The Supabase JWT is expected either in the Authorization header
- * (Bearer <access_token>) or via the `session` cookie.
+ * requireAuth middleware verifies the Supabase Bearer token and attaches
+ * req.userId + req.tenantId before this handler runs.
  */
-router.get('/me', async (req: Request, res: Response) => {
+router.get('/me', requireAuth, async (req: Request, res: Response) => {
   try {
-    // Get access token from Authorization header or cookie
-    const token =
-      req.headers.authorization?.replace('Bearer ', '') ||
-      (req.cookies as Record<string, string>)?.['sb-access-token'];
-
-    if (!token) {
-      res.status(401).json({ error: 'Not authenticated' });
-      return;
-    }
-
     const db = getSupabaseAdmin();
 
-    // Verify the Supabase JWT and get the user
-    const { data: { user }, error } = await db.auth.getUser(token);
-    if (error || !user) {
-      res.status(401).json({ error: 'Invalid token' });
-      return;
-    }
-
-    // Look up their tenant record
-    const { data: userRow } = await db
-      .from('users')
-      .select('tenant_id, tenants(name)')
-      .eq('supabase_uid', user.id)
+    // requireAuth already verified the token and looked up the user row.
+    // Fetch the tenant name to return brokerage info.
+    const { data: tenantRow, error } = await db
+      .from('tenants')
+      .select('name')
+      .eq('id', req.tenantId!)
       .maybeSingle();
 
-    if (!userRow) {
-      res.status(404).json({ error: 'User profile not found' });
+    if (error) {
+      console.error('[auth/me] tenant lookup error:', error.message);
+      res.status(500).json({ error: 'Failed to load tenant' });
       return;
     }
 
-    // Supabase join returns the related table as a nested object
-    const tenant = userRow.tenants as { name?: string } | null;
-
     res.json({
-      tenantId:      userRow.tenant_id,
-      brokerageName: tenant?.name ?? null,
+      tenantId:      req.tenantId,
+      brokerageName: tenantRow?.name ?? null,
+      userId:        req.userId,
+      email:         req.userEmail,
     });
   } catch (err) {
     console.error('[auth/me] error:', err);
