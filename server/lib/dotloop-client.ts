@@ -210,7 +210,12 @@ export class DotloopAPIClient {
   async getAccount(): Promise<DotloopAccount> {
     try {
       const response = await this.client.get('/account');
-      return response.data;
+      // Dotloop wraps the account in a "data" envelope: { "data": { "id": ..., "defaultProfileId": ... } }
+      // response.data is that envelope, so the actual account is response.data.data
+      const account = (response.data?.data ?? response.data) as DotloopAccount;
+      console.log('[DotloopClient] getAccount raw response.data:', JSON.stringify(response.data));
+      console.log('[DotloopClient] getAccount unwrapped account:', JSON.stringify(account));
+      return account;
     } catch (error) {
       throw new Error(`Failed to fetch account: ${DotloopAPIClient.getErrorMessage(error)}`);
     }

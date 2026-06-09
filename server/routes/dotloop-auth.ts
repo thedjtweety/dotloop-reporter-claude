@@ -171,7 +171,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     ]);
 
     // ── Log raw API responses ────────────────────────────────────────────────
-    console.log('[callback] account:', JSON.stringify(account));
+    console.log('[callback] full account object:', JSON.stringify(account));
     console.log('[callback] profiles:', JSON.stringify(profiles));
 
     // ── Select profile ───────────────────────────────────────────────────────
