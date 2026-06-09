@@ -15,7 +15,7 @@ The app runs entirely from a CSV upload — no Dotloop API integration is active
 ## Commands
 
 ```bash
-pnpm dev          # Start dev server (Vite + Express, hot reload) on port 3000
+pnpm dev          # Start dev server (Vite + Express, hot reload) on port 3001
 pnpm build        # Build frontend (Vite) + backend (esbuild) to dist/
 pnpm start        # Run production build
 pnpm test         # Run all Vitest tests
@@ -431,9 +431,9 @@ JWT_SECRET=<min 32 chars>
 TOKEN_ENCRYPTION_KEY=<min 32 chars>
 
 # Auth (leave as localhost values to run without OAuth)
-VITE_OAUTH_PORTAL_URL=http://localhost:3000
+VITE_OAUTH_PORTAL_URL=http://localhost:3001
 VITE_APP_ID=local-dev
-OAUTH_SERVER_URL=http://localhost:3000
+OAUTH_SERVER_URL=http://localhost:3001
 
 # Owner identity (required by some routes)
 OWNER_NAME=Local Dev
@@ -444,7 +444,7 @@ BUILT_IN_FORGE_API_URL=        # AI/Forge integration
 BUILT_IN_FORGE_API_KEY=
 DOTLOOP_CLIENT_ID=             # Live Dotloop OAuth
 DOTLOOP_CLIENT_SECRET=
-DOTLOOP_REDIRECT_URI=http://localhost:3000/api/dotloop/callback
+DOTLOOP_REDIRECT_URI=http://localhost:3001/api/dotloop/callback
 ```
 
 The app runs in "demo mode" without a database or OAuth configured — just leave those vars as the localhost defaults and click "Load Demo Data" in the UI.
@@ -943,11 +943,11 @@ When building UI that should match the Replit reference version:
 2. Share screenshot in Claude.ai chat for analysis
 3. Claude.ai writes detailed build prompt from screenshot
 4. Paste prompt into Claude Desktop to build
-5. Compare result in browser at `localhost:3000`
+5. Compare result in browser at `localhost:3001`
 6. Iterate as needed
 
 - **Reference app:** `dotloopreport.replit.app`
-- **Our app:** `localhost:3000` (`pnpm dev`)
+- **Our app:** `localhost:3001` (`pnpm dev`)
 - **GitHub:** `github.com/thedjtweety/dotloop-reporter`
 
 ---
