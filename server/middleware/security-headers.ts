@@ -26,15 +26,17 @@ export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
+      scriptSrc:  ["'self'", "'unsafe-inline'"],
+      styleSrc:   ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+      fontSrc:    ["'self'", 'fonts.gstatic.com'],
+      imgSrc:     ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'", '*.supabase.co', 'wss://*.supabase.co'],
     },
   },
-  frameguard: { action: 'deny' },
+  frameguard:    { action: 'deny' },
   hidePoweredBy: true,
-  hsts: { maxAge: 31536000 },
-  noSniff: true,
+  hsts:          { maxAge: 31536000 },
+  noSniff:       true,
 });
 
 /**
