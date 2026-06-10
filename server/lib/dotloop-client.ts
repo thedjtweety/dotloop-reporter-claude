@@ -14,11 +14,17 @@ export interface DotloopAccount {
 }
 
 export interface DotloopLoop {
-  loopId: string;
+  id: number | string;
+  loopId?: string;
   name: string;
   status: string;
+  transactionType?: string;
   created: string;
-  viewUrl: string;
+  updated?: string;
+  loopUrl?: string;
+  viewUrl?: string;
+  profileId?: number | string;
+  ownerProfileId?: number | string;
   listingPrice?: number;
   salePrice?: number;
   closingDate?: string;
@@ -34,6 +40,8 @@ export interface DotloopLoop {
   squareFootage?: number;
   commissionRate?: number;
   totalCommission?: number;
+  totalTaskCount?: number;
+  completedTaskCount?: number;
 }
 
 export interface DotloopLoopDetail extends DotloopLoop {
@@ -264,7 +272,7 @@ export class DotloopAPIClient {
         console.log(`[DotloopClient] Page ${batchNumber} raw response status:`, response.status);
         console.log(`[DotloopClient] Page ${batchNumber} raw response.data:`, JSON.stringify(response.data));
 
-        const loops: DotloopLoop[] = response.data?.loops || [];
+        const loops: DotloopLoop[] = response.data?.data || [];
 
         if (loops.length === 0) {
           console.warn(`[DotloopClient] Page ${batchNumber} returned 0 loops. Full response.data keys:`,

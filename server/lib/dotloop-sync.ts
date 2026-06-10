@@ -71,7 +71,7 @@ export function transformLoop(
 
   return {
     tenant_id:           tenantId,
-    dotloop_loop_id:     loop.loopId,
+    dotloop_loop_id:     loop.loopId ?? String(loop.id),
     loop_name:           loop.name ?? '',
     loop_status:         loop.status ?? '',
     listing_agent:       listingAgent,
