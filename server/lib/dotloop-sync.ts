@@ -209,6 +209,16 @@ export async function syncTenant(
     const errorMsg = err instanceof Error ? err.message : String(err);
     const completedAt = new Date();
 
+    // Always log full error to terminal — this is what shows in pnpm dev output
+    console.error('[sync] FAILED for tenant:', tenantId);
+    console.error('[sync] error message:', errorMsg);
+    if (err instanceof Error && err.stack) {
+      console.error('[sync] stack:', err.stack);
+    }
+    // If it's an axios error re-thrown from DotloopClient, the inner detail
+    // is already logged there; print the full err object here as a safety net
+    console.error('[sync] full error object:', err);
+
     await db
       .from('sync_jobs')
       .update({

@@ -261,7 +261,16 @@ export class DotloopAPIClient {
           },
         });
 
+        console.log(`[DotloopClient] Page ${batchNumber} raw response status:`, response.status);
+        console.log(`[DotloopClient] Page ${batchNumber} raw response.data:`, JSON.stringify(response.data));
+
         const loops: DotloopLoop[] = response.data?.loops || [];
+
+        if (loops.length === 0) {
+          console.warn(`[DotloopClient] Page ${batchNumber} returned 0 loops. Full response.data keys:`,
+            Object.keys(response.data ?? {}));
+        }
+
         all.push(...loops);
 
         // Dotloop returns fewer than batchSize items on the last page
@@ -272,13 +281,25 @@ export class DotloopAPIClient {
           await new Promise(res => setTimeout(res, 100));
         }
       } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error(`[DotloopClient] Axios error on page ${batchNumber}:`, {
+            status:       error.response?.status,
+            statusText:   error.response?.statusText,
+            responseData: JSON.stringify(error.response?.data),
+            message:      error.message,
+            url:          error.config?.url,
+          });
+        } else {
+          console.error(`[DotloopClient] Non-axios error on page ${batchNumber}:`, error);
+        }
         throw new Error(
-          `Failed to fetch loops page ${batchNumber}: ${DotloopAPIClient.getErrorMessage(error)}`
+          `Failed to fetch loops page ${batchNumber} for profile ${profileId}: ` +
+          `${DotloopAPIClient.getErrorMessage(error)}`
         );
       }
     }
 
-    console.log(`[DotloopClient] Fetched ${all.length} loops total.`);
+    console.log(`[DotloopClient] Fetched ${all.length} loops total for profile ${profileId}.`);
     return all;
   }
 
