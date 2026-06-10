@@ -10,6 +10,7 @@ import { getDb } from '../db';
 import { oauthTokens } from '../../drizzle/schema';
 import { getTenantIdFromUser } from '../lib/tenant-context';
 import { eq, and } from 'drizzle-orm';
+import { DOTLOOP_AUTH_URL } from '../config/dotloopOAuth';
 
 export const connectionStatusRouter = router({
   /**
@@ -103,7 +104,7 @@ export const connectionStatusRouter = router({
         action: 'reconnect',
       })).toString('base64');
 
-      const authUrl = new URL('https://auth.dotloop.com/oauth/authorize');
+      const authUrl = new URL(DOTLOOP_AUTH_URL);
       authUrl.searchParams.append('client_id', clientId);
       authUrl.searchParams.append('redirect_uri', redirectUri);
       authUrl.searchParams.append('response_type', 'code');
