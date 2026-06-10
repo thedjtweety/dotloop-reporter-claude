@@ -71,7 +71,7 @@ export function transformLoop(
 
   return {
     tenant_id:           tenantId,
-    dotloop_loop_id:     loop.loopId ?? String(loop.id),
+    dotloop_loop_id:     String(loop.loopId ?? loop.id),
     loop_name:           loop.name ?? '',
     loop_status:         loop.status ?? '',
     listing_agent:       listingAgent,
@@ -90,7 +90,7 @@ export function transformLoop(
     closing_date:        parseDate(loop.closingDate),
     listing_date:        parseDate(loop.listingDate),
     created_at_dotloop:  parseDate(loop.created),
-    view_url:            loop.viewUrl ?? null,
+    view_url:            loop.loopUrl ?? loop.viewUrl ?? null,
     raw_data:            loop as unknown as Record<string, unknown>,
     updated_at:          new Date().toISOString(),
   };
