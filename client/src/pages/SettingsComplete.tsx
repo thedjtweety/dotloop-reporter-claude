@@ -728,6 +728,7 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
   const [status, setStatus] = useState<{
     connected: boolean;
     profileName?: string;
+    loopsSynced?: number;
     lastSynced?: string;
     syncStatus?: string;
     error?: string;
@@ -748,6 +749,7 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
         const data = await res.json() as {
           connected: boolean;
           profileName?: string;
+          loopsSynced?: number;
           lastSynced?: string;
           syncStatus?: string;
           error?: string;
@@ -814,20 +816,29 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
       <p className="text-xs text-muted-foreground">Connect your Dotloop account for live transaction sync</p>
 
       {status?.connected ? (
-        <div className="flex items-center gap-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 flex-none" />
-          <div className="flex-1 min-w-0">
-            <span className="text-xs text-emerald-400 font-medium">
-              Connected{status.profileName ? ` — ${status.profileName}` : ''}
-            </span>
-            {status.lastSynced && (
-              <p className="text-[10px] text-muted-foreground truncate">
-                Last synced: {new Date(status.lastSynced).toLocaleString()}
-              </p>
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg space-y-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 flex-none" />
+              <span className="text-xs text-emerald-400 font-semibold">Connected</span>
+            </div>
+            {status.syncStatus === 'running' && (
+              <span className="text-[10px] text-blue-400 animate-pulse">Syncing…</span>
             )}
           </div>
-          {status.syncStatus === 'running' && (
-            <span className="text-[10px] text-blue-400 animate-pulse">Syncing…</span>
+          {status.profileName && (
+            <p className="text-xs text-foreground font-medium pl-4">{status.profileName}</p>
+          )}
+          {status.loopsSynced != null && (
+            <p className="text-[11px] text-muted-foreground pl-4">{status.loopsSynced} loops synced</p>
+          )}
+          {status.lastSynced && (
+            <p className="text-[11px] text-muted-foreground pl-4">
+              Last synced: {new Date(status.lastSynced).toLocaleString('en-US', {
+                month: 'short', day: 'numeric', year: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              })}
+            </p>
           )}
         </div>
       ) : status?.error ? (
