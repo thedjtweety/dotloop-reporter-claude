@@ -60,11 +60,12 @@ export interface DotloopParticipant {
 }
 
 export interface DotloopProfile {
+  id?: number | string;  // numeric id from real API response (matches account.defaultProfileId)
   profileId: string;
   name: string;
   email: string;
   phone?: string;
-  type?: string;        // e.g. 'INDIVIDUAL', 'TEAM', 'OFFICE' — present in real API responses
+  type?: string;         // e.g. 'INDIVIDUAL', 'TEAM', 'OFFICE' — present in real API responses
   active?: boolean;
 }
 

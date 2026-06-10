@@ -175,26 +175,33 @@ router.get('/callback', async (req: Request, res: Response) => {
     // ── Select profile ───────────────────────────────────────────────────────
     // account.defaultProfileId is the most reliable fallback — it's present even
     // when getProfiles() returns an empty array (Dotloop API quirk).
+    // ── Select profile ───────────────────────────────────────────────────────
+    // account.defaultProfileId is the canonical source of truth per Dotloop's
+    // API docs. We use it to find the matching profile in the list and pull
+    // its name. The profiles list alone is unreliable: it may include
+    // deactivated entries, non-INDIVIDUAL types, or profiles the user doesn't
+    // own. Honoring defaultProfileId avoids those traps.
     const defaultProfileId = account?.defaultProfileId
       ? String(account.defaultProfileId)
       : null;
     console.log('[callback] defaultProfileId from account:', defaultProfileId);
 
-    // Prefer first INDIVIDUAL-typed profile → profiles[0] → account.defaultProfileId
-    const individualProfile = profiles?.find(
-      (p) => typeof p.type === 'string' && p.type.toUpperCase() === 'INDIVIDUAL'
-    );
-    const profileFromList = individualProfile ?? profiles?.[0] ?? null;
+    const matchedProfile = defaultProfileId
+      ? profiles?.find((p) => String(p.id) === defaultProfileId) ?? null
+      : null;
 
-    const profileId   = profileFromList?.profileId ?? defaultProfileId;
-    const profileName = profileFromList?.name ?? (account?.firstName && account?.lastName ? `${account.firstName} ${account.lastName}` : account?.email ?? 'Unknown');
+    const profileId   = defaultProfileId;
+    const profileName =
+      matchedProfile?.name ??
+      (account?.firstName && account?.lastName
+        ? `${account.firstName} ${account.lastName}`
+        : account?.email ?? 'Unknown');
 
     console.log('[callback] selected profileId:', profileId);
     console.log('[callback] selected profile source:',
-      individualProfile   ? 'INDIVIDUAL match from profiles list' :
-      profileFromList     ? 'fallback profiles[0]' :
-      defaultProfileId    ? 'account.defaultProfileId fallback' :
-                            'NONE — will abort'
+      matchedProfile   ? `defaultProfileId matched in profiles list (${matchedProfile.name})` :
+      defaultProfileId ? 'defaultProfileId only (no match in profiles list)' :
+                         'NONE — will abort'
     );
 
     if (!profileId) {
