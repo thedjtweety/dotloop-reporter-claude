@@ -71,7 +71,7 @@ router.get('/connect', requireAuth, async (req: Request, res: Response) => {
       response_type: 'code',
       client_id:     clientId,
       redirect_uri:  redirectUri,
-      scope:         'account:read profile:read loop:read',
+      scope:         'dotloop-os:read',
       state,
     });
 
