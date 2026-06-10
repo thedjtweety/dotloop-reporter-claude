@@ -97,7 +97,7 @@ export class DotloopAPIClient {
   }
 
   /**
-   * Get all profiles for the authenticated user
+   * Get all profiles - Dotloop wraps response in data envelope
    */
   async getProfiles(): Promise<DotloopProfile[]> {
     try {
