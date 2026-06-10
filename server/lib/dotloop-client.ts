@@ -102,7 +102,15 @@ export class DotloopAPIClient {
   async getProfiles(): Promise<DotloopProfile[]> {
     try {
       const response = await this.client.get('/profile');
-      return response.data.profiles || [];
+      console.log('[DotloopClient] getProfiles raw response.data:', JSON.stringify(response.data));
+      // Account endpoint uses { data: {...} } envelope — profiles may too.
+      // Try response.data.data first, then response.data.profiles, then response.data as array.
+      const profiles: DotloopProfile[] =
+        response.data?.data ??
+        response.data?.profiles ??
+        (Array.isArray(response.data) ? response.data : []);
+      console.log('[DotloopClient] getProfiles parsed:', profiles.length, 'profiles');
+      return profiles;
     } catch (error) {
       throw new Error(`Failed to fetch profiles: ${DotloopAPIClient.getErrorMessage(error)}`);
     }
