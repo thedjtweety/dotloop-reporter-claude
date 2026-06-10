@@ -9,6 +9,8 @@ export interface DotloopAccount {
   id: number;
   name: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   timeZone?: string;
   defaultProfileId?: string | number;  // present in real API responses
 }

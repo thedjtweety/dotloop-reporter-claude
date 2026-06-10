@@ -189,7 +189,7 @@ router.get('/callback', async (req: Request, res: Response) => {
     const profileFromList = individualProfile ?? profiles?.[0] ?? null;
 
     const profileId   = profileFromList?.profileId ?? defaultProfileId;
-    const profileName = profileFromList?.name ?? account?.name ?? 'Unknown';
+    const profileName = profileFromList?.name ?? (account?.firstName && account?.lastName ? `${account.firstName} ${account.lastName}` : account?.email ?? 'Unknown');
 
     console.log('[callback] selected profileId:', profileId);
     console.log('[callback] selected profile source:',
