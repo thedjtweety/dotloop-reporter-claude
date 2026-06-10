@@ -107,7 +107,7 @@ export const connectionStatusRouter = router({
       authUrl.searchParams.append('client_id', clientId);
       authUrl.searchParams.append('redirect_uri', redirectUri);
       authUrl.searchParams.append('response_type', 'code');
-      authUrl.searchParams.append('scope', 'read write');
+      authUrl.searchParams.append('scope', 'account:read profile:* loop:* contact:* template:read');
       authUrl.searchParams.append('state', state);
 
       return {
