@@ -17,6 +17,21 @@ import { DotloopAPIClient } from '../lib/dotloop-client';
 
 const router = Router();
 
+/**
+ * ⚠️  DOTLOOP OAUTH NOTE — DO NOT ADD A `scope` PARAMETER
+ *
+ * Dotloop's /oauth/authorize endpoint does NOT accept a `scope` query parameter.
+ * Adding one causes Dotloop to reject the request with `invalid_scope`.
+ *
+ * Scopes are assigned at app registration time in the Dotloop developer portal
+ * and returned in the access token response (e.g. "account:read, profile:*,
+ * loop:*, contact:*, template:read").
+ *
+ * Valid authorize URL params per Dotloop's public API docs:
+ *   response_type, client_id, redirect_uri, state, redirect_on_deny
+ *
+ * Reference: https://dotloop.github.io/public-api/#obtaining-access-token
+ */
 const DOTLOOP_AUTH_URL = 'https://auth.dotloop.com/oauth/authorize';
 const DOTLOOP_TOKEN_URL = 'https://auth.dotloop.com/oauth/token';
 
