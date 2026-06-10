@@ -19,10 +19,9 @@ import { tokenEncryption } from './lib/token-encryption';
 import { getTenantIdFromUser } from './lib/tenant-context';
 import { eq, sql } from 'drizzle-orm';
 
-const DOTLOOP_AUTH_URL = 'https://auth.dotloop.com/oauth/authorize';
-const DOTLOOP_TOKEN_URL = 'https://auth.dotloop.com/oauth/token';
-const DOTLOOP_REVOKE_URL = 'https://auth.dotloop.com/oauth/token/revoke';
-const DOTLOOP_API_BASE = 'https://api-gateway.dotloop.com/public/v2';
+import { DOTLOOP_AUTH_URL, DOTLOOP_TOKEN_URL, DOTLOOP_TOKEN_REVOKE_URL, DOTLOOP_API_BASE_URL } from './config/dotloopOAuth';
+const DOTLOOP_REVOKE_URL = DOTLOOP_TOKEN_REVOKE_URL;
+const DOTLOOP_API_BASE   = DOTLOOP_API_BASE_URL;
 
 /**
  * Get Dotloop OAuth credentials from environment
