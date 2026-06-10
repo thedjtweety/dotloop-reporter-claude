@@ -727,7 +727,7 @@ function AccountConnectionsForm({ onClose }: FormProps) {
 function DotloopConnectionsForm({ onClose }: FormProps) {
   const [status, setStatus] = useState<{
     connected: boolean;
-    accountName?: string;
+    profileName?: string;
     lastSynced?: string;
     syncStatus?: string;
     error?: string;
@@ -747,7 +747,7 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
         if (!res.ok) { setLoading(false); return; }
         const data = await res.json() as {
           connected: boolean;
-          accountName?: string;
+          profileName?: string;
           lastSynced?: string;
           syncStatus?: string;
           error?: string;
@@ -818,7 +818,7 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
           <div className="w-2 h-2 rounded-full bg-emerald-400 flex-none" />
           <div className="flex-1 min-w-0">
             <span className="text-xs text-emerald-400 font-medium">
-              Connected{status.accountName ? ` — ${status.accountName}` : ''}
+              Connected{status.profileName ? ` — ${status.profileName}` : ''}
             </span>
             {status.lastSynced && (
               <p className="text-[10px] text-muted-foreground truncate">
