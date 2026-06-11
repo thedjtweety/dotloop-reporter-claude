@@ -124,7 +124,11 @@ router.post('/', async (req: Request, res: Response) => {
       const accessToken = await getValidToken(tenantId);
       const client = new DotloopAPIClient(accessToken);
       const detail = await client.getLoopDetail(profileId, loopId);
-      const row = transformLoop(detail, tenantId);
+      if (!detail) {
+        console.warn(`[webhook] getLoopDetail returned null for loop ${loopId}, skipping upsert`);
+        return;
+      }
+      const row = transformLoop(detail as unknown as import('../lib/dotloop-client').DotloopLoop & { participants?: import('../lib/dotloop-client').DotloopParticipant[] }, tenantId);
 
       await db
         .from('loops')

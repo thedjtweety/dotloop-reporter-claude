@@ -3,7 +3,8 @@
  * Handles all communication with Dotloop API v2
  */
 
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { DOTLOOP_API_BASE_URL } from '../config/dotloopOAuth';
 
 export interface DotloopAccount {
   id: number;
@@ -83,7 +84,7 @@ export interface TokenRefreshResponse {
 export class DotloopAPIClient {
   private client: AxiosInstance;
   private accessToken: string;
-  private baseURL = 'https://api-gateway.dotloop.com/public/v2';
+  private baseURL = DOTLOOP_API_BASE_URL;
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
@@ -159,18 +160,6 @@ export class DotloopAPIClient {
   }
 
   /**
-   * Get participants (agents) for a specific loop
-   */
-  async getLoopParticipants(profileId: string, loopId: string): Promise<DotloopParticipant[]> {
-    try {
-      const response = await this.client.get(`/profile/${profileId}/loop/${loopId}/participant`);
-      return response.data.participants || [];
-    } catch (error) {
-      throw new Error(`Failed to fetch participants: ${DotloopAPIClient.getErrorMessage(error)}`);
-    }
-  }
-
-  /**
    * Get documents for a specific loop
    */
   async getLoopDocuments(loopId: string): Promise<any[]> {
@@ -237,18 +226,6 @@ export class DotloopAPIClient {
       return account;
     } catch (error) {
       throw new Error(`Failed to fetch account: ${DotloopAPIClient.getErrorMessage(error)}`);
-    }
-  }
-
-  /**
-   * Get a single loop with full detail
-   */
-  async getLoopDetail(profileId: string, loopId: string): Promise<DotloopLoopDetail> {
-    try {
-      const response = await this.client.get(`/profile/${profileId}/loop/${loopId}/detail`);
-      return response.data;
-    } catch (error) {
-      throw new Error(`Failed to fetch loop detail: ${DotloopAPIClient.getErrorMessage(error)}`);
     }
   }
 
@@ -320,6 +297,163 @@ export class DotloopAPIClient {
 
     console.log(`[DotloopClient] Fetched ${all.length} loops total for profile ${profileId}.`);
     return all;
+  }
+
+  /**
+   * Log a warning if the rate limit is running low.
+   */
+  private logRateLimit(headers: Record<string, string | string[] | undefined>): void {
+    const remaining = headers['x-ratelimit-remaining'];
+    const reset = headers['x-ratelimit-reset'];
+    if (remaining !== undefined) {
+      const n = Number(remaining);
+      if (!isNaN(n) && n < 20) {
+        console.warn(`[DotloopClient] ⚠️ rate limit low: ${n} remaining, resets in ${reset ?? 'unknown'} ms`);
+      }
+    }
+  }
+
+  /**
+   * Fetch a single loop by profileId + loopId.
+   *
+   * Returns the unwrapped loop object (response.data.data), or null on 404.
+   *
+   * 301 Merge behavior: Dotloop may redirect to a different profile/loop when
+   * two accounts are merged.  This method follows the redirect once, adds
+   * _redirectedFrom: { profileId, loopId } to the returned object, and returns
+   * the resolved loop.  A second redirect is not followed — null is returned
+   * and a warning is logged instead.
+   */
+  async getLoop(
+    profileId: string,
+    loopId: string,
+    _redirectDepth = 0
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      const response: AxiosResponse = await this.client.get(
+        `/profile/${profileId}/loop/${loopId}`,
+        { maxRedirects: 0, validateStatus: (s) => s < 400 || s === 301 || s === 404 }
+      );
+
+      this.logRateLimit(response.headers as Record<string, string | string[] | undefined>);
+
+      if (response.status === 301) {
+        const location = response.headers['location'] as string | undefined;
+        if (!location) {
+          console.warn(`[DotloopClient] getLoop 301 with no Location header profileId=${profileId} loopId=${loopId}`);
+          return null;
+        }
+        if (_redirectDepth > 0) {
+          console.warn(`[DotloopClient] getLoop too many redirects profileId=${profileId} loopId=${loopId}`);
+          return null;
+        }
+        // Parse /public/v2/profile/{newProfileId}/loop/{newLoopId}
+        const match = location.match(/\/profile\/(\d+)\/loop\/(\d+)/);
+        if (!match) {
+          console.warn(`[DotloopClient] getLoop 301 unparseable Location: ${location}`);
+          return null;
+        }
+        const [, newProfileId, newLoopId] = match;
+        console.log(`[DotloopClient] getLoop redirect profileId=${profileId} loopId=${loopId} → profileId=${newProfileId} loopId=${newLoopId}`);
+        const data = await this.getLoop(newProfileId, newLoopId, 1);
+        if (data) {
+          data._redirectedFrom = { profileId, loopId };
+        }
+        return data;
+      }
+
+      if (response.status === 404) {
+        console.warn(`[DotloopClient] getLoop not found profileId=${profileId} loopId=${loopId}`);
+        return null;
+      }
+
+      const data = response.data?.data as Record<string, unknown>;
+      console.log(`[DotloopClient] getLoop profileId=${profileId} loopId=${loopId} status=200`, data);
+      return data ?? null;
+    } catch (error) {
+      console.error(`[DotloopClient] getLoop error profileId=${profileId} loopId=${loopId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch the detail sections for a single loop.
+   *
+   * Returns the unwrapped response.data.data object, or null on 404.
+   * Note: all field values in detail sections are strings; empty fields are
+   * omitted from the response.
+   *
+   * Full raw response is only logged when DOTLOOP_DEBUG_VERBOSE=true.
+   */
+  async getLoopDetail(
+    profileId: string,
+    loopId: string
+  ): Promise<Record<string, unknown> | null> {
+    try {
+      const response: AxiosResponse = await this.client.get(
+        `/profile/${profileId}/loop/${loopId}/detail`,
+        { validateStatus: (s) => s < 400 || s === 404 }
+      );
+
+      this.logRateLimit(response.headers as Record<string, string | string[] | undefined>);
+
+      if (response.status === 404) {
+        console.warn(`[DotloopClient] getLoopDetail not found profileId=${profileId} loopId=${loopId}`);
+        return null;
+      }
+
+      const data = response.data?.data as Record<string, unknown> | undefined;
+      const sectionKeys = data ? Object.keys(data) : [];
+      console.log(
+        `[DotloopClient] getLoopDetail profileId=${profileId} loopId=${loopId} status=${response.status}`,
+        `sections: ${JSON.stringify(sectionKeys)}`
+      );
+      if (process.env.DOTLOOP_DEBUG_VERBOSE === 'true') {
+        console.log('[DotloopClient] getLoopDetail full raw response:', JSON.stringify(response.data));
+      }
+      return data ?? null;
+    } catch (error) {
+      console.error(`[DotloopClient] getLoopDetail error profileId=${profileId} loopId=${loopId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch all participants for a loop.
+   *
+   * Returns the unwrapped array (response.data.data), or [] on 404 or empty.
+   * Common roles: LISTING_AGENT, BUYING_AGENT, BUYER, SELLER, BROKER,
+   * TRANSACTION_COORDINATOR, TITLE_COMPANY, LENDER, OTHER.
+   */
+  async getLoopParticipants(
+    profileId: string,
+    loopId: string
+  ): Promise<Record<string, unknown>[]> {
+    try {
+      const response: AxiosResponse = await this.client.get(
+        `/profile/${profileId}/loop/${loopId}/participant`,
+        { validateStatus: (s) => s < 400 || s === 404 }
+      );
+
+      this.logRateLimit(response.headers as Record<string, string | string[] | undefined>);
+
+      if (response.status === 404) {
+        console.warn(`[DotloopClient] getLoopParticipants not found profileId=${profileId} loopId=${loopId}`);
+        return [];
+      }
+
+      const data = response.data?.data as Record<string, unknown>[] | undefined;
+      const meta = response.data?.meta as { total?: number } | undefined;
+      if (!data || data.length === 0 || (meta?.total !== undefined && meta.total === 0)) {
+        console.log(`[DotloopClient] getLoopParticipants profileId=${profileId} loopId=${loopId} count=0`);
+        return [];
+      }
+      console.log(`[DotloopClient] getLoopParticipants profileId=${profileId} loopId=${loopId} count=${data.length}`);
+      return data;
+    } catch (error) {
+      console.error(`[DotloopClient] getLoopParticipants error profileId=${profileId} loopId=${loopId}:`, error);
+      throw error;
+    }
   }
 
   /**

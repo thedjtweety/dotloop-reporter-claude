@@ -9,6 +9,8 @@ import { Router, Request, Response } from 'express';
 import { getSupabaseAdmin } from '../lib/supabase';
 import { requireAuth } from '../middleware/auth';
 import { syncTenant } from '../lib/dotloop-sync';
+import { getValidToken } from '../lib/dotloop-token-service';
+import { DotloopAPIClient } from '../lib/dotloop-client';
 
 const router = Router();
 
@@ -88,6 +90,89 @@ router.get('/sync/status', requireAuth, async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[dotloop-sync] GET /sync/status error:', err);
     res.status(500).json({ error: 'Failed to fetch sync status' });
+  }
+});
+
+// ─── GET /debug/loop/:loopId ──────────────────────────────────────────────────
+
+router.get('/debug/loop/:loopId', requireAuth, async (req: Request, res: Response) => {
+  const { loopId } = req.params;
+
+  if (!/^\d+$/.test(loopId)) {
+    res.status(400).json({ error: 'loopId must be numeric' });
+    return;
+  }
+
+  const tenantId = req.tenantId!;
+
+  try {
+    const db = getSupabaseAdmin();
+
+    const { data: connection, error: connErr } = await db
+      .from('dotloop_connections')
+      .select('dotloop_profile_id')
+      .eq('tenant_id', tenantId)
+      .maybeSingle();
+
+    if (connErr) {
+      res.status(500).json({ error: connErr.message });
+      return;
+    }
+
+    if (!connection || !connection.dotloop_profile_id) {
+      res.status(400).json({ error: 'No Dotloop connection or dotloop_profile_id is missing for this tenant' });
+      return;
+    }
+
+    const profileId = String(connection.dotloop_profile_id);
+    console.log(`[debug/loop] fetching loop=${loopId} profile=${profileId} tenant=${tenantId}`);
+
+    const accessToken = await getValidToken(tenantId);
+    const client = new DotloopAPIClient(accessToken);
+
+    let loop: unknown = null;
+    let loopError: string | null = null;
+    let detail: unknown = null;
+    let detailError: string | null = null;
+    let participants: unknown = null;
+    let participantsError: string | null = null;
+
+    try {
+      loop = await client.getLoop(profileId, loopId);
+    } catch (e) {
+      loopError = String(e);
+    }
+
+    try {
+      detail = await client.getLoopDetail(profileId, loopId);
+    } catch (e) {
+      detailError = String(e);
+    }
+
+    try {
+      participants = await client.getLoopParticipants(profileId, loopId);
+    } catch (e) {
+      participantsError = String(e);
+    }
+
+    console.log(`[debug/loop] done loop=${loopId}`);
+
+    res.json({
+      profileId,
+      loopId,
+      results: {
+        loop,
+        loopError,
+        detail,
+        detailError,
+        participants,
+        participantsError,
+      },
+      fetchedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error('[dotloop-sync] GET /debug/loop error:', err);
+    res.status(500).json({ error: 'Failed to fetch loop debug data' });
   }
 });
 
