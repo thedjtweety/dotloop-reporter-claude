@@ -149,23 +149,26 @@ export const dotloopOAuthRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        let { clientId, redirectUri } = getDotloopCredentials();
-        // TEMPORARY: Use Replit callback for demonstration
-        redirectUri = 'https://dotloopreport.replit.app/api/dotloop-oauth/callback';
-        console.log('[dotloopOAuth.getAuthorizationUrl] Using Replit callback for demo:', redirectUri);
-      
+        const { clientId, redirectUri } = getDotloopCredentials();
+
         // Generate CSRF state token if not provided
         const state = input.state || tokenEncryption.hashToken(
           `${Date.now()}-${Math.random()}`
         ).substring(0, 32);
 
+        // ⚠️ DO NOT add a `scope` parameter here.
+        // Dotloop's /oauth/authorize endpoint REJECTS any `scope` param with `invalid_scope`.
+        // Scopes are assigned at app registration time in the Dotloop developer portal.
+        // This was a real bug previously fixed in server/routes/dotloop-auth.ts —
+        // see that file's comment block for the full explanation.
+        // Valid authorize URL params per Dotloop API docs (https://dotloop.github.io/public-api/):
+        //   response_type, client_id, redirect_uri, state, redirect_on_deny
         const params = new URLSearchParams({
           response_type: 'code',
           client_id: clientId,
           redirect_uri: redirectUri,
           state,
           redirect_on_deny: 'true',
-          scope: 'account:read profile:* loop:* contact:* template:read',
         });
 
         const authUrl = `${DOTLOOP_AUTH_URL}?${params.toString()}`;
