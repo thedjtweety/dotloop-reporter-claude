@@ -176,4 +176,56 @@ router.get('/debug/loop/:loopId', requireAuth, async (req: Request, res: Respons
   }
 });
 
+// ─── GET /debug/profiles ─────────────────────────────────────────────────────
+// Temporary endpoint: test whether COMPANY/TEAM profile types return loops.
+// Remove once the question is answered.
+
+router.get('/debug/profiles', requireAuth, async (req: Request, res: Response) => {
+  const profilesToTest = [
+    { id: 13221915, name: 'Team Drew Bryant (TEAM)' },
+    { id: 78112,    name: 'Redlegs Real Estate (COMPANY)' },
+    { id: 13221907, name: 'Bryant Realty (COMPANY)' },
+    { id: 13505249, name: 'dotloop California Brokerage (COMPANY)' },
+    { id: 14060684, name: 'Drew Bryant (INDIVIDUAL, control)' },
+  ];
+
+  const tenantId = req.tenantId!;
+
+  try {
+    const accessToken = await getValidToken(tenantId);
+
+    console.log(`[debug/profiles] testing ${profilesToTest.length} profiles`);
+
+    const results = await Promise.all(
+      profilesToTest.map(async (profile) => {
+        const url = `https://api-gateway.dotloop.com/public/v2/profile/${profile.id}/loop?batch_size=3`;
+        try {
+          const fetchRes = await fetch(url, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          const status = fetchRes.status;
+          let data: unknown = null;
+          let error: string | null = null;
+          try {
+            data = await fetchRes.json() as unknown;
+          } catch {
+            error = await fetchRes.text().catch(() => 'failed to read response body');
+          }
+          console.log(`[debug/profiles] profile=${profile.id} status=${status}`);
+          return { profileId: String(profile.id), name: profile.name, status, data, error };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.log(`[debug/profiles] profile=${profile.id} error=${msg}`);
+          return { profileId: String(profile.id), name: profile.name, status: null, data: null, error: msg };
+        }
+      })
+    );
+
+    res.json({ fetchedAt: new Date().toISOString(), results });
+  } catch (err) {
+    console.error('[debug/profiles] failed to get access token:', err);
+    res.status(500).json({ error: 'Failed to retrieve access token' });
+  }
+});
+
 export default router;
