@@ -24,6 +24,7 @@ import {
   type QbAgentMapping,
   type QbBillingItem,
 } from '@/hooks/useSettings';
+import { trpc } from '@/lib/trpc';
 
 // ─── Card / Section data ──────────────────────────────────────────────────────
 
@@ -736,6 +737,13 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
   const [loading,       setLoading]       = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing,       setSyncing]       = useState(false);
+  const [profileSwitching, setProfileSwitching] = useState(false);
+  const [profileSwitchError, setProfileSwitchError] = useState<string | null>(null);
+
+  const profilesQuery = trpc.dotloopOAuth.listProfiles.useQuery(undefined, {
+    enabled: !!status?.connected,
+  });
+  const setSyncProfileMutation = trpc.dotloopOAuth.setSyncProfile.useMutation();
 
   useEffect(() => {
     let cancelled = false;
@@ -786,6 +794,19 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
       setStatus({ connected: false });
     } catch { /* ignore */ }
     setDisconnecting(false);
+  }
+
+  async function handleProfileChange(profileId: string) {
+    setProfileSwitching(true);
+    setProfileSwitchError(null);
+    try {
+      await setSyncProfileMutation.mutateAsync({ profileId });
+      await handleSync();
+    } catch (err) {
+      setProfileSwitchError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setProfileSwitching(false);
+    }
   }
 
   async function handleSync() {
@@ -850,6 +871,33 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
         <div className="flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
           <div className="w-2 h-2 rounded-full bg-yellow-400 flex-none" />
           <span className="text-xs text-yellow-400 font-medium">Not connected</span>
+        </div>
+      )}
+
+      {status?.connected && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-medium text-foreground">Syncing profile</p>
+            {(profileSwitching || syncing) && (
+              <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+          <select
+            value={status.profileName ? (profilesQuery.data?.find(p => p.name === status.profileName)?.id ?? '') : ''}
+            onChange={(e) => { void handleProfileChange(e.target.value); }}
+            disabled={profileSwitching || syncing || profilesQuery.isLoading}
+            className="w-full px-3 py-2 text-xs bg-secondary border border-border rounded-lg text-foreground disabled:opacity-50 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          >
+            {profilesQuery.isLoading && <option value="">Loading profiles…</option>}
+            {profilesQuery.data?.map(p => (
+              <option key={p.id} value={p.id} className={!p.active ? 'opacity-50' : ''}>
+                {p.name} ({p.type ?? 'UNKNOWN'}){!p.active ? ' (deactivated)' : ''}
+              </option>
+            ))}
+          </select>
+          {profileSwitchError && (
+            <p className="text-[11px] text-red-400">{profileSwitchError}</p>
+          )}
         </div>
       )}
 

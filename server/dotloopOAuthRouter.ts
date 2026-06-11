@@ -18,6 +18,10 @@ import { oauthTokens, tokenAuditLogs } from '../drizzle/schema';
 import { tokenEncryption } from './lib/token-encryption';
 import { getTenantIdFromUser } from './lib/tenant-context';
 import { eq, sql } from 'drizzle-orm';
+import { TRPCError } from '@trpc/server';
+import { getValidToken } from './lib/dotloop-token-service';
+import { DotloopAPIClient } from './lib/dotloop-client';
+import { getSupabaseAdmin } from './lib/supabase';
 
 import { DOTLOOP_AUTH_URL, DOTLOOP_TOKEN_URL, DOTLOOP_TOKEN_REVOKE_URL, DOTLOOP_API_BASE_URL } from './config/dotloopOAuth';
 const DOTLOOP_REVOKE_URL = DOTLOOP_TOKEN_REVOKE_URL;
@@ -590,6 +594,100 @@ export const dotloopOAuthRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Delete connection (stub implementation)
       return { success: true, connectionId: input.connectionId };
+    }),
+
+  /**
+   * List all Dotloop profiles for the connected account
+   */
+  listProfiles: protectedProcedure
+    .query(async ({ ctx }) => {
+      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantIdStr = String(tenantId);
+
+      // Get the connection record so we know the currently-selected profile
+      const supabase = getSupabaseAdmin();
+      const { data: conn, error: connError } = await supabase
+        .from('dotloop_connections')
+        .select('dotloop_profile_id')
+        .eq('tenant_id', tenantIdStr)
+        .maybeSingle();
+
+      if (connError || !conn) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No Dotloop connection found. Please connect your account first.',
+        });
+      }
+
+      const accessToken = await getValidToken(tenantIdStr);
+      const client = new DotloopAPIClient(accessToken);
+      const profiles = await client.getProfiles();
+
+      console.log(`[listProfiles] tenant=${tenantIdStr} found ${profiles.length} profiles`);
+
+      return profiles.map((p) => ({
+        id: String(p.id ?? ''),
+        name: p.name,
+        type: p.type,
+        isDefault: String(p.id) === String(conn.dotloop_profile_id),
+        active: p.active !== false,
+      }));
+    }),
+
+  /**
+   * Switch the active sync profile for this tenant
+   */
+  setSyncProfile: protectedProcedure
+    .input(z.object({ profileId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      const tenantIdStr = String(tenantId);
+
+      const supabase = getSupabaseAdmin();
+
+      // Verify connection exists
+      const { data: conn, error: connError } = await supabase
+        .from('dotloop_connections')
+        .select('dotloop_profile_id')
+        .eq('tenant_id', tenantIdStr)
+        .maybeSingle();
+
+      if (connError || !conn) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'No Dotloop connection found. Please connect your account first.',
+        });
+      }
+
+      // Look up profile name
+      const accessToken = await getValidToken(tenantIdStr);
+      const client = new DotloopAPIClient(accessToken);
+      const profiles = await client.getProfiles();
+      const matched = profiles.find((p) => String(p.id) === input.profileId);
+      const profileName = matched?.name ?? 'Unknown';
+
+      console.log(
+        `[setSyncProfile] tenant=${tenantIdStr} switching to profile=${input.profileId} (name=${profileName})`
+      );
+
+      // Update the connection record
+      await supabase
+        .from('dotloop_connections')
+        .update({
+          dotloop_profile_id: input.profileId,
+          dotloop_profile_name: profileName,
+        })
+        .eq('tenant_id', tenantIdStr);
+
+      // Clear cached loops for this tenant
+      const { count } = await supabase
+        .from('loops')
+        .delete({ count: 'exact' })
+        .eq('tenant_id', tenantIdStr);
+
+      console.log(`[setSyncProfile] cleared ${count ?? 0} loops for tenant=${tenantIdStr}`);
+
+      return { profileId: input.profileId, profileName };
     }),
 
   getConnectionStatus: protectedProcedure
