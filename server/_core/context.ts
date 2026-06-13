@@ -1,73 +1,97 @@
-import { users } from "../../drizzle/schema";
-import type { InferSelectModel } from "drizzle-orm";
-import { parse as parseCookieHeader } from "cookie";
-import type { Request, Response } from "express";
-import * as db from "../db";
+/**
+ * tRPC Request Context
+ *
+ * Mirrors the logic in server/middleware/auth.ts (requireAuth) but adapted for
+ * tRPC: instead of calling res.status(401) on failure we return { user: null }
+ * so that publicProcedure still works and protectedProcedure can throw its own
+ * TRPCError.
+ *
+ * Token flow:
+ *   Frontend: Authorization: Bearer <supabase_access_token>
+ *   Context:  supabaseAdmin.auth.getUser(token) → user
+ *             users table .eq('id', user.id)    → { id, tenant_id, email }
+ */
 
-type User = InferSelectModel<typeof users>;
+import type { Request, Response } from 'express';
+import { getSupabaseAdmin } from '../lib/supabase';
+
+// ─── Context shape ────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  tenantId: string;
+  email: string | null;
+  role: string | null;
+  name: string | null;
+}
 
 export type TrpcContext = {
   req: Request;
   res: Response;
-  user: User | null;
+  user: AuthUser | null;
 };
 
-/**
- * Extract Dotloop session from cookie
- * The session cookie is set during the OAuth callback
- */
-function extractDotloopSession(req: Request): string | null {
-  try {
-    const cookies = parseCookieHeader(req.headers.cookie || "");
-    return cookies.session || null;
-  } catch (error) {
-    return null;
-  }
-}
-
-/**
- * Get user from database by session
- * For now, we store the user during OAuth callback
- */
-async function getUserFromSession(session: string | null): Promise<User | null> {
-  if (!session) return null;
-
-  try {
-    // In a real implementation, you'd decode the session token and get the user ID
-    // For now, we'll just get the first user (assuming single-user app)
-    const dbInstance = await db.getDb();
-    if (!dbInstance) return null;
-
-    const userList = await dbInstance.select().from(users).limit(1);
-    return userList[0] || null;
-  } catch (error) {
-    console.warn("[Context] Failed to get user from session:", error);
-    return null;
-  }
-}
+// ─── createContext ────────────────────────────────────────────────────────────
 
 export async function createContext(opts: {
   req: Request;
   res: Response;
 }): Promise<TrpcContext> {
-  let user: User | null = null;
+  const { req, res } = opts;
 
   try {
-    // Extract session cookie
-    const session = extractDotloopSession(opts.req);
-    if (session) {
-      // Session exists, get user from database
-      user = await getUserFromSession(session);
-    }
-  } catch (error) {
-    // Authentication is optional for public procedures
-    console.warn("[Context] Authentication failed:", error instanceof Error ? error.message : String(error));
-    user = null;
-  }
+    // Extract bearer token — same as requireAuth
+    const token = req.headers.authorization?.replace('Bearer ', '');
 
-  return {
-    req: opts.req,
-    res: opts.res,
-    user,
-  };
+    if (!token) {
+      return { req, res, user: null };
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    // Verify the Supabase JWT
+    const { data: { user: supabaseUser }, error: authError } =
+      await supabase.auth.getUser(token);
+
+    if (authError || !supabaseUser) {
+      console.warn('[Context] getUser failed:', authError?.message ?? 'no user returned');
+      return { req, res, user: null };
+    }
+
+    // Look up tenant via users table (users.id = auth.users.id)
+    const { data: userRow, error: dbError } = await supabase
+      .from('users')
+      .select('id, tenant_id, email, role, name')
+      .eq('id', supabaseUser.id)
+      .maybeSingle();
+
+    if (dbError) {
+      console.error('[Context] users table lookup error:', dbError.message);
+      return { req, res, user: null };
+    }
+
+    if (!userRow) {
+      console.warn('[Context] no users row for supabase_uid:', supabaseUser.id);
+      return { req, res, user: null };
+    }
+
+    console.log('[Context] ✓ authenticated user, tenant_id:', userRow.tenant_id);
+
+    return {
+      req,
+      res,
+      user: {
+        id:       userRow.id as string,
+        tenantId: userRow.tenant_id as string,
+        email:    (userRow.email as string | null) ?? null,
+        role:     (userRow.role as string | null) ?? null,
+        name:     (userRow.name as string | null) ??
+                  (supabaseUser.user_metadata?.full_name as string | null) ?? null,
+      },
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('[Context] unexpected error:', msg);
+    return { req, res: opts.res, user: null };
+  }
 }

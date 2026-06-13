@@ -604,7 +604,8 @@ export const dotloopOAuthRouter = router({
    */
   listProfiles: protectedProcedure
     .query(async ({ ctx }) => {
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      // TODO: getTenantIdFromUser is broken (mysql driver vs postgres URL). Using ctx.user.tenantId directly until tenant-context.ts is fixed.
+      const tenantId = ctx.user.tenantId;
       const tenantIdStr = String(tenantId);
 
       // Get the connection record so we know the currently-selected profile
@@ -643,7 +644,8 @@ export const dotloopOAuthRouter = router({
   setSyncProfile: protectedProcedure
     .input(z.object({ profileId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const tenantId = await getTenantIdFromUser(ctx.user.id);
+      // TODO: getTenantIdFromUser is broken (mysql driver vs postgres URL). Using ctx.user.tenantId directly until tenant-context.ts is fixed.
+      const tenantId = ctx.user.tenantId;
       const tenantIdStr = String(tenantId);
 
       const supabase = getSupabaseAdmin();

@@ -79,6 +79,9 @@ interface TransactionDataContextType {
     assignments: AgentAssignment[];
   }) => void;
   clearTransactionData: () => void;
+  // Re-fetch live loops from /api/loops (Supabase). Used after a Dotloop
+  // sync-profile switch + sync to refresh allRecords/metrics with new data.
+  reloadDotloopLoops: () => Promise<void>;
   hasData: boolean;
   teams: string[];
   dataStatistics: {
@@ -155,37 +158,43 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
   // When true, skip auto-recalculation so commission-plan-applied metrics are preserved
   const externalMetricsRef = useRef(false);
 
-  // Auto-load loops from Supabase when user is authenticated
-  useEffect(() => {
-    let cancelled = false;
-    async function loadFromSupabase() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.access_token) return; // Not authenticated — CSV/demo mode only
+  // Auto-load loops from Supabase when user is authenticated.
+  // Also exposed via context as `reloadDotloopLoops` so other parts of the app
+  // (e.g. Settings > Dotloop Connections after switching sync profile) can
+  // force a refresh once a new sync completes.
+  const loadFromSupabase = useRef(async (cancelledRef?: { current: boolean }) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return; // Not authenticated — CSV/demo mode only
 
-        const res = await fetch('/api/loops', {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        if (!res.ok || cancelled) return;
+      const res = await fetch('/api/loops', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok || cancelledRef?.current) return;
 
-        const body = await res.json() as { records?: DotloopRecord[] };
-        const records = body.records ?? [];
-        if (records.length === 0 || cancelled) return;
+      const body = await res.json() as { records?: DotloopRecord[] };
+      const records = body.records ?? [];
+      if (cancelledRef?.current) return;
+      // On initial mount with no live data yet, don't overwrite CSV/demo data
+      // with an empty set. On explicit reload (profile switch), always apply
+      // the latest result — including an empty set if the new profile has 0 loops.
+      if (records.length === 0 && cancelledRef !== undefined) return;
 
-        // Only load if no data is already loaded (don't overwrite CSV or demo)
-        // User can always load CSV on top of this
-        externalMetricsRef.current = false;
-        setAllRecords(records);
-        setMetrics(calculateMetrics(records));
-        setAgentMetrics(calculateAgentMetrics(records));
-        setIsDemoMode(false);
-        setActiveDataSetName('Live Dotloop Data');
-      } catch {
-        // Silently ignore — app works without Supabase
-      }
+      externalMetricsRef.current = false;
+      setAllRecords(records);
+      setMetrics(calculateMetrics(records));
+      setAgentMetrics(calculateAgentMetrics(records));
+      setIsDemoMode(false);
+      setActiveDataSetName('Live Dotloop Data');
+    } catch {
+      // Silently ignore — app works without Supabase
     }
-    void loadFromSupabase();
-    return () => { cancelled = true; };
+  });
+
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    void loadFromSupabase.current(cancelledRef);
+    return () => { cancelledRef.current = true; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredRecords = useMemo(
@@ -283,6 +292,7 @@ export function TransactionDataProvider({ children }: { children: ReactNode }) {
       setDateFilterState(DEFAULT_DATE_FILTER);
       setTeamFilterState(DEFAULT_TEAM_FILTER);
     },
+    reloadDotloopLoops: () => loadFromSupabase.current(),
     hasData: allRecords.length > 0,
     teams,
     dataStatistics: {

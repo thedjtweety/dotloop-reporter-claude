@@ -1,5 +1,5 @@
 import {
-  useState, useMemo, useEffect, useRef,
+  useState, useMemo, useEffect, useRef, useCallback,
   type ReactNode, type ChangeEvent,
 } from 'react';
 import { useLocation } from 'wouter';
@@ -744,31 +744,36 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
     enabled: !!status?.connected,
   });
   const setSyncProfileMutation = trpc.dotloopOAuth.setSyncProfile.useMutation();
+  const { reloadDotloopLoops } = useTransactionData();
+
+  // Connection status (loops synced, last synced, etc.) — pulled out of the
+  // effect so it can also be called immediately after a profile switch/sync,
+  // not just on the 3s poll interval.
+  const fetchStatus = useCallback(async (cancelledRef?: { current: boolean }) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = {};
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+      const res = await fetch('/api/dotloop/status', { credentials: 'include', headers });
+      if (!res.ok) { setLoading(false); return; }
+      const data = await res.json() as {
+        connected: boolean;
+        profileName?: string;
+        loopsSynced?: number;
+        lastSynced?: string;
+        syncStatus?: string;
+        error?: string;
+      };
+      if (!cancelledRef?.current) { setStatus(data); setLoading(false); }
+    } catch { if (!cancelledRef?.current) setLoading(false); }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    async function fetchStatus() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const headers: Record<string, string> = {};
-        if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-        const res = await fetch('/api/dotloop/status', { credentials: 'include', headers });
-        if (!res.ok) { setLoading(false); return; }
-        const data = await res.json() as {
-          connected: boolean;
-          profileName?: string;
-          loopsSynced?: number;
-          lastSynced?: string;
-          syncStatus?: string;
-          error?: string;
-        };
-        if (!cancelled) { setStatus(data); setLoading(false); }
-      } catch { if (!cancelled) setLoading(false); }
-    }
-    void fetchStatus();
-    const interval = setInterval(() => { if (!cancelled) void fetchStatus(); }, 3000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+    const cancelledRef = { current: false };
+    void fetchStatus(cancelledRef);
+    const interval = setInterval(() => { void fetchStatus(cancelledRef); }, 3000);
+    return () => { cancelledRef.current = true; clearInterval(interval); };
+  }, [fetchStatus]);
 
   async function handleConnect() {
     // Get the Supabase access token so the backend can identify this user
@@ -802,6 +807,11 @@ function DotloopConnectionsForm({ onClose }: FormProps) {
     try {
       await setSyncProfileMutation.mutateAsync({ profileId });
       await handleSync();
+      // Refresh the connection status (loops synced / last synced) and the
+      // live loops data feeding the rest of the app — both can otherwise
+      // show stale data from the previous profile until the next poll.
+      await fetchStatus();
+      await reloadDotloopLoops();
     } catch (err) {
       setProfileSwitchError(err instanceof Error ? err.message : String(err));
     } finally {

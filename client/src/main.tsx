@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import supabase from "@/lib/supabase";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
@@ -61,6 +62,11 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      headers: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return {};
+        return { Authorization: `Bearer ${session.access_token}` };
+      },
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),
