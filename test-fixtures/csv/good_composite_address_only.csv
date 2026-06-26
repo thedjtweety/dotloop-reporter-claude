@@ -1,0 +1,6 @@
+Loop ID,Loop Name,Loop Status,Address,Price,Created By,"Property Address / Street Number, Street Name, Unit Number (Address 1)","Property Address / City, State/Prov, Zip/Postal Code (Address 2)",Closing Date
+80400001,"9 Liberty St, Hamilton, OH 45011",Sold,"9 Liberty St, Hamilton, OH 45011",245000,Renee Foster,9 Liberty St,"Hamilton, OH 45011",2025-05-01
+80400002,"210 Eaton Ave # 3, Hamilton, OH 45013",Under Contract,"210 Eaton Ave # 3, Hamilton, OH 45013",198000,Renee Foster,"210 Eaton Ave, 3","Hamilton, OH 45013",
+80400003,"48 Pleasant Ave, Fairfield, OH 45014",Active Listing,"48 Pleasant Ave, Fairfield, OH 45014",329000,Caleb Wynn,48 Pleasant Ave,"Fairfield, OH 45014",
+80400004,"1100 Nilles Rd # 12, Fairfield, OH 45014",Pending,"1100 Nilles Rd # 12, Fairfield, OH 45014",156000,Caleb Wynn,"1100 Nilles Rd, 12","Fairfield, OH 45014",
+80400005,"77 Symmes Rd, Hamilton, OH 45015",Sold,"77 Symmes Rd, Hamilton, OH 45015",412000,Renee Foster,77 Symmes Rd,"Hamilton, OH 45015",2025-07-15

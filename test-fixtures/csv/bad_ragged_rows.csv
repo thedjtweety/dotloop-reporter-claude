@@ -1,0 +1,5 @@
+Loop ID,Loop Name,Loop Status,Address,Price,Created By,Closing Date
+70500001,123 Short Row,Sold,123 Short Row
+70500002,456 Normal Row,Active Listing,456 Normal Row St,310000,Pat Reyes,
+70500003,789 Long Row,Pending,789 Long Row Ave,275000,Pat Reyes,,EXTRA,FIELDS,HERE
+70500004,1010 Another Normal,Sold,1010 Another Normal St,399000,Jamie Cruz,2025-05-01
